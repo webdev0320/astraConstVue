@@ -33,7 +33,7 @@ const avatarText = (name) => {
     : initials[0][0];
 };
 
-const products = ref([]);
+const assets = ref([]);
 const errorMessage = ref("");
 
 const getCookie = (name) => {
@@ -43,7 +43,7 @@ const getCookie = (name) => {
   return null;
 };
 
-const fetchProducts = async () => {
+const fetchAssets = async () => {
   try {
     const accessToken = getCookie("accessToken");
     if (!accessToken) {
@@ -51,13 +51,13 @@ const fetchProducts = async () => {
     }
 
     const decodedToken = decodeURIComponent(accessToken);
-    const response = await axios.get(`${apiBaseUrl}/products`, {
+    const response = await axios.get(`${apiBaseUrl}/assets`, {
       headers: {
         Authorization: `Bearer ${decodedToken}`,
       },
     });
 
-    products.value = response.data.products.map((product) => ({
+    assets.value = response.data.assets.map((product) => ({
       id: product.id,
       name: product.name,
       status: product.status,
@@ -72,12 +72,12 @@ const fetchProducts = async () => {
       avatar: product.primary_image || null,
     }));
   } catch (error) {
-    console.error("Error fetching products:", error);
-    errorMessage.value = error.response?.data?.message || "Failed to fetch products.";
+    console.error("Error fetching assets:", error);
+    errorMessage.value = error.response?.data?.message || "Failed to fetch assets.";
   }
 };
 
-fetchProducts();
+fetchAssets();
 
 const deleteProduct = async (productId) => {
   if (confirm("Are you sure you want to delete this product?")) {
@@ -86,13 +86,13 @@ const deleteProduct = async (productId) => {
       const decodedToken = decodeURIComponent(accessToken);
 
       // Call the DELETE API with the product ID
-      await axios.delete(`${apiBaseUrl}/products/${productId}`, {
+      await axios.delete(`${apiBaseUrl}/assets/${productId}`, {
         headers: {
           Authorization: `Bearer ${decodedToken}`,
         },
       });
 
-      products.value = products.value.filter((product) => product.id !== productId);
+      assets.value = assets.value.filter((product) => product.id !== productId);
       alert("Product deleted successfully!");
     } catch (error) {
       console.error("Error deleting product:", error);
@@ -105,19 +105,19 @@ const deleteProduct = async (productId) => {
 <template>
   <div>
     <div class="d-flex justify-between align-center mb-4">
-      <h3>Products List</h3>
-      <VBtn color="primary" class="ms-auto" @click="$router.push('/dashboards/products/create')">Create Product</VBtn>
+      <h3>Assets List</h3>
+      <VBtn color="primary" class="ms-auto" @click="$router.push('/dashboards/assets/create')">Create Asset</VBtn>
     </div>
 
     <VDataTable
-      v-if="products.length > 0"
+      v-if="assets.length > 0"
       :headers="headers"
-      :items="products"
+      :items="assets"
       :items-per-page="5"
     >
       <template #item.actions="{ item }">
         <div class="d-flex gap-2">
-          <VBtn color="warning" size="small" @click="$router.push(`/dashboards/products/edit/${item.id}`)">
+          <VBtn color="warning" size="small" @click="$router.push(`/dashboards/assets/edit/${item.id}`)">
             Edit
           </VBtn>
           <VBtn color="error" size="small" @click="deleteProduct(item.id)">
