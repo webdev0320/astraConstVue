@@ -44,6 +44,11 @@ const suggestionGroups = [
       },
       {
         icon: 'tabler-truck',
+        title: 'Projects',
+        url: { name: 'dashboards-projects' },
+      },
+      {
+        icon: 'tabler-truck',
         title: 'Users',
         url: { name: 'dashboards-users' },
       },

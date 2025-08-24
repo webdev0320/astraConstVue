@@ -8,15 +8,9 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 console.log('----->>',apiBaseUrl);
 const headers = [
   { title: "NAME", key: "name" },
-  { title: "STATUS", key: "status" },
-  { title: "SELLING RANGE", key: "selling_range" },
-  { title: "DAILY TRADE", key: "daily_trade" },
-  { title: "AREA", key: "area" },
+  { title: "START DATE", key: "start_date" },
+  { title: "END DATE", key: "end_date" },
   { title: "DESCRIPTION", key: "description" },
-  { title: "READY TO MARKET", key: "ready_to_market_date" },
-  { title: "LOCATION", key: "location" },
-  { title: "USER NAME", key: "user_name" },
-  { title: "USER MOBILE", key: "user_mobile_number" },
   { title: "ACTIONS", key: "actions" },
 ];
 
@@ -34,7 +28,7 @@ const avatarText = (name) => {
     : initials[0][0];
 };
 
-const assets = ref([]);
+const projects = ref([]);
 const errorMessage = ref("");
 
 const getCookie = (name) => {
@@ -44,7 +38,7 @@ const getCookie = (name) => {
   return null;
 };
 
-const fetchAssets = async () => {
+const fetchProjects = async () => {
   try {
     const accessToken = getCookie("accessToken");
     if (!accessToken) {
@@ -52,53 +46,47 @@ const fetchAssets = async () => {
     }
 
     const decodedToken = decodeURIComponent(accessToken);
-    const response = await axios.get(`${apiBaseUrl}/assets`, {
+    const response = await axios.get(`${apiBaseUrl}/projects`, {
       headers: {
         Authorization: `Bearer ${decodedToken}`,
       },
     });
 
   console.log('======>>',response)
-    assets.value = response.data.assets.map((product) => ({
-      id: product.id,
-      name: product.name,
-      status: product.status,
-      selling_range: `${product.selling_min_range} - ${product.selling_max_range} ${product.selling_unit}`,
-      daily_trade: `${product.daily_trade_volume} ${product.daily_trade_unit}`,
-      area: `${product.area} ${product.area_unit}`,
-      description: product.description,
-      ready_to_market_date: product.ready_to_market_date,
-      location: product.location || "N/A",
-      user_name: product.user_name,
-      user_mobile_number: product.user_mobile_number,
-      avatar: product.primary_image || null,
+    projects.value = response.data.projects.map((project) => ({
+      id: project.id,
+      name: project.name,
+      start_date: project.start_date,
+      end_date: project.end_date,
+      description: project.description,
+      budget: project.budget,
     }));
   } catch (error) {
-    console.error("Error fetching assets:", error);
-    errorMessage.value = error.response?.data?.message || "Failed to fetch assets.";
+    console.error("Error fetching projects:", error);
+    errorMessage.value = error.response?.data?.message || "Failed to fetch projects.";
   }
 };
 
-fetchAssets();
+fetchProjects();
 
-const deleteProduct = async (productId) => {
-  if (confirm("Are you sure you want to delete this product?")) {
+const deleteProject = async (projectId) => {
+  if (confirm("Are you sure you want to delete this project?")) {
     try {
       const accessToken = getCookie("accessToken");
       const decodedToken = decodeURIComponent(accessToken);
 
-      // Call the DELETE API with the product ID
-      await axios.delete(`${apiBaseUrl}/assets/${productId}`, {
+      // Call the DELETE API with the project ID
+      await axios.delete(`${apiBaseUrl}/projects/${projectId}`, {
         headers: {
           Authorization: `Bearer ${decodedToken}`,
         },
       });
 
-      assets.value = assets.value.filter((product) => product.id !== productId);
-      alert("Product deleted successfully!");
+      projects.value = projects.value.filter((project) => project.id !== projectId);
+      alert("project deleted successfully!");
     } catch (error) {
-      console.error("Error deleting product:", error);
-      alert("Failed to delete product.");
+      console.error("Error deleting project:", error);
+      alert("Failed to delete project.");
     }
   }
 };
@@ -107,22 +95,22 @@ const deleteProduct = async (productId) => {
 <template>
   <div>
     <div class="d-flex justify-between align-center mb-4">
-      <h3>Assets List</h3>
-      <VBtn color="primary" class="ms-auto" @click="$router.push('/dashboards/assets/create')">Create Asset</VBtn>
+      <h3>Projects List</h3>
+      <VBtn color="primary" class="ms-auto" @click="$router.push('/dashboards/projects/create')">Create Project</VBtn>
     </div>
 
     <VDataTable
-      v-if="assets.length > 0"
+      v-if="projects.length > 0"
       :headers="headers"
-      :items="assets"
+      :items="projects"
       :items-per-page="5"
     >
       <template #item.actions="{ item }">
         <div class="d-flex gap-2">
-          <VBtn color="warning" size="small" @click="$router.push(`/dashboards/assets/edit/${item.id}`)">
+          <VBtn color="warning" size="small" @click="$router.push(`/dashboards/projects/edit/${item.id}`)">
             Edit
           </VBtn>
-          <VBtn color="error" size="small" @click="deleteProduct(item.id)">
+          <VBtn color="error" size="small" @click="deleteProject(item.id)">
             Delete
           </VBtn>
         </div>

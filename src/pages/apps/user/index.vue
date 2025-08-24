@@ -33,8 +33,8 @@
   import { ref, onMounted } from "vue";
   import { VBtn, VDataTable } from "vuetify/components";
 
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-  console.log('aaaaaaaaaaaaa',apiBaseUrl);
+  const apiBaseUrl = 'https://dm.kreashionsoftwarehouse.com/astraConst/public/api';
+  console.log('aaaaabbbbbbcccc',apiBaseUrl);
   const users = ref([]);
   const errorMessage = ref("");
 

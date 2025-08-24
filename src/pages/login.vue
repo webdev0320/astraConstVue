@@ -34,7 +34,7 @@ const errors = ref({
 const refVForm = ref()
 
  const credentials = ref({
-      mobile_number: "",
+      email: "",
       password: "",
 });
 
@@ -49,10 +49,10 @@ const login = async () => {
 const errorCode = ref(null); // To store the error code globally
 
 try {
-  const res = await $api('https://demo.mygoatlegacy.com/public/api/login', {
+  const res = await $api('https://dm.kreashionsoftwarehouse.com/astraConst/public/api/login', {
     method: 'POST',
     body: {
-      mobile_number: credentials.value.mobile_number,
+      email: credentials.value.email,
       password: credentials.value.password,
     },
     onResponseError({ response }) {
@@ -64,7 +64,7 @@ try {
 
         for (const [key, messages] of Object.entries(response._data.errors)) {
           if(messages=='Invalid credentials'){
-            errors.value['mobile_number'] = Array.isArray(messages) ? messages.join(", ") : messages;
+            errors.value['email'] = Array.isArray(messages) ? messages.join(", ") : messages;
           }else{
             errors.value[key] = Array.isArray(messages) ? messages.join(", ") : messages;
           }
@@ -174,13 +174,13 @@ const onSubmit = () => {
               <!-- email -->
               <VCol cols="12">
                 <AppTextField
-                  v-model="credentials.mobile_number"
-                  label="Mobile Number"
-                  placeholder="+92123456789"
+                  v-model="credentials.email"
+                  label="email"
+                  placeholder="email"
                   type="tel"
                   autofocus
                   :rules="[requiredValidator]"
-                  :error-messages="errors.mobile_number"
+                  :error-messages="errors.email"
                 />
               </VCol>
 

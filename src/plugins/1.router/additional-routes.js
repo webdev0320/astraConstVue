@@ -83,6 +83,23 @@ export const routes = [
     name: 'dashboards-assets-edit',
     component: () => import('@/pages/apps/product/edit.vue'),
   },
+  
+  {
+    path: '/dashboards/projects',
+    name: 'dashboards-projects',
+    component: () => import('@/pages/apps/projects/index.vue'),
+  },
+  {
+    path: '/dashboards/projects/create',
+    name: 'dashboards-projects-create',
+    component: () => import('@/pages/apps/projects/create.vue'),
+  },
+  {
+    path: '/dashboards/projects/edit/:id',
+    name: 'dashboards-projects-edit',
+    component: () => import('@/pages/apps/projects/edit.vue'),
+  },
+
   {
     path: '/dashboards/users',
     name: 'dashboards-users',

@@ -33,6 +33,11 @@ export default [
         to: 'dashboards-assets',
         icon: { icon: 'tabler-truck' },
       },
+            {
+        title: 'Projects',
+        to: 'dashboards-projects',
+        icon: { icon: 'tabler-truck' },
+      },
     ],
   },
 ]
