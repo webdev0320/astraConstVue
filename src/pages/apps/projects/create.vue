@@ -1,46 +1,61 @@
 <template>
+  <div class="d-flex justify-between align-center mb-4">
+    <h3>Create Project</h3>
+  </div>
+
   <VForm ref="refForm" @submit.prevent="submitForm">
     <VRow>
-
-      <!-- 2) Name -->
-      <VCol cols="12" md="6">
+      <!-- Name -->
+      <VCol cols="12" md="4">
         <VTextField
+          v-model="project.name"
           label="Name"
           :rules="[requiredValidator]"
+          :error-messages="errorMessages.name"
           clearable
         />
       </VCol>
 
-      <!-- 2) Start Date -->
-      <VCol cols="12" md="6">
+      <!-- Start Date -->
+      <VCol cols="12" md="4">
         <VTextField
+          v-model="project.start_date"
           label="Start Date"
           type="date"
+          :error-messages="errorMessages.start_date"
         />
       </VCol>
 
-      <!-- 3) End Date -->
-      <VCol cols="12" md="6">
+      <!-- End Date -->
+      <VCol cols="12" md="4">
         <VTextField
+          v-model="project.end_date"
           label="End Date"
           type="date"
+          :min="project.start_date || undefined"
+          :error-messages="errorMessages.end_date"
         />
       </VCol>
 
-      <!-- 4) Budget -->
-      <VCol cols="12" md="6">
+      <!-- Budget (optional) -->
+      <VCol cols="12" md="4">
         <VTextField
+          v-model="project.budget"
           label="Budget"
           type="number"
+          step="0.01"
+          :error-messages="errorMessages.budget"
+          clearable
         />
       </VCol>
 
-      <!-- 5) Description -->
+      <!-- Description -->
       <VCol cols="12">
         <VTextarea
+          v-model="project.description"
           label="Description"
           :rows="3"
-          :rules="[requiredValidator]"
+          :error-messages="errorMessages.description"
         />
       </VCol>
 
@@ -58,13 +73,13 @@
 <script setup>
 import axios from 'axios'
 import { ref } from 'vue'
-import { VBtn, VCol, VForm, VRow, VSwitch, VTextField, VTextarea } from 'vuetify/components'
+import { useRouter } from 'vue-router'
+import { VBtn, VCol, VForm, VRow, VTextField, VTextarea } from 'vuetify/components'
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
+const apiBaseUrl = 'https://dm.kreashionsoftwarehouse.com/astraConst/public/api'
+const router = useRouter()
 
-// 🆕 Fields updated as requested
-const product = ref({
-  code: '',
+const project = ref({
   name: '',
   start_date: '',
   end_date: '',
@@ -91,41 +106,40 @@ const submitForm = async () => {
     loading.value = true
     errorMessages.value = {}
 
-    const accessToken = getCookie('accessToken')
-    if (!accessToken) {
-      throw new Error('Access token is missing. Please log in.')
+    // (optional) basic client validation
+    const { valid } = await refForm.value?.validate?.() ?? { valid: true }
+    if (!valid) {
+      loading.value = false
+      return
     }
+
+    const accessToken = getCookie('accessToken')
+    if (!accessToken) throw new Error('Access token is missing. Please log in.')
     const decodedToken = decodeURIComponent(accessToken)
 
-    // ✅ Only send the new fields
-    const formData = {
-      code: project.value.code,
+    // Normalize budget: send null instead of empty string
+    const payload = {
       name: project.value.name,
       start_date: project.value.start_date,
       end_date: project.value.end_date,
-      budget: project.value.budget,
       description: project.value.description,
+      budget: project.value.budget === '' ? null : Number(project.value.budget),
     }
 
-    const response = await axios.post(`${apiBaseUrl}/projects`, formData, {
+    const res = await axios.post(`${apiBaseUrl}/projects`, payload, {
       headers: {
         'Content-Type': 'application/json',
+        Accept: 'application/json',
         Authorization: `Bearer ${decodedToken}`,
       },
     })
 
-    message.value = response.data.message || 'Product created successfully!'
-
-    // Reset form
-    Object.keys(project.value).forEach(key => {
-      project.value[key] = typeof project.value[key] === 'boolean' ? false : ''
-    })
-
-    // If you navigate after create:
-    // router.push('/dashboards/projects')
+    message.value = res.data?.message || 'Project created successfully!'
+    router.push('/dashboards/projects')
   } catch (error) {
     console.error('Error submitting form:', error)
     if (error.response?.data?.errors) {
+      // Laravel validation errors { field: [messages...] }
       errorMessages.value = error.response.data.errors
       message.value = 'Please fix the highlighted errors.'
     } else {
@@ -138,5 +152,8 @@ const submitForm = async () => {
 </script>
 
 <style>
-/* optional */
+.mb-4 { margin-bottom: 16px; }
+.d-flex { display: flex; }
+.justify-between { justify-content: space-between; }
+.align-center { align-items: center; }
 </style>

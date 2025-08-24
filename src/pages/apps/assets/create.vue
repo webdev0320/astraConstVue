@@ -1,4 +1,7 @@
 <template>
+    <div class="d-flex justify-between align-center mb-4">
+      <h3>Create Asset</h3>
+    </div>
   <VForm ref="refForm" @submit.prevent="submitForm">
     <VRow>
       <!-- 1) Code -->
@@ -23,10 +26,10 @@
         />
       </VCol>
 
-      <!-- 3) Category (from backend) -->
+      <!-- 3) Category (top-level under Fixed Assets) -->
       <VCol cols="12" md="6">
         <VSelect
-          v-model="asset.category_id"
+          v-model="asset.asset_category_id"
           :items="categories"
           item-title="name"
           item-value="id"
@@ -34,7 +37,7 @@
           :rules="[requiredValidator]"
           :loading="loadingCategories"
           :disabled="loadingCategories"
-          :error-messages="errorMessages.category_id"
+          :error-messages="errorMessages.asset_category_id"
           clearable
         />
       </VCol>
@@ -42,15 +45,15 @@
       <!-- 4) Sub Category (depends on category) -->
       <VCol cols="12" md="6">
         <VSelect
-          v-model="asset.sub_category_id"
+          v-model="asset.asset_sub_category_id"
           :items="subCategories"
           item-title="name"
           item-value="id"
           label="Sub Category"
           :rules="[requiredValidator]"
           :loading="loadingSubCategories"
-          :disabled="!asset.category_id || loadingSubCategories"
-          :error-messages="errorMessages.sub_category_id"
+          :disabled="!asset.asset_category_id || loadingSubCategories"
+          :error-messages="errorMessages.asset_sub_category_id"
           clearable
         />
       </VCol>
@@ -116,14 +119,20 @@
         />
       </VCol>
 
-      <!-- 11) Extended Warranty (Yes/No) -->
+      <!-- 11) Extended Warranty -->
       <VCol cols="12" md="6" class="d-flex align-center">
-        <VSwitch
+        <VSwitch v-model="asset.extended_warranty" inset label="Extended Warranty" />
+      </VCol>
+
+      <VCol cols="12" md="6">
+        <VTextField
           v-model="asset.extended_warranty"
-          inset
-          label="Extended Warranty"
+          label="ExtendedWarranty Date"
+          type="date"
+          :error-messages="errorMessages.extended_warranty"
         />
       </VCol>
+
 
       <!-- 12) Purchase Date -->
       <VCol cols="12" md="6">
@@ -151,27 +160,30 @@ import axios from 'axios'
 import { ref, watch, onMounted } from 'vue'
 import { VBtn, VCol, VForm, VRow, VSwitch, VTextField, VTextarea, VSelect } from 'vuetify/components'
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
+/** Base URL from env with fallback */
+const apiBaseUrl =
+  'https://dm.kreashionsoftwarehouse.com/astraConst/public/api'
 
-// ---- State ----
+console.info('API base:', apiBaseUrl)
+
+/* ---------------- State ---------------- */
 const asset = ref({
   code: '',
   name: '',
-  category_id: null,
-  sub_category_id: null,
+  asset_category_id: null,       // selected parent category id (top-level under Fixed Assets)
+  asset_sub_category_id: null,   // selected child id
   description: '',
   serial_number: '',
   plate_number: '',
   make: '',
   insurance_start_date: '',
   warranty_start_date: '',
-  extended_warranty: false,
+  extended_warranty: '',
   purchase_date: '',
 })
 
-// dropdown data
-const categories = ref([])
-const subCategories = ref([])
+const categories = ref([])     // [{id, name, slug}]
+const subCategories = ref([])  // [{id, name, slug}]
 
 const loading = ref(false)
 const loadingCategories = ref(false)
@@ -181,7 +193,7 @@ const refForm = ref()
 const message = ref('')
 const errorMessages = ref({})
 
-// ---- Utils ----
+/* ---------------- Utils ---------------- */
 const requiredValidator = value => !!value || 'This field is required'
 
 const getCookie = name => {
@@ -190,36 +202,102 @@ const getCookie = name => {
   if (parts.length === 2) return parts.pop().split(';').shift()
   return null
 }
+const authHeader = () => {
+  const token = decodeURIComponent(getCookie('accessToken') || '')
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+const slugToTitle = slug =>
+  (slug || '')
+    .replace(/-/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/(^|\s)\S/g, s => s.toUpperCase())
 
-// ---- API calls ----
+/* ---------------- API: fetch ALL pages ---------------- */
+const fetchAllCategories = async () => {
+  let page = 1
+  let all = []
+  let total = Infinity
+  let perPageFromServer = 15
+
+  while ((page - 1) * perPageFromServer < total) {
+    const res = await axios.get(`${apiBaseUrl}/asset-categories`, {
+      // only send page; do NOT send perPage
+      params: { page },
+      headers: { ...authHeader() },
+    })
+
+    const list = Array.isArray(res.data?.categories) ? res.data.categories : []
+    all = all.concat(list)
+
+    // use server-provided totals
+    total = Number(res.data?.total_records ?? all.length)
+    perPageFromServer = Number(res.data?.perPage ?? perPageFromServer)
+    page += 1
+
+    // safety break if the API ever returns an empty page
+    if (list.length === 0) break
+  }
+
+  return all
+}
+
+/**
+ * Load top-level categories (under Fixed Assets)
+ * Condition: is_parent === true AND parent_id === 1 AND status === true
+ */
 const fetchCategories = async () => {
   try {
     loadingCategories.value = true
-    const token = decodeURIComponent(getCookie('accessToken') || '')
-    const res = await axios.get(`${apiBaseUrl}/categories`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    categories.value = Array.isArray(res.data?.data) ? res.data.data : res.data
+    const raw = await fetchAllCategories()
+
+    const parentsUnderFixedAssets = raw.filter(
+      c => c && c.status === true && c.is_parent === true && Number(c.parent_id) === 1
+    )
+
+    categories.value = parentsUnderFixedAssets
+      .map(c => ({
+        id: c.id,
+        slug: c.slug,
+        name: c.title || slugToTitle(c.slug),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name))
   } catch (e) {
     console.error('Failed to load categories', e)
+    categories.value = []
   } finally {
     loadingCategories.value = false
   }
 }
 
-const fetchSubCategories = async (categoryId) => {
-  if (!categoryId) {
+/**
+ * Sub-categories by **ID**
+ * GET /api/asset-categories/:id
+ * Response: { success, data: { ..., children: [...] } }
+ */
+const fetchSubCategories = async (parentId) => {
+  if (!parentId) { 
     subCategories.value = []
     return
   }
   try {
     loadingSubCategories.value = true
-    const token = decodeURIComponent(getCookie('accessToken') || '')
-    // example endpoint: /categories/{id}/sub-categories
-    const res = await axios.get(`${apiBaseUrl}/categories/${categoryId}/sub-categories`, {
-      headers: { Authorization: `Bearer ${token}` },
+
+    // ID direct pass karein; slug ki zaroorat nahi
+    const res = await axios.get(`${apiBaseUrl}/asset-categories/${encodeURIComponent(parentId)}`, {
+      headers: { ...authHeader() },
     })
-    subCategories.value = Array.isArray(res.data?.data) ? res.data.data : res.data
+
+    const children = res?.data?.data?.children || []
+
+    subCategories.value = children
+      .filter(ch => ch?.status !== false)
+      .map(ch => ({
+        id: ch.id,
+        slug: ch.slug,                          // optional, future use
+        name: ch.title || slugToTitle(ch.slug), // UI friendly label
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name))
   } catch (e) {
     console.error('Failed to load sub categories', e)
     subCategories.value = []
@@ -228,27 +306,30 @@ const fetchSubCategories = async (categoryId) => {
   }
 }
 
-// when category changes, reset and fetch sub-categories
-watch(() => asset.value.category_id, async (newVal, oldVal) => {
-  asset.value.sub_category_id = null
-  await fetchSubCategories(newVal)
-})
+/* ---------------- Watchers ---------------- */
+watch(
+  () => asset.value.asset_category_id,
+  async newVal => {
+    asset.value.asset_sub_category_id = null
+    await fetchSubCategories(newVal)
+  }
+)
 
-// ---- Submit ----
+/* ---------------- Submit ---------------- */
 const submitForm = async () => {
   try {
     loading.value = true
     errorMessages.value = {}
 
-    const accessToken = getCookie('accessToken')
-    if (!accessToken) throw new Error('Access token is missing. Please log in.')
-    const decodedToken = decodeURIComponent(accessToken)
+    const token = getCookie('accessToken')
+    if (!token) throw new Error('Access token is missing. Please log in.')
+    const decodedToken = decodeURIComponent(token)
 
-    const formData = {
+    const payload = {
       code: asset.value.code,
       name: asset.value.name,
-      category_id: asset.value.category_id,
-      sub_category_id: asset.value.sub_category_id,
+      asset_category_id: asset.value.asset_category_id,
+      asset_sub_category_id: asset.value.asset_sub_category_id,
       description: asset.value.description,
       serial_number: asset.value.serial_number,
       plate_number: asset.value.plate_number,
@@ -257,21 +338,25 @@ const submitForm = async () => {
       warranty_start_date: asset.value.warranty_start_date,
       extended_warranty: asset.value.extended_warranty,
       purchase_date: asset.value.purchase_date,
-      // 👇 type intentionally NOT sent (backend-controlled)
     }
 
-    const response = await axios.post(`${apiBaseUrl}/assets`, formData, {
+    const response = await axios.post(`${apiBaseUrl}/assets`, payload, {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${decodedToken}`,
       },
     })
 
-    message.value = response.data.message || 'Asset created successfully!'
+    message.value = response.data?.message || 'Asset created successfully!'
 
-    // Reset form
+    // reset form
     Object.keys(asset.value).forEach(key => {
-      asset.value[key] = typeof asset.value[key] === 'boolean' ? false : (key.endsWith('_id') ? null : '')
+      asset.value[key] =
+        typeof asset.value[key] === 'boolean'
+          ? false
+          : key.endsWith('_id')
+            ? null
+            : ''
     })
     subCategories.value = []
   } catch (error) {
@@ -287,6 +372,7 @@ const submitForm = async () => {
   }
 }
 
+/* ---------------- Lifecycle ---------------- */
 onMounted(() => {
   fetchCategories()
 })

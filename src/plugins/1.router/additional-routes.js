@@ -71,17 +71,17 @@ export const routes = [
   {
     path: '/dashboards/assets',
     name: 'dashboards-assets',
-    component: () => import('@/pages/apps/product/index.vue'),
+    component: () => import('@/pages/apps/assets/index.vue'),
   },
   {
     path: '/dashboards/assets/create',
     name: 'dashboards-assets-create',
-    component: () => import('@/pages/apps/product/create.vue'),
+    component: () => import('@/pages/apps/assets/create.vue'),
   },
   {
     path: '/dashboards/assets/edit/:id',
     name: 'dashboards-assets-edit',
-    component: () => import('@/pages/apps/product/edit.vue'),
+    component: () => import('@/pages/apps/assets/edit.vue'),
   },
   
   {
