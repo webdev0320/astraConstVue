@@ -138,6 +138,19 @@
         />
       </VCol>
 
+      <VCol cols="12" md="6">
+        <VSelect
+          v-model="asset.is_related_to_it"
+          :items="yesNoOptions"
+          item-title="title"
+          item-value="value"
+          label="Is Related to IT"
+          :rules="[requiredValidator]"
+          :error-messages="errorMessages.is_related_to_it"
+          clearable
+        />
+      </VCol>
+
       <VCol cols="12">
         <VBtn type="submit" color="primary" :loading="loading" :disabled="loading">
           Update
@@ -175,7 +188,13 @@ const asset = ref({
   warranty_start_date: '',
   extended_warranty: '',   // your API uses date string (e.g., 2025-11-19)
   purchase_date: '',
+  is_related_to_it: null,
 })
+
+const yesNoOptions = [
+  { title: 'Yes', value: 'yes' },
+  { title: 'No', value: 'no' },
+]
 
 const categories = ref([])     // [{id, name, slug}]
 const subCategories = ref([])  // [{id, name, slug}]
@@ -326,6 +345,8 @@ const submitForm = async () => {
       warranty_start_date: asset.value.warranty_start_date,
       extended_warranty: asset.value.extended_warranty,
       purchase_date: asset.value.purchase_date,
+      is_related_to_it: asset.value.is_related_to_it,
+
     }
 
     await axios.put(`${apiBaseUrl}/assets/${assetId}`, payload, {

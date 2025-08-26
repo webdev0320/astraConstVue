@@ -83,6 +83,21 @@ export const routes = [
     name: 'dashboards-assets-edit',
     component: () => import('@/pages/apps/assets/edit.vue'),
   },
+  {
+    path: '/dashboards/assetcategories',
+    name: 'dashboards-assetcategories',
+    component: () => import('@/pages/apps/asset-category/index.vue'),
+  },
+  {
+    path: '/dashboards/assetcategories/create',
+    name: 'dashboards-assetcategories-create',
+    component: () => import('@/pages/apps/asset-category/create.vue'),
+  },
+  {
+    path: '/dashboards/assetcategories/edit/:id',
+    name: 'dashboards-assetcategories-edit',
+    component: () => import('@/pages/apps/asset-category/edit.vue'),
+  },
   
   {
     path: '/dashboards/projects',

@@ -28,6 +28,10 @@ export default [
         to: 'dashboards-assets',
       },
       {
+        title: 'Assets Categories',
+        to: 'dashboards-assetcategories',
+      },
+      {
         title: 'Projects',
         to: 'dashboards-projects',
       },
