@@ -36,6 +36,14 @@ export default [
         to: 'dashboards-users',
       },
       {
+        title: 'Departments',
+        to: 'dashboards-departments',
+      },
+      {
+        title: 'Permissions',
+        to: 'apps-permissions',
+      },
+      {
         title: 'Faqs',
         to: 'dashboards-faqs',
       },

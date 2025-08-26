@@ -101,6 +101,22 @@ export const routes = [
   },
 
   {
+    path: '/dashboards/departments',
+    name: 'dashboards-departments',
+    component: () => import('@/pages/apps/departments/index.vue'),
+  },
+  {
+    path: '/dashboards/departments/create',
+    name: 'dashboards-departments-create',
+    component: () => import('@/pages/apps/departments/create.vue'),
+  },
+  {
+    path: '/dashboards/departments/edit/:id',
+    name: 'dashboards-departments-edit',
+    component: () => import('@/pages/apps/departments/edit.vue'),
+  },
+
+  {
     path: '/dashboards/users',
     name: 'dashboards-users',
     component: () => import('@/pages/apps/user/index.vue'),
