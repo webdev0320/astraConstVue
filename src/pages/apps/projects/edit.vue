@@ -76,7 +76,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { VBtn, VCol, VForm, VRow, VTextField, VTextarea } from 'vuetify/components'
 
-const apiBaseUrl = 'https://dm.kreashionsoftwarehouse.com/astraConst/public/api'
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
 const route = useRoute()
 const router = useRouter()

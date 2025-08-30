@@ -130,7 +130,8 @@ import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { VForm, VRow, VCol, VTextField, VSelect, VBtn } from "vuetify/components";
 
-const apiBaseUrl = "https://dm.kreashionsoftwarehouse.com/astraConst/public/api";
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+
 const router = useRouter();
 
 const user = ref({

@@ -174,8 +174,8 @@ import { ref, watch, onMounted } from 'vue'
 import { VBtn, VCol, VForm, VRow, VSwitch, VTextField, VTextarea, VSelect } from 'vuetify/components'
 
 /** Base URL from env with fallback */
-const apiBaseUrl =
-  'https://dm.kreashionsoftwarehouse.com/astraConst/public/api'
+
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
 console.info('API base:', apiBaseUrl)
 

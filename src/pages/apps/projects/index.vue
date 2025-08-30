@@ -80,7 +80,7 @@ import {
   VSelect
 } from "vuetify/components";
 
-const apiBaseUrl = "https://dm.kreashionsoftwarehouse.com/astraConst/public/api";
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
 const headers = [
   { title: "NAME", key: "name" },

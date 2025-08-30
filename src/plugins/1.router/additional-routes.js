@@ -77,11 +77,13 @@ export const routes = [
     path: '/dashboards/assets/create',
     name: 'dashboards-assets-create',
     component: () => import('@/pages/apps/assets/create.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-assets' },
   },
   {
     path: '/dashboards/assets/edit/:id',
     name: 'dashboards-assets-edit',
     component: () => import('@/pages/apps/assets/edit.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-assets' },
   },
   {
     path: '/dashboards/assetcategories',
@@ -92,11 +94,13 @@ export const routes = [
     path: '/dashboards/assetcategories/create',
     name: 'dashboards-assetcategories-create',
     component: () => import('@/pages/apps/asset-category/create.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-assetcategories' },
   },
   {
     path: '/dashboards/assetcategories/edit/:id',
     name: 'dashboards-assetcategories-edit',
     component: () => import('@/pages/apps/asset-category/edit.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-assetcategories' },
   },
   
   {
@@ -108,11 +112,13 @@ export const routes = [
     path: '/dashboards/projects/create',
     name: 'dashboards-projects-create',
     component: () => import('@/pages/apps/projects/create.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-projects' },
   },
   {
     path: '/dashboards/projects/edit/:id',
     name: 'dashboards-projects-edit',
     component: () => import('@/pages/apps/projects/edit.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-projects' },
   },
 
   {
@@ -124,11 +130,13 @@ export const routes = [
     path: '/dashboards/departments/create',
     name: 'dashboards-departments-create',
     component: () => import('@/pages/apps/departments/create.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-departments' },
   },
   {
     path: '/dashboards/departments/edit/:id',
     name: 'dashboards-departments-edit',
     component: () => import('@/pages/apps/departments/edit.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-departments' },
   },
 
   {
@@ -140,11 +148,13 @@ export const routes = [
     path: '/dashboards/users/create',
     name: 'dashboards-users-create',
     component: () => import('@/pages/apps/user/create.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-users' },
   },
   {
     path: '/dashboards/users/edit/:id',
     name: 'dashboards-users-edit',
     component: () => import('@/pages/apps/user/edit.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-users' },
   },
   {
     path: '/dashboards/faqs',
@@ -155,11 +165,13 @@ export const routes = [
     path: '/dashboards/faqs/create',
     name: 'dashboards-faqs-create',
     component: () => import('@/pages/apps/faq/create.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-faqs' },
   },
   {
     path: '/dashboards/faqs/edit/:id',
     name: 'dashboards-faqs-edit',
     component: () => import('@/pages/apps/faq/edit.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-faqs' },
   },
   {
     path: '/dashboards/settings',
@@ -170,11 +182,13 @@ export const routes = [
     path: '/dashboards/settings/create',
     name: 'dashboards-settings-create',
     component: () => import('@/pages/apps/setting/create.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-settings' },
   },
   {
     path: '/dashboards/settings/edit/:id',
     name: 'dashboards-settings-edit',
     component: () => import('@/pages/apps/setting/edit.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-settings' },
   },
 
   {
@@ -186,10 +200,12 @@ export const routes = [
     path: '/dashboards/supports/create',
     name: 'dashboards-supports-create',
     component: () => import('@/pages/apps/support/create.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-supports' },
   },
   {
     path: '/dashboards/supports/view/:id',
     name: 'dashboards-supports-view',
     component: () => import('@/pages/apps/support/view.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-supports' },
   },
 ]
