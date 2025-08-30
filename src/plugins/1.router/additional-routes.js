@@ -102,6 +102,24 @@ export const routes = [
     component: () => import('@/pages/apps/asset-category/edit.vue'),
     meta: { layout: 'default', navActiveLink: 'dashboards-assetcategories' },
   },
+  {
+    path: '/dashboards/asset-investment-requests',
+    name: 'dashboards-asset-investment-requests',
+    component: () => import('@/pages/apps/asset-investment-request/index.vue'),
+  },
+  {
+    path: '/dashboards/asset-investment-requests/create',
+    name: 'dashboards-asset-investment-requests-create',
+    component: () => import('@/pages/apps/asset-investment-request/create.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-asset-investment-requests' },
+  },
+  {
+    path: '/dashboards/asset-investment-requests/edit/:id',
+    name: 'dashboards-asset-investment-requests-edit',
+    component: () => import('@/pages/apps/asset-investment-request/edit.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-asset-investment-requests' },
+  },
+  
   
   {
     path: '/dashboards/projects',

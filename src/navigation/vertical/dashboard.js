@@ -36,6 +36,10 @@ export default [
         to: 'dashboards-projects',
       },
       {
+        title: 'Asset Investment Request',
+        to: 'dashboards-asset-investment-requests',
+      },
+      {
         title: 'Users',
         to: 'dashboards-users',
       },

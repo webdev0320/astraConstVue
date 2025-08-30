@@ -3,7 +3,7 @@ import axios from "axios";
 import { ref } from "vue";
 import { VBtn, VDataTable } from "vuetify/components";
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+const apiBaseUrl = 'https://dm.kreashionsoftwarehouse.com/astraConst/public/api';
 
 const headers = [
   { title: "ID", key: "id" },
