@@ -138,6 +138,30 @@ export const routes = [
     component: () => import('@/pages/apps/projects/edit.vue'),
     meta: { layout: 'default', navActiveLink: 'dashboards-projects' },
   },
+  {
+    path: '/dashboards/projects/:id/assign-users',
+    name: 'dashboards-project-assignUsers',
+    component: () => import('@/pages/apps/projects/assign-users.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-projects' },
+  },
+  {
+    path: '/dashboards/projects/:id/budgets',
+    name: 'dashboards-project-budget',
+    component: () => import('@/pages/apps/projects/budget/index.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-projects' },
+  },
+  {
+    path: '/dashboards/projects/:id/budgets/create',
+    name: 'dashboards-project-budgets-create',
+    component: () => import('@/pages/apps/projects/budget/create.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-projects' },
+  },
+    {
+    path: '/dashboards/projects/:id/budgets/:budgetId/edit',
+    name: 'dashboards-project-budgets-edit',
+    component: () => import('@/pages/apps/projects/budget/edit.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-projects' },
+  },
 
   {
     path: '/dashboards/departments',

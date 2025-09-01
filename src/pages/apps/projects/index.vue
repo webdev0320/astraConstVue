@@ -1,3 +1,4 @@
+<!-- src/views/projects/index.vue -->
 <template>
   <div>
     <div class="d-flex justify-between align-center mb-4">
@@ -21,14 +22,39 @@
 
       <template #item.actions="{ item }">
         <div class="d-flex gap-2">
-          <VBtn color="warning" size="small" @click="$router.push(`/dashboards/projects/edit/${item.raw?.id ?? item.id}`)">
+          <VBtn
+            color="warning"
+            size="small"
+            @click="$router.push(`/dashboards/projects/edit/${item.raw?.id ?? item.id}`)"
+          >
             Edit
           </VBtn>
-          <VBtn color="error" size="small" @click="deleteProject(item.raw?.id ?? item.id)">
+
+          <VBtn
+            color="error"
+            size="small"
+            @click="deleteProject(item.raw?.id ?? item.id)"
+          >
             Delete
           </VBtn>
-          <VBtn color="primary" size="small" @click="openUserModal(item.raw?.id ?? item.id)">
-            Assign Users
+
+          <!-- Assign Users -> route to assign-users page -->
+          <VBtn
+            color="primary"
+            size="small"
+            @click="$router.push(`/dashboards/projects/${item.raw?.id ?? item.id}/assign-users`)"
+          >
+             Users
+          </VBtn>
+
+          <!-- Budget button (after Assign Users) -->
+          <VBtn
+            color="secondary"
+            size="small"
+            variant="tonal"
+            @click="$router.push(`/dashboards/projects/${item.raw?.id ?? item.id}/budgets`)"
+          >
+            Budget
           </VBtn>
         </div>
       </template>
@@ -36,49 +62,13 @@
 
     <p v-else-if="errorMessage">{{ errorMessage }}</p>
     <p v-else>Loading...</p>
-
-    <!-- Users Modal -->
-    <VDialog v-model="userModal" max-width="520px">
-      <VCard>
-        <VCardTitle>Select Users</VCardTitle>
-        <VCardText>
-          <div v-if="usersLoading">Loading users…</div>
-          <div v-else>
-            <VSelect
-              v-model="selectedUsers"
-              :items="users"
-              item-title="name"
-              item-value="id"
-              label="Select Users"
-              multiple
-              chips
-              closable-chips
-              outlined
-            />
-          </div>
-        </VCardText>
-        <VCardActions>
-          <VBtn color="secondary" text @click="userModal = false">Cancel</VBtn>
-          <VBtn color="primary" :loading="saving" :disabled="saving" @click="assignUsers">Save</VBtn>
-        </VCardActions>
-      </VCard>
-    </VDialog>
   </div>
 </template>
 
 <script setup>
 import axios from "axios";
 import { ref, onMounted } from "vue";
-import {
-  VBtn,
-  VDataTable,
-  VDialog,
-  VCard,
-  VCardTitle,
-  VCardText,
-  VCardActions,
-  VSelect
-} from "vuetify/components";
+import { VBtn, VDataTable } from "vuetify/components";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
@@ -92,13 +82,6 @@ const headers = [
 
 const projects = ref([]);
 const errorMessage = ref("");
-
-const userModal = ref(false);
-const users = ref([]);           // [{ id: '1', name: '...' }]
-const selectedUsers = ref([]);   // ['1','2', ...] keep as strings to match items
-const usersLoading = ref(false);
-const saving = ref(false);
-const currentProjectId = ref(null);
 
 const truncateSmart = (text, wordLimit = 20, charFallback = 120) => {
   if (!text) return "—";
@@ -120,18 +103,21 @@ const getAuthHeaders = () => {
   return { Authorization: `Bearer ${decodeURIComponent(access)}`, Accept: "application/json" };
 };
 
-// projects list
+// list
 const fetchProjects = async () => {
   try {
     const res = await axios.get(`${apiBaseUrl}/projects`, { headers: getAuthHeaders() });
-    const list = Array.isArray(res.data) ? res.data : Array.isArray(res.data?.data) ? res.data.data : [];
+    const list = Array.isArray(res.data)
+      ? res.data
+      : Array.isArray(res.data?.data)
+      ? res.data.data
+      : [];
     projects.value = list.map(p => ({
       id: p.id,
       name: p.name,
       start_date: p.start_date ?? "—",
       end_date: p.end_date ?? "—",
       description: p.description ?? "—",
-      budget: p.budget ?? null,
     }));
   } catch (e) {
     console.error("Error fetching projects:", e);
@@ -150,68 +136,6 @@ const deleteProject = async (projectId) => {
   } catch (e) {
     console.error("Error deleting project:", e);
     alert(e.response?.data?.message || "Failed to delete project.");
-  }
-};
-
-// users for dropdown (cast ids to STRING)
-const fetchUsersForModal = async () => {
-  const res = await axios.get(`${apiBaseUrl}/users`, {
-    headers: getAuthHeaders(),
-    params: { per_page: 500, page: 1 },
-  });
-  const usersNode = res?.data?.data?.users;
-  const rows = Array.isArray(usersNode) ? usersNode : (usersNode?.data ?? []);
-  users.value = rows.map(u => ({ id: String(u.id), name: u.name }));
-};
-
-// assigned users for project (return STRING ids)
-const fetchAssignedUserIds = async (projectId) => {
-  const res = await axios.get(`${apiBaseUrl}/projects/${projectId}`, { headers: getAuthHeaders() });
-  const existing =
-    (Array.isArray(res.data?.users) && res.data.users) ||
-    (Array.isArray(res.data?.data?.users) && res.data.data.users) ||
-    (Array.isArray(res.data?.project?.users) && res.data.project.users) ||
-    (Array.isArray(res.data?.data?.project?.users) && res.data.data.project.users) ||
-    [];
-  return existing.map(u => String(u.id));
-};
-
-// open modal (always prefill from server)
-const openUserModal = async (projectId) => {
-  try {
-    userModal.value = true;
-    usersLoading.value = true;
-    currentProjectId.value = projectId;
-    selectedUsers.value = [];
-
-    await fetchUsersForModal();
-    const preselected = await fetchAssignedUserIds(projectId);
-    selectedUsers.value = preselected;
-  } catch (e) {
-    console.error("Error opening users modal:", e);
-    alert(e.response?.data?.message || "Failed to prepare users list.");
-  } finally {
-    usersLoading.value = false;
-  }
-};
-
-// save (convert to numbers for API)
-const assignUsers = async () => {
-  if (!currentProjectId.value) return;
-  try {
-    saving.value = true;
-    await axios.post(
-      `${apiBaseUrl}/projects/${currentProjectId.value}/users/sync`,
-      { user_ids: selectedUsers.value.map(id => Number(id)) },
-      { headers: getAuthHeaders() }
-    );
-    alert("Users synced successfully!");
-    userModal.value = false;
-  } catch (e) {
-    console.error("Error syncing users:", e);
-    alert(e.response?.data?.message || "Failed to sync users.");
-  } finally {
-    saving.value = false;
   }
 };
 </script>
