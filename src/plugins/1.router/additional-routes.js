@@ -120,7 +120,24 @@ export const routes = [
     meta: { layout: 'default', navActiveLink: 'dashboards-asset-investment-requests' },
   },
   
-  
+  {
+    path: '/dashboards/assethandovers',
+    name: 'dashboards-assethandovers',
+    component: () => import('@/pages/apps/asset-handover/index.vue'),
+  },
+  {
+    path: '/dashboards/assethandovers/create',
+    name: 'dashboards-assethandovers-create',
+    component: () => import('@/pages/apps/asset-handover/create.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-assethandovers' },
+  },
+  {
+    path: '/dashboards/assethandovers/edit/:id',
+    name: 'dashboards-assethandovers-edit',
+    component: () => import('@/pages/apps/asset-handover/edit.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-assethandovers' },
+  },
+
   {
     path: '/dashboards/projects',
     name: 'dashboards-projects',

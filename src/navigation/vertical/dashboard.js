@@ -40,6 +40,10 @@ export default [
         to: 'dashboards-asset-investment-requests',
       },
       {
+        title: 'Asset HandOver',
+        to: 'dashboards-assethandovers',
+      },
+      {
         title: 'Users',
         to: 'dashboards-users',
       },
