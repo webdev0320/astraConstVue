@@ -1,3 +1,14 @@
+# --- Must ignore ---
+node_modules/
+.vite/
+dist/
+coverage/
+*.tsbuildinfo
+src/**/*.generated.*
+src/**/*.d.ts
+node_modules/.vite/
+node_modules/.vue-global-types/
+
 # Logs
 logs
 *.log
@@ -7,18 +18,8 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# node_modules
+# OS/editor
 .DS_Store
-# dist
-# dist-ssr
-# *.local
-
-/cypress/videos/
-/cypress/screenshots/
-
-# 👉 Custom Git ignores
-
-# Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
@@ -32,10 +33,12 @@ lerna-debug.log*
 *.sw?
 .yarn
 
-# iconify dist files
-src/plugins/iconify/icons.css
+# Cypress
+/cypress/videos/
+/cypress/screenshots/
 
-# Ignore MSW script
+# Custom
+src/plugins/iconify/icons.css
 public/mockServiceWorker.js
 
 # Env files
