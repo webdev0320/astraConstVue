@@ -87,7 +87,7 @@
           </VCol>
 
           <!-- Summary -->
-          <VCol cols="12" md="8" class="d-flex align-end justify-end">
+          <VCol cols="12" md="4" class="d-flex align-end justify-end">
             <div class="text-end">
               <div class="text-medium-emphasis">Records: <b>{{ budgetRecords.length }}</b></div>
               <div class="text-medium-emphasis">Total: <b>{{ formatAmount(totalAmount) }}</b></div>
@@ -173,38 +173,11 @@ const headers = [
 const fetchAssetCategories = async () => {
   loading.value.categories = true;
   try {
-    let page = 1;
-    let perPage = 15;      // server se update hoga
-    let total = Infinity;  // server se update hoga
-    const acc = [];
-
-    while ((page - 1) * perPage < total) {
-      const res = await axios.get(`${apiBaseUrl}/asset-categories`, {
-        params: { page /* , perPage: 1000  // <- agar API allow karti ho to ek hi call me sab aa jayega */ },
-        headers: getAuthHeaders(),
-      });
-
-      const data  = res.data || {};
-      const chunk = Array.isArray(data.categories)
-        ? data.categories
-        : Array.isArray(data.data)
-          ? data.data
-          : Array.isArray(data) ? data : [];
-
-      acc.push(...chunk);
-
-      // defensive: server numbers se loop bounds update
-      total  = Number(data.total_records ?? total);
-      perPage = Number(data.perPage ?? perPage);
-
-      if (!chunk.length) break; // safety
-      page += 1;
-    }
-
-    allCategories.value = acc;
+    const res = await axios.get(`${apiBaseUrl}/asset-categories`, { headers: getAuthHeaders() });
+    const list = res.data?.categories ?? res.data?.data ?? res.data ?? [];
+    allCategories.value = Array.isArray(list) ? list : [];
   } catch (e) {
     console.error(e);
-    allCategories.value = [];
   } finally {
     loading.value.categories = false;
   }
@@ -295,24 +268,21 @@ const addBudgetRecord = () => {
       project_id: Number(projectId.value),
       asset_id: a.id,
       asset_category_id: Number(selectedCategoryId.value),
-      asset_subcategory_id: Number(selectedSubCategoryId.value),
-      asset_sub_category_id: Number(selectedSubCategoryId.value), // safety for backend
+      asset_subcategory_id: Number(selectedSubCategoryId.value),   // response-style
+      asset_sub_category_id: Number(selectedSubCategoryId.value),  // request-style (just in case)
       amount: Number(budget.value.amount),
 
-      // UI only:
+      // UI only
       asset_code: a.code,
       category_name: categoryNameById(selectedCategoryId.value),
       subcategory_name: subcategoryNameById(selectedSubCategoryId.value),
     });
   }
 
-  // ✅ FORM RESET (poora blank)
-  selectedCategoryId.value    = null;
-  selectedSubCategoryId.value = null;
-  selectedAsset.value         = null;
-  assets.value                = [];
-  budget.value.amount         = null; // blank dikhane ke liye
+  selectedAsset.value = null;
+  budget.value.amount = 0;
 };
+
 
 const removeBudgetRecord = (item) => {
   budgetRecords.value = budgetRecords.value.filter(r => r !== item);

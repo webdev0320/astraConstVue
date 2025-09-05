@@ -42,7 +42,7 @@
           <VBtn
             color="primary"
             size="small"
-            @click="$router.push(`/dashboards/projects/${item.raw?.id ?? item.id}/assign-users`)"
+            @click="$router.push(`/dashboards/projects/${item.raw?.id ?? item.id}/assignusers`)"
           >
              Users
           </VBtn>
@@ -67,7 +67,7 @@
 
 <script setup>
 import axios from "axios";
-import { ref, onMounted } from "vue";
+import { onMounted, ref } from "vue";
 import { VBtn, VDataTable } from "vuetify/components";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;

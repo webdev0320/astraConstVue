@@ -46,10 +46,23 @@
       <VCol cols="12" md="4">
         <VSelect
           v-model="form.request_type"
-          :items="['NEW', 'RENEWAL', 'UPGRADE']"
+          :items="REQUEST_TYPE_OPTIONS"
           label="Request Type"
           :rules="[requiredValidator]"
           :error-messages="errorMessages.request_type"
+          clearable
+        />
+      </VCol>
+
+      <!-- Quantity (NEW) -->
+      <VCol cols="12" md="4">
+        <VTextField
+          v-model="form.quantity"
+          type="number"
+          label="Quantity"
+          :rules="[requiredValidator, integerPositiveValidator]"
+          :error-messages="errorMessages.quantity"
+          min="1"
           clearable
         />
       </VCol>
@@ -91,17 +104,20 @@
 
 <script setup>
 import axios from 'axios'
-import { ref, onMounted, nextTick } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { nextTick, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
-  VBtn, VCol, VForm, VRow, VTextField, VTextarea, VSelect,
+  VBtn, VCol, VForm, VRow,
+  VSelect,
+  VTextField, VTextarea,
 } from 'vuetify/components'
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 const router = useRouter()
 const route = useRoute()
 
 const id = route.params.id // /asset-investment-requests/edit/:id
+const REQUEST_TYPE_OPTIONS = ['NEW', 'RENEWAL', 'USED']
 
 const form = ref({
   project_id: null,
@@ -109,6 +125,7 @@ const form = ref({
   description: '',
   planned_cost: '',
   request_type: 'NEW',
+  quantity: 1,        // NEW default
   reason: '',
 })
 
@@ -121,6 +138,12 @@ const errorMessages = ref({})
 
 const requiredValidator = v => (!!v || v === 0) || 'This field is required'
 const numberValidator   = v => (v === '' || isNaN(Number(v))) ? 'Enter a valid number' : true
+const integerPositiveValidator = v => {
+  if (v === '' || v === null || v === undefined) return 'This field is required'
+  const n = Number(v)
+  if (!Number.isInteger(n) || n < 1) return 'Enter a whole number ≥ 1'
+  return true
+}
 
 const getCookie = name => {
   const value = `; ${document.cookie}`
@@ -164,6 +187,7 @@ const loadRecord = async () => {
         ? String(p.planned_cost).replace(/\.00$/, '')
         : '',
       request_type: p.request_type ?? 'NEW',
+      quantity: p.quantity !== undefined && p.quantity !== null ? Number(p.quantity) : 1, // NEW
       reason: p.reason ?? '',
     }
   } catch (error) {
@@ -210,10 +234,11 @@ const submitForm = async () => {
       description: form.value.description,
       planned_cost: form.value.planned_cost === '' ? null : Number(form.value.planned_cost),
       request_type: form.value.request_type,
+      quantity: form.value.quantity === '' ? null : Number(form.value.quantity), // NEW
       reason: form.value.reason,
     }
 
-    // Use PUT; if backend expects PATCH, change method accordingly
+    // Use PUT; if backend expects PATCH, switch to axios.patch
     const res = await axios.put(`${apiBaseUrl}/asset-investment-requests/${id}`, payload, {
       headers: {
         'Content-Type': 'application/json',

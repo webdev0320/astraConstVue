@@ -1,9 +1,35 @@
 <template>
-    <div class="d-flex justify-between align-center mb-4">
-      <h3>Create Asset</h3>
-    </div>
+  <div class="d-flex justify-between align-center mb-4">
+    <h3>Create Asset</h3>
+  </div>
+
   <VForm ref="refForm" @submit.prevent="submitForm">
     <VRow>
+
+      <!-- ===================== -->
+      <!-- Base Information      -->
+      <!-- ===================== -->
+      <VCol cols="12">
+        <h4 class="section-title">Base Information</h4>
+        <VDivider class="my-3" />
+      </VCol>
+
+      <!-- 0) Asset Investment Request (REQUIRED) -->
+      <VCol cols="12" md="6">
+        <VSelect
+          v-model="asset.asset_investment_requests_id"
+          :items="investmentRequests"
+          item-title="label"
+          item-value="id"
+          label="Asset Investment Request"
+          :rules="[requiredValidator]"
+          :loading="loadingInvestmentRequests"
+          :disabled="loadingInvestmentRequests"
+          :error-messages="errorMessages.asset_investment_requests_id"
+          clearable
+        />
+      </VCol>
+
       <!-- 1) Code -->
       <VCol cols="12" md="6">
         <VTextField
@@ -26,7 +52,7 @@
         />
       </VCol>
 
-      <!-- 3) Category (top-level under Fixed Assets) -->
+      <!-- 3) Category -->
       <VCol cols="12" md="6">
         <VSelect
           v-model="asset.asset_category_id"
@@ -42,7 +68,7 @@
         />
       </VCol>
 
-      <!-- 4) Sub Category (depends on category) -->
+      <!-- 4) Sub Category -->
       <VCol cols="12" md="6">
         <VSelect
           v-model="asset.asset_sub_category_id"
@@ -119,20 +145,15 @@
         />
       </VCol>
 
-      <!-- 11) Extended Warranty -->
-      <VCol cols="12" md="6" class="d-flex align-center">
-        <VSwitch v-model="asset.extended_warranty" inset label="Extended Warranty" />
-      </VCol>
-
+      <!-- 11b) Extended Warranty Date -->
       <VCol cols="12" md="6">
         <VTextField
-          v-model="asset.extended_warranty"
-          label="ExtendedWarranty Date"
+          v-model="asset.extended_warranty_date"
+          label="Extended Warranty Date"
           type="date"
-          :error-messages="errorMessages.extended_warranty"
+          :error-messages="errorMessages.extended_warranty_date"
         />
       </VCol>
-
 
       <!-- 12) Purchase Date -->
       <VCol cols="12" md="6">
@@ -144,23 +165,45 @@
         />
       </VCol>
 
-        <VCol cols="12" md="6">
-          <VSelect
-            v-model="asset.is_related_to_it"
-            :items="yesNoOptions"
-            item-title="title"
-            item-value="value"
-            label="Is Related to IT"
-            :rules="[requiredValidator]"
-            :error-messages="errorMessages.is_related_to_it"
-            clearable
-          />
-        </VCol>
+      <!-- Is Related to IT -->
+      <VCol cols="12" md="6">
+        <VSelect
+          v-model="asset.is_related_to_it"
+          :items="yesNoOptions"
+          item-title="title"
+          item-value="value"
+          label="Is Related to IT"
+          :rules="[requiredValidator]"
+          :error-messages="errorMessages.is_related_to_it"
+          clearable
+        />
+      </VCol>
 
+      <!-- ===================== -->
+      <!-- IT Asset Details (ALWAYS VISIBLE) -->
+      <!-- ===================== -->
       <VCol cols="12">
-        <VBtn type="submit" color="primary" :loading="loading" :disabled="loading">
-          Submit
-        </VBtn>
+        <h4 class="section-title">IT Asset Details</h4>
+        <VDivider class="my-3" />
+      </VCol>
+
+      <VCol cols="12" md="4"><VTextField v-model="asset.model" label="Model" clearable /></VCol>
+      <VCol cols="12" md="4"><VTextField v-model="asset.brand" label="Brand" clearable /></VCol>
+      <VCol cols="12" md="4"><VTextField v-model="asset.production_date" type="date" label="Production Date" clearable /></VCol>
+
+      <VCol cols="12" md="4">
+        <VTextField v-model="asset.depreciation_rate" type="number" label="Depreciation Rate (%)" :rules="[percentOptionalValidator]" clearable />
+      </VCol>
+      <VCol cols="12" md="4"><VTextField v-model="asset.location" label="Location" clearable /></VCol>
+      <VCol cols="12" md="4"><VTextField v-model="asset.price" type="number" label="Price" :rules="[numberOptionalValidator]" clearable /></VCol>
+      <VCol cols="12" md="4"><VTextField v-model="asset.useful_life" type="number" label="Useful Life" :rules="[numberOptionalValidator]" clearable /></VCol>
+      <VCol cols="12" md="4"><VTextField v-model="asset.replacement_cost" type="number" label="Replacement Cost" :rules="[numberOptionalValidator]" clearable /></VCol>
+      <VCol cols="12" md="4"><VTextField v-model="asset.purchase_cost" type="number" label="Purchase Cost" :rules="[numberOptionalValidator]" clearable /></VCol>
+      <VCol cols="12" md="4"><VTextField v-model="asset.nbv" type="number" label="NBV / Book Value" :rules="[numberOptionalValidator]" clearable /></VCol>
+
+      <!-- Submit -->
+      <VCol cols="12">
+        <VBtn type="submit" color="primary" :loading="loading" :disabled="loading">Submit</VBtn>
       </VCol>
     </VRow>
 
@@ -170,30 +213,39 @@
 
 <script setup>
 import axios from 'axios'
-import { ref, watch, onMounted } from 'vue'
-import { VBtn, VCol, VForm, VRow, VSwitch, VTextField, VTextarea, VSelect } from 'vuetify/components'
+import { onMounted, ref, watch } from 'vue'
+import { VBtn, VCol, VDivider, VForm, VRow, VSelect, VTextField, VTextarea } from 'vuetify/components'
 
-/** Base URL from env with fallback */
-
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-
-console.info('API base:', apiBaseUrl)
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 
 /* ---------------- State ---------------- */
 const asset = ref({
+  asset_investment_requests_id: null, // NEW required field
   code: '',
   name: '',
-  asset_category_id: null,       // selected parent category id (top-level under Fixed Assets)
-  asset_sub_category_id: null,   // selected child id
+  asset_category_id: null,
+  asset_sub_category_id: null,
   description: '',
   serial_number: '',
   plate_number: '',
   make: '',
   insurance_start_date: '',
   warranty_start_date: '',
-  extended_warranty: '',
+  extended_warranty_date: '',
   purchase_date: '',
-  is_related_to_it: null,
+  is_related_to_it: null,   // 'yes' | 'no'
+
+  // IT (all optional)
+  model: '',
+  brand: '',
+  production_date: '',
+  depreciation_rate: '',
+  location: '',
+  price: '',
+  useful_life: '',
+  replacement_cost: '',
+  purchase_cost: '',
+  nbv: '',
 })
 
 const yesNoOptions = [
@@ -201,21 +253,31 @@ const yesNoOptions = [
   { title: 'No',  value: 'no'  },
 ]
 
-
-const categories = ref([])     // [{id, name, slug}]
-const subCategories = ref([])  // [{id, name, slug}]
+const categories = ref([])
+const subCategories = ref([])
+const investmentRequests = ref([]) // [{id,label}]
 
 const loading = ref(false)
 const loadingCategories = ref(false)
 const loadingSubCategories = ref(false)
+const loadingInvestmentRequests = ref(false)
 
 const refForm = ref()
 const message = ref('')
 const errorMessages = ref({})
 
-/* ---------------- Utils ---------------- */
+/* ---------------- Validators ---------------- */
 const requiredValidator = value => !!value || 'This field is required'
+const numberOptionalValidator = value => (value === '' || value === null || value === undefined) ? true : (!isNaN(Number(value)) || 'Enter a valid number')
+const percentOptionalValidator = value => {
+  if (value === '' || value === null || value === undefined) return true
+  const n = Number(value)
+  if (isNaN(n)) return 'Enter a valid number'
+  if (n < 0 || n > 100) return 'Enter a value between 0 and 100'
+  return true
+}
 
+/* ---------------- Utils ---------------- */
 const getCookie = name => {
   const value = `; ${document.cookie}`
   const parts = value.split(`; ${name}=`)
@@ -242,45 +304,35 @@ const fetchAllCategories = async () => {
 
   while ((page - 1) * perPageFromServer < total) {
     const res = await axios.get(`${apiBaseUrl}/asset-categories`, {
-      // only send page; do NOT send perPage
       params: { page },
-      headers: { ...authHeader() },
+      headers: { ...authHeader(), Accept: 'application/json' },
     })
 
     const list = Array.isArray(res.data?.categories) ? res.data.categories : []
     all = all.concat(list)
 
-    // use server-provided totals
     total = Number(res.data?.total_records ?? all.length)
     perPageFromServer = Number(res.data?.perPage ?? perPageFromServer)
     page += 1
 
-    // safety break if the API ever returns an empty page
     if (list.length === 0) break
   }
 
   return all
 }
 
-/**
- * Load top-level categories (under Fixed Assets)
- * Condition: is_parent === true AND parent_id === 1 AND status === true
- */
+/* Load top-level categories where parent_id is null */
 const fetchCategories = async () => {
   try {
     loadingCategories.value = true
     const raw = await fetchAllCategories()
 
-    const parentsUnderFixedAssets = raw.filter(
-      c => c && c.status === true && c.is_parent === true && Number(c.parent_id) === 1
+    const parents = raw.filter(
+      c => c && c.status === true && c.is_parent === true && (c.parent_id === null || c.parent_id === undefined)
     )
 
-    categories.value = parentsUnderFixedAssets
-      .map(c => ({
-        id: c.id,
-        slug: c.slug,
-        name: c.title || slugToTitle(c.slug),
-      }))
+    categories.value = parents
+      .map(c => ({ id: c.id, slug: c.slug, name: c.title || slugToTitle(c.slug) }))
       .sort((a, b) => a.name.localeCompare(b.name))
   } catch (e) {
     console.error('Failed to load categories', e)
@@ -290,11 +342,7 @@ const fetchCategories = async () => {
   }
 }
 
-/**
- * Sub-categories by **ID**
- * GET /api/asset-categories/:id
- * Response: { success, data: { ..., children: [...] } }
- */
+/* Sub-categories by parent ID */
 const fetchSubCategories = async (parentId) => {
   if (!parentId) { 
     subCategories.value = []
@@ -302,21 +350,13 @@ const fetchSubCategories = async (parentId) => {
   }
   try {
     loadingSubCategories.value = true
-
-    // ID direct pass karein; slug ki zaroorat nahi
     const res = await axios.get(`${apiBaseUrl}/asset-categories/${encodeURIComponent(parentId)}`, {
-      headers: { ...authHeader() },
+      headers: { ...authHeader(), Accept: 'application/json' },
     })
-
     const children = res?.data?.data?.children || []
-
     subCategories.value = children
       .filter(ch => ch?.status !== false)
-      .map(ch => ({
-        id: ch.id,
-        slug: ch.slug,                          // optional, future use
-        name: ch.title || slugToTitle(ch.slug), // UI friendly label
-      }))
+      .map(ch => ({ id: ch.id, slug: ch.slug, name: ch.title || slugToTitle(ch.slug) }))
       .sort((a, b) => a.name.localeCompare(b.name))
   } catch (e) {
     console.error('Failed to load sub categories', e)
@@ -326,7 +366,36 @@ const fetchSubCategories = async (parentId) => {
   }
 }
 
-/* ---------------- Watchers ---------------- */
+/* Investment Requests (for required select) */
+const formatIRLabel = ir => {
+  const proj = ir?.project?.name ? `• ${ir.project.name}` : ''
+  const type = ir?.request_type || ''
+  const qty  = ir?.quantity ?? ''
+  const cost = ir?.planned_cost ?? ''
+  const date = ir?.date || ''
+  return `#${ir.id} ${type} ${date} ${proj} (qty ${qty}, cost ${cost})`.trim()
+}
+
+const fetchInvestmentRequests = async () => {
+  try {
+    loadingInvestmentRequests.value = true
+    const res = await axios.get(`${apiBaseUrl}/asset-investment-requests`, {
+      headers: { ...authHeader(), Accept: 'application/json' },
+    })
+    const list = Array.isArray(res.data?.data) ? res.data.data : Array.isArray(res.data) ? res.data : []
+    investmentRequests.value = list.map(ir => ({
+      id: ir.id,
+      label: formatIRLabel(ir),
+    }))
+  } catch (e) {
+    console.error('Failed to load asset investment requests', e)
+    investmentRequests.value = []
+  } finally {
+    loadingInvestmentRequests.value = false
+  }
+}
+
+/* Watchers */
 watch(
   () => asset.value.asset_category_id,
   async newVal => {
@@ -335,7 +404,7 @@ watch(
   }
 )
 
-/* ---------------- Submit ---------------- */
+/* Submit */
 const submitForm = async () => {
   try {
     loading.value = true
@@ -346,6 +415,10 @@ const submitForm = async () => {
     const decodedToken = decodeURIComponent(token)
 
     const payload = {
+      // required mapping including NEW field
+      asset_investment_requests_id: asset.value.asset_investment_requests_id,
+
+      // base info
       code: asset.value.code,
       name: asset.value.name,
       asset_category_id: asset.value.asset_category_id,
@@ -356,22 +429,33 @@ const submitForm = async () => {
       make: asset.value.make,
       insurance_start_date: asset.value.insurance_start_date,
       warranty_start_date: asset.value.warranty_start_date,
-      extended_warranty: asset.value.extended_warranty,
+      extended_warranty_date: asset.value.extended_warranty_date,
       purchase_date: asset.value.purchase_date,
       is_related_to_it: asset.value.is_related_to_it,
 
+      // IT (optional)
+      model: asset.value.model || null,
+      brand: asset.value.brand || null,
+      production_date: asset.value.production_date || null,
+      depreciation_rate: asset.value.depreciation_rate === '' ? null : Number(asset.value.depreciation_rate),
+      location: asset.value.location || null,
+      price: asset.value.price === '' ? null : Number(asset.value.price),
+      useful_life: asset.value.useful_life === '' ? null : Number(asset.value.useful_life),
+      replacement_cost: asset.value.replacement_cost === '' ? null : Number(asset.value.replacement_cost),
+      purchase_cost: asset.value.purchase_cost === '' ? null : Number(asset.value.purchase_cost),
+      nbv: asset.value.nbv === '' ? null : Number(asset.value.nbv),
     }
 
     const response = await axios.post(`${apiBaseUrl}/assets`, payload, {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${decodedToken}`,
+        Accept: 'application/json',
       },
     })
 
     message.value = response.data?.message || 'Asset created successfully!'
-
-    // reset form
+    // reset
     Object.keys(asset.value).forEach(key => {
       asset.value[key] =
         typeof asset.value[key] === 'boolean'
@@ -380,9 +464,10 @@ const submitForm = async () => {
             ? null
             : ''
     })
+    asset.value.is_related_to_it = null
     subCategories.value = []
   } catch (error) {
-    console.error('Error submitting form:', error)
+    console.error('Error submitting form:', error?.response?.data || error)
     if (error.response?.data?.errors) {
       errorMessages.value = error.response.data.errors
       message.value = 'Please fix the highlighted errors.'
@@ -394,8 +479,18 @@ const submitForm = async () => {
   }
 }
 
-/* ---------------- Lifecycle ---------------- */
+/* Lifecycle */
 onMounted(() => {
   fetchCategories()
+  fetchInvestmentRequests() // NEW
 })
 </script>
+
+<style>
+.mb-4 { margin-bottom: 16px; }
+.d-flex { display: flex; }
+.justify-between { justify-content: space-between; }
+.align-center { align-items: center; }
+.section-title { font-weight: 600; }
+.my-3 { margin: 12px 0; }
+</style>

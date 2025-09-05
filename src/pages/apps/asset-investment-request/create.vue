@@ -46,10 +46,23 @@
       <VCol cols="12" md="4">
         <VSelect
           v-model="form.request_type"
-          :items="['NEW', 'RENEWAL', 'UPGRADE']"
+          :items="REQUEST_TYPE_OPTIONS"
           label="Request Type"
           :rules="[requiredValidator]"
           :error-messages="errorMessages.request_type"
+          clearable
+        />
+      </VCol>
+
+      <!-- Quantity (NEW FIELD) -->
+      <VCol cols="12" md="4">
+        <VTextField
+          v-model="form.quantity"
+          type="number"
+          label="Quantity"
+          :rules="[requiredValidator, integerPositiveValidator]"
+          :error-messages="errorMessages.quantity"
+          min="1"
           clearable
         />
       </VCol>
@@ -95,22 +108,26 @@
 
 <script setup>
 import axios from 'axios'
-import { ref, onMounted, nextTick } from 'vue'
+import { nextTick, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
-  VBtn, VCol, VForm, VRow, VTextField, VTextarea, VSelect,
+  VBtn, VCol, VForm, VRow,
+  VSelect,
+  VTextField, VTextarea,
 } from 'vuetify/components'
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 const router = useRouter()
+
+const REQUEST_TYPE_OPTIONS = ['NEW', 'RENEWAL', 'USED']
 
 const form = ref({
   project_id: null,
   date: '',
   description: '',
   planned_cost: '',
-  request_type: 'NEW',   // ✅ default to NEW
+  request_type: 'NEW',    // default
+  quantity: 1,            // NEW: default 1
   reason: '',
 })
 
@@ -121,8 +138,15 @@ const loading = ref(false)
 const message = ref('')
 const errorMessages = ref({})
 
+// validators
 const requiredValidator = v => (!!v || v === 0) || 'This field is required'
 const numberValidator   = v => (v === '' || isNaN(Number(v))) ? 'Enter a valid number' : true
+const integerPositiveValidator = v => {
+  if (v === '' || v === null || v === undefined) return 'This field is required'
+  const n = Number(v)
+  if (!Number.isInteger(n) || n < 1) return 'Enter a whole number ≥ 1'
+  return true
+}
 
 const getCookie = name => {
   const value = `; ${document.cookie}`
@@ -146,7 +170,6 @@ const fetchProjects = async () => {
 onMounted(fetchProjects)
 
 const scrollToFirstError = () => {
-  // Vuetify fields with error show aria-invalid; scroll to first
   nextTick(() => {
     const el = document.querySelector('[aria-invalid="true"]')
     if (el?.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -159,7 +182,6 @@ const submitForm = async () => {
   errorMessages.value = {}
 
   try {
-    // ✅ run Vuetify validation first
     const { valid } = (await refForm.value?.validate?.()) ?? { valid: true }
     if (!valid) {
       loading.value = false
@@ -172,13 +194,13 @@ const submitForm = async () => {
     if (!accessToken) throw new Error('Access token is missing. Please log in.')
     const decodedToken = decodeURIComponent(accessToken)
 
-    // ✅ cast planned_cost to number (backend often expects numeric)
     const payload = {
       project_id: form.value.project_id,
       date: form.value.date,
       description: form.value.description,
       planned_cost: form.value.planned_cost === '' ? null : Number(form.value.planned_cost),
       request_type: form.value.request_type,
+      quantity: form.value.quantity === '' ? null : Number(form.value.quantity), // NEW
       reason: form.value.reason,
     }
 
@@ -194,8 +216,6 @@ const submitForm = async () => {
     router.push('/dashboards/asset-investment-requests')
   } catch (error) {
     console.error('Error submitting form:', error?.response?.data || error)
-
-    // ✅ Laravel validation errors: { errors: { field: ['msg', ...] } }
     if (error.response?.status === 422 && error.response?.data?.errors) {
       errorMessages.value = error.response.data.errors
       message.value = 'Please fix the highlighted errors.'
