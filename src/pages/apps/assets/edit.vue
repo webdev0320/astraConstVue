@@ -14,7 +14,7 @@
         <VDivider class="my-3" />
       </VCol>
 
-      <!-- 0) Asset Investment Request (REQUIRED) -->
+      <!-- Asset Investment Request (REQUIRED) -->
       <VCol cols="12" md="6">
         <VSelect
           v-model="asset.asset_investment_requests_id"
@@ -30,7 +30,7 @@
         />
       </VCol>
 
-      <!-- 1) Code -->
+      <!-- Code (REQUIRED) -->
       <VCol cols="12" md="6">
         <VTextField
           v-model="asset.code"
@@ -41,7 +41,7 @@
         />
       </VCol>
 
-      <!-- 2) Name -->
+      <!-- Name (REQUIRED - UI only; payload may be ignored by API) -->
       <VCol cols="12" md="6">
         <VTextField
           v-model="asset.name"
@@ -52,7 +52,7 @@
         />
       </VCol>
 
-      <!-- 3) Category -->
+      <!-- Category (REQUIRED) -->
       <VCol cols="12" md="6">
         <VSelect
           v-model="asset.asset_category_id"
@@ -68,7 +68,7 @@
         />
       </VCol>
 
-      <!-- 4) Sub Category -->
+      <!-- Sub Category (REQUIRED) -->
       <VCol cols="12" md="6">
         <VSelect
           v-model="asset.asset_sub_category_id"
@@ -84,7 +84,36 @@
         />
       </VCol>
 
-      <!-- 5) Description -->
+      <!-- Type (optional) -->
+      <VCol cols="12" md="6">
+        <VSelect
+          v-model="asset.type"
+          :items="TYPE_OPTIONS"
+          label="Type"
+          clearable
+        />
+      </VCol>
+
+      <!-- Asset Type (optional) -->
+      <VCol cols="12" md="6">
+        <VSelect
+          v-model="asset.asset_type"
+          :items="ASSET_TYPE_OPTIONS"
+          label="Asset Type"
+          clearable
+        />
+      </VCol>
+
+      <!-- Location (optional) -->
+      <VCol cols="12" md="6">
+        <VTextField
+          v-model="asset.location"
+          label="Location"
+          clearable
+        />
+      </VCol>
+
+      <!-- Description (REQUIRED) -->
       <VCol cols="12">
         <VTextarea
           v-model="asset.description"
@@ -95,77 +124,40 @@
         />
       </VCol>
 
-      <!-- 6) Serial Number -->
-      <VCol cols="12" md="6">
-        <VTextField
-          v-model="asset.serial_number"
-          label="Serial Number"
-          :error-messages="errorMessages.serial_number"
-          clearable
-        />
+      <!-- ===================== -->
+      <!-- Make / Identity       -->
+      <!-- ===================== -->
+      <VCol cols="12">
+        <h4 class="section-title">Make / Identity</h4>
+        <VDivider class="my-3" />
       </VCol>
 
-      <!-- 7) Plate Number -->
-      <VCol cols="12" md="6">
-        <VTextField
-          v-model="asset.plate_number"
-          label="Plate Number"
-          :error-messages="errorMessages.plate_number"
-          clearable
-        />
+      <VCol cols="12" md="6"><VTextField v-model="asset.serial_number" label="Serial Number" clearable /></VCol>
+      <VCol cols="12" md="6"><VTextField v-model="asset.plate_number"  label="Plate Number"  clearable /></VCol>
+      <VCol cols="12" md="6"><VTextField v-model="asset.make"          label="Make"          clearable /></VCol>
+      <VCol cols="12" md="6"><VTextField v-model="asset.model"         label="Model"         clearable /></VCol>
+      <VCol cols="12" md="6"><VTextField v-model="asset.brand"         label="Brand"         clearable /></VCol>
+      <VCol cols="12" md="6"><VTextField v-model="asset.model_number"  label="Model Number"  clearable /></VCol>
+
+      <!-- ===================== -->
+      <!-- Dates                 -->
+      <!-- ===================== -->
+      <VCol cols="12">
+        <h4 class="section-title">Dates</h4>
+        <VDivider class="my-3" />
       </VCol>
 
-      <!-- 8) Make -->
-      <VCol cols="12" md="6">
-        <VTextField
-          v-model="asset.make"
-          label="Make"
-          :error-messages="errorMessages.make"
-          clearable
-        />
-      </VCol>
+      <VCol cols="12" md="6"><VTextField v-model="asset.insurance_start_date" type="date" label="Insurance Start Date" /></VCol>
+      <VCol cols="12" md="6"><VTextField v-model="asset.insurance_end_date"   type="date" label="Insurance End Date"   /></VCol>
 
-      <!-- 9) Insurance Start Date -->
-      <VCol cols="12" md="6">
-        <VTextField
-          v-model="asset.insurance_start_date"
-          label="Insurance Start Date"
-          type="date"
-          :error-messages="errorMessages.insurance_start_date"
-        />
-      </VCol>
+      <VCol cols="12" md="6"><VTextField v-model="asset.warranty_start_date"  type="date" label="Warranty Start Date"  /></VCol>
+      <VCol cols="12" md="6"><VTextField v-model="asset.warranty_end_date"    type="date" label="Warranty End Date"    /></VCol>
 
-      <!-- 10) Warranty Start Date -->
-      <VCol cols="12" md="6">
-        <VTextField
-          v-model="asset.warranty_start_date"
-          label="Warranty Start Date"
-          type="date"
-          :error-messages="errorMessages.warranty_start_date"
-        />
-      </VCol>
+      <VCol cols="12" md="6"><VTextField v-model="asset.extended_warranty"    type="date" label="Extended Warranty Date" /></VCol>
+      <VCol cols="12" md="6"><VTextField v-model="asset.purchase_date"        type="date" label="Purchase Date" /></VCol>
+      <VCol cols="12" md="6"><VTextField v-model="asset.production_date"      type="date" label="Production Date" clearable /></VCol>
 
-      <!-- 11b) Extended Warranty Date -->
-      <VCol cols="12" md="6">
-        <VTextField
-          v-model="asset.extended_warranty_date"
-          label="Extended Warranty Date"
-          type="date"
-          :error-messages="errorMessages.extended_warranty_date"
-        />
-      </VCol>
-
-      <!-- 12) Purchase Date -->
-      <VCol cols="12" md="6">
-        <VTextField
-          v-model="asset.purchase_date"
-          label="Purchase Date"
-          type="date"
-          :error-messages="errorMessages.purchase_date"
-        />
-      </VCol>
-
-      <!-- Is Related to IT -->
+      <!-- Is Related to IT (REQUIRED) -->
       <VCol cols="12" md="6">
         <VSelect
           v-model="asset.is_related_to_it"
@@ -180,32 +172,24 @@
       </VCol>
 
       <!-- ===================== -->
-      <!-- IT Asset Details (ALWAYS VISIBLE) -->
+      <!-- Price / Financials    -->
       <!-- ===================== -->
       <VCol cols="12">
-        <h4 class="section-title">IT Asset Details</h4>
+        <h4 class="section-title">Price / Financials</h4>
         <VDivider class="my-3" />
       </VCol>
 
-      <VCol cols="12" md="4"><VTextField v-model="asset.model" label="Model" clearable /></VCol>
-      <VCol cols="12" md="4"><VTextField v-model="asset.brand" label="Brand" clearable /></VCol>
-      <VCol cols="12" md="4"><VTextField v-model="asset.production_date" type="date" label="Production Date" clearable /></VCol>
-
+      <!-- Note: depreciation_rate UI only; not sent if API doesn't accept -->
       <VCol cols="12" md="4">
-        <VTextField
-          v-model="asset.depreciation_rate"
-          type="number"
-          label="Depreciation Rate (%)"
-          :rules="[percentOptionalValidator]"
-          clearable
-        />
+        <VTextField v-model="asset.depreciation_rate" type="number" label="Depreciation Rate (%)" :rules="[percentOptionalValidator]" clearable />
       </VCol>
-      <VCol cols="12" md="4"><VTextField v-model="asset.location" label="Location" clearable /></VCol>
-      <VCol cols="12" md="4"><VTextField v-model="asset.price" type="number" label="Price" :rules="[numberOptionalValidator]" clearable /></VCol>
-      <VCol cols="12" md="4"><VTextField v-model="asset.useful_life" type="number" label="Useful Life" :rules="[numberOptionalValidator]" clearable /></VCol>
-      <VCol cols="12" md="4"><VTextField v-model="asset.replacement_cost" type="number" label="Replacement Cost" :rules="[numberOptionalValidator]" clearable /></VCol>
-      <VCol cols="12" md="4"><VTextField v-model="asset.purchase_cost" type="number" label="Purchase Cost" :rules="[numberOptionalValidator]" clearable /></VCol>
-      <VCol cols="12" md="4"><VTextField v-model="asset.nbv" type="number" label="NBV / Book Value" :rules="[numberOptionalValidator]" clearable /></VCol>
+
+      <VCol cols="12" md="4"><VTextField v-model="asset.price"            type="number" label="Price"             :rules="[numberOptionalValidator]" clearable /></VCol>
+      <VCol cols="12" md="4"><VTextField v-model="asset.useful_life"      type="number" label="Useful Life"       :rules="[numberOptionalValidator]" clearable /></VCol>
+      <VCol cols="12" md="4"><VTextField v-model="asset.replacement_cost" type="number" label="Replacement Cost"  :rules="[numberOptionalValidator]" clearable /></VCol>
+      <VCol cols="12" md="4"><VTextField v-model="asset.purchase_cost"    type="number" label="Purchase Cost"     :rules="[numberOptionalValidator]" clearable /></VCol>
+      <!-- Book Value maps to API: book_value -->
+      <VCol cols="12" md="4"><VTextField v-model="asset.nbv"              type="number" label="NBV / Book Value"  :rules="[numberOptionalValidator]" clearable /></VCol>
 
       <!-- Actions -->
       <VCol cols="12" class="d-flex gap-2">
@@ -229,6 +213,10 @@ const route = useRoute()
 const router = useRouter()
 const id = route.params.id // /dashboards/assets/edit/:id
 
+/* ---------------- Options ---------------- */
+const TYPE_OPTIONS = ['Vehicle', 'IT Equipment', 'Machinery', 'Furniture', 'Other']
+const ASSET_TYPE_OPTIONS = ['Owned', 'Rental', 'Leased', 'Used', 'New']
+
 /* ---------------- State ---------------- */
 const asset = ref({
   asset_investment_requests_id: null, // REQUIRED
@@ -237,26 +225,37 @@ const asset = ref({
   asset_category_id: null,
   asset_sub_category_id: null,
   description: '',
+
+  // Identity / make
   serial_number: '',
   plate_number: '',
   make: '',
-  insurance_start_date: '',
-  warranty_start_date: '',
-  extended_warranty_date: '',
-  purchase_date: '',
-  is_related_to_it: null,   // 'yes' | 'no'
-
-  // IT (all optional)
   model: '',
   brand: '',
+  model_number: '',
+
+  // dates
+  insurance_start_date: '',
+  insurance_end_date: '',
+  warranty_start_date: '',
+  warranty_end_date: '',
+  extended_warranty: '',   // API key
+  purchase_date: '',
   production_date: '',
-  depreciation_rate: '',
+
+  // misc
+  is_related_to_it: null,  // 'yes' | 'no' (UI) -> boolean in payload
   location: '',
+  type: '',
+  asset_type: '',
+
+  // financials
+  depreciation_rate: '',
   price: '',
   useful_life: '',
   replacement_cost: '',
   purchase_cost: '',
-  nbv: '',
+  nbv: '',                 // maps to API: book_value
 })
 
 const yesNoOptions = [
@@ -266,7 +265,7 @@ const yesNoOptions = [
 
 const categories = ref([])
 const subCategories = ref([])
-const investmentRequests = ref([]) // [{id,label}]
+const investmentRequests = ref([])
 
 const loading = ref(false)
 const loadingCategories = ref(false)
@@ -320,14 +319,18 @@ const fetchAllCategories = async () => {
       headers: { ...authHeader(), Accept: 'application/json' },
     })
 
-    const list = Array.isArray(res.data?.categories) ? res.data.categories : []
+    const list =
+      Array.isArray(res.data?.categories) ? res.data.categories
+      : Array.isArray(res.data?.data) ? res.data.data
+      : Array.isArray(res.data) ? res.data : []
+
     all = all.concat(list)
 
-    total = Number(res.data?.total_records ?? all.length)
+    total = Number(res.data?.total_records ?? total)
     perPageFromServer = Number(res.data?.perPage ?? perPageFromServer)
-    page += 1
 
-    if (list.length === 0) break
+    if (!list.length) break
+    page += 1
   }
 
   return all
@@ -356,7 +359,7 @@ const fetchCategories = async () => {
 
 /* Sub-categories by parent ID */
 const fetchSubCategories = async (parentId) => {
-  if (!parentId) { 
+  if (!parentId) {
     subCategories.value = []
     return
   }
@@ -365,7 +368,7 @@ const fetchSubCategories = async (parentId) => {
     const res = await axios.get(`${apiBaseUrl}/asset-categories/${encodeURIComponent(parentId)}`, {
       headers: { ...authHeader(), Accept: 'application/json' },
     })
-    const children = res?.data?.data?.children || []
+    const children = res?.data?.data?.children || res?.data?.children || []
     subCategories.value = children
       .filter(ch => ch?.status !== false)
       .map(ch => ({ id: ch.id, slug: ch.slug, name: ch.title || slugToTitle(ch.slug) }))
@@ -421,32 +424,45 @@ const loadRecord = async () => {
 
     const p = res.data?.data ?? res.data
 
+    // map backend -> UI fields (with sensible fallbacks)
     asset.value = {
       asset_investment_requests_id: p.asset_investment_requests_id ?? p.asset_investment_request_id ?? null,
       code: p.code ?? '',
       name: p.name ?? '',
+
       asset_category_id: p.asset_category_id ?? p.category_id ?? null,
       asset_sub_category_id: p.asset_sub_category_id ?? p.sub_category_id ?? null,
-      description: p.description ?? '',
-      serial_number: p.serial_number ?? '',
-      plate_number: p.plate_number ?? '',
-      make: p.make ?? '',
-      insurance_start_date: p.insurance_start_date ?? '',
-      warranty_start_date: p.warranty_start_date ?? '',
-      extended_warranty_date: p.extended_warranty_date ?? '',
-      purchase_date: p.purchase_date ?? '',
-      is_related_to_it: p.is_related_to_it ?? null,
 
-      model: p.model ?? '',
-      brand: p.brand ?? '',
-      production_date: p.production_date ?? '',
+      description: p.description ?? '',
+
+      serial_number: p.serial_number ?? '',
+      plate_number:  p.plate_number  ?? '',
+      make:          p.make          ?? '',
+      model:         p.model         ?? '',
+      brand:         p.brand         ?? '',
+      model_number:  p.model_number  ?? '',
+
+      insurance_start_date: p.insurance_start_date ?? '',
+      insurance_end_date:   p.insurance_end_date   ?? '',
+      warranty_start_date:  p.warranty_start_date  ?? '',
+      warranty_end_date:    p.warranty_end_date    ?? '',
+      extended_warranty:    p.extended_warranty    ?? (p.extended_warranty_date ?? ''), // legacy fallback
+      purchase_date:        p.purchase_date        ?? '',
+      production_date:      p.production_date      ?? '',
+
+      // boolean -> 'yes'/'no'
+      is_related_to_it: (p.is_related_to_it === true) ? 'yes' : (p.is_related_to_it === false) ? 'no' : null,
+
+      location:   p.location   ?? '',
+      type:       p.type       ?? '',
+      asset_type: p.asset_type ?? '',
+
       depreciation_rate: p.depreciation_rate ?? '',
-      location: p.location ?? '',
-      price: p.price ?? '',
-      useful_life: p.useful_life ?? '',
+      price:            p.price            ?? '',
+      useful_life:      p.useful_life      ?? '',
       replacement_cost: p.replacement_cost ?? '',
-      purchase_cost: p.purchase_cost ?? '',
-      nbv: p.nbv ?? '',
+      purchase_cost:    p.purchase_cost    ?? '',
+      nbv:              (p.book_value ?? p.nbv ?? ''), // show in UI
     }
 
     // ensure subcategories list for current category
@@ -490,37 +506,61 @@ const submitForm = async () => {
     if (!token) throw new Error('Access token is missing. Please log in.')
     const decodedToken = decodeURIComponent(token)
 
+    // UI 'yes'/'no' -> boolean
+    const itBool = asset.value.is_related_to_it === 'yes' ? true
+                 : asset.value.is_related_to_it === 'no'  ? false
+                 : null
+
     const payload = {
-      asset_investment_requests_id: asset.value.asset_investment_requests_id,
+      asset_category_id: Number(asset.value.asset_category_id),
+      asset_sub_category_id: Number(asset.value.asset_sub_category_id),
+      asset_investment_requests_id: Number(asset.value.asset_investment_requests_id),
 
+      // optional enums/text
+      type: asset.value.type || null,
+      asset_type: asset.value.asset_type || null,
+
+      // required in UI
       code: asset.value.code,
-      name: asset.value.name,
-      asset_category_id: asset.value.asset_category_id,
-      asset_sub_category_id: asset.value.asset_sub_category_id,
       description: asset.value.description,
-      serial_number: asset.value.serial_number,
-      plate_number: asset.value.plate_number,
-      make: asset.value.make,
-      insurance_start_date: asset.value.insurance_start_date,
-      warranty_start_date: asset.value.warranty_start_date,
-      extended_warranty_date: asset.value.extended_warranty_date,
-      purchase_date: asset.value.purchase_date,
-      is_related_to_it: asset.value.is_related_to_it,
 
-      // IT (optional)
+      // identity
+      serial_number: asset.value.serial_number || null,
+      plate_number:  asset.value.plate_number  || null,
+      model_number:  asset.value.model_number  || null,
+      make: asset.value.make || null,
       model: asset.value.model || null,
       brand: asset.value.brand || null,
-      production_date: asset.value.production_date || null,
-      depreciation_rate: asset.value.depreciation_rate === '' ? null : Number(asset.value.depreciation_rate),
+
+      // dates
+      insurance_start_date: asset.value.insurance_start_date || null,
+      insurance_end_date:   asset.value.insurance_end_date   || null,
+      warranty_start_date:  asset.value.warranty_start_date  || null,
+      warranty_end_date:    asset.value.warranty_end_date    || null,
+      extended_warranty:    asset.value.extended_warranty    || null,
+      purchase_date:        asset.value.purchase_date        || null,
+      production_date:      asset.value.production_date      || null,
+
+      // boolean
+      is_related_to_it: itBool,
+
+      // misc
       location: asset.value.location || null,
-      price: asset.value.price === '' ? null : Number(asset.value.price),
-      useful_life: asset.value.useful_life === '' ? null : Number(asset.value.useful_life),
+
+      // numbers
+      price:            asset.value.price            === '' ? null : Number(asset.value.price),
       replacement_cost: asset.value.replacement_cost === '' ? null : Number(asset.value.replacement_cost),
-      purchase_cost: asset.value.purchase_cost === '' ? null : Number(asset.value.purchase_cost),
-      nbv: asset.value.nbv === '' ? null : Number(asset.value.nbv),
+      purchase_cost:    asset.value.purchase_cost    === '' ? null : Number(asset.value.purchase_cost),
+      book_value:       asset.value.nbv              === '' ? null : Number(asset.value.nbv),
+      useful_life:      asset.value.useful_life      === '' ? null : Number(asset.value.useful_life),
+
+      // NOTE: name & depreciation_rate intentionally omitted unless backend supports them.
+      // If your API accepts 'name', you can include: name: asset.value.name,
+      // If API accepts 'depreciation_rate', include:
+      // depreciation_rate: asset.value.depreciation_rate === '' ? null : Number(asset.value.depreciation_rate),
     }
 
-    const response = await axios.put(`${apiBaseUrl}/assets/${encodeURIComponent(id)}`, payload, {
+    await axios.put(`${apiBaseUrl}/assets/${encodeURIComponent(id)}`, payload, {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${decodedToken}`,
@@ -528,7 +568,7 @@ const submitForm = async () => {
       },
     })
 
-    message.value = response.data?.message || 'Asset updated successfully!'
+    // alert('Asset updated successfully!')
     goBack()
   } catch (error) {
     console.error('Error updating asset:', error?.response?.data || error)
@@ -537,6 +577,7 @@ const submitForm = async () => {
       message.value = 'Please fix the highlighted errors.'
     } else {
       message.value = error.response?.data?.message || 'Failed to update asset.'
+      alert(message.value)
     }
   } finally {
     loading.value = false
@@ -552,11 +593,11 @@ onMounted(async () => {
 </script>
 
 <style>
-.mb-4 { margin-bottom: 16px; }
+.mb-4 { margin-block-end: 16px; }
 .d-flex { display: flex; }
 .justify-between { justify-content: space-between; }
 .align-center { align-items: center; }
 .section-title { font-weight: 600; }
-.my-3 { margin: 12px 0; }
+.my-3 { margin-block: 12px; margin-inline: 0; }
 .gap-2 { gap: 8px; }
 </style>

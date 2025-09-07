@@ -7,29 +7,44 @@
       </VBtn>
     </div>
 
+    <!-- Loading -->
+    <p v-if="isLoading">Loading...</p>
+
+    <!-- Error -->
+    <p v-else-if="errorMessage" class="text-error">{{ errorMessage }}</p>
+
+    <!-- Table (raw API fields, as-is) -->
     <VDataTable
-      v-if="assets.length > 0"
+      v-else-if="assets.length > 0"
       :headers="headers"
       :items="assets"
       :items-per-page="10"
     >
       <template #item.actions="{ item }">
         <div class="d-flex gap-2">
-          <VBtn color="info" size="small" @click="openDepartmentModal(item.id)">
+          <VBtn color="info" size="small" @click="openDepartmentModal(item.raw?.id ?? item.id)">
             Add Department
           </VBtn>
-          <VBtn color="warning" size="small" @click="$router.push(`/dashboards/assets/edit/${item.id}`)">
+          <VBtn color="warning" size="small" @click="$router.push(`/dashboards/assets/edit/${item.raw?.id ?? item.id}`)">
             Edit
           </VBtn>
-          <VBtn color="error" size="small" @click="deleteAsset(item.id)">
+          <VBtn color="error" size="small" @click="deleteAsset(item.raw?.id ?? item.id)">
             Delete
           </VBtn>
         </div>
       </template>
     </VDataTable>
 
-    <p v-else-if="errorMessage">{{ errorMessage }}</p>
-    <p v-else>Loading...</p>
+    <!-- Empty State -->
+    <VCard v-else class="mt-6 pa-6 text-center" variant="tonal">
+      <VCardTitle>No assets found</VCardTitle>
+      <VCardText>
+        You don’t have any assets yet. Create your first asset to get started.
+      </VCardText>
+      <VBtn color="primary" @click="$router.push('/dashboards/assets/create')">
+        Create Asset
+      </VBtn>
+    </VCard>
 
     <!-- Department Modal -->
     <VDialog v-model="departmentModal" max-width="500px">
@@ -61,51 +76,70 @@
 
 <script setup>
 import axios from "axios";
-import { ref, onMounted } from "vue";
+import { onMounted, ref } from "vue";
 import {
   VBtn,
+  VCard,
+  VCardActions,
+  VCardText,
+  VCardTitle,
   VDataTable,
   VDialog,
-  VCard,
-  VCardTitle,
-  VCardText,
-  VCardActions,
   VSelect
 } from "vuetify/components";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
-// ---- Table headers ----
+/* ---- Headers exactly matching API keys ---- */
 const headers = [
   { title: "ID", key: "id" },
-  { title: "CODE", key: "code" },
+  { title: "ASSET CATEGORY ID", key: "asset_category_id" },
+  { title: "ASSET SUB CATEGORY ID", key: "asset_sub_category_id" },
+  { title: "ASSET INVESTMENT REQUEST ID", key: "asset_investment_requests_id" },
   { title: "TYPE", key: "type" },
   { title: "ASSET TYPE", key: "asset_type" },
-  { title: "CATEGORY ID", key: "asset_category_id" },
-  { title: "SUB CATEGORY ID", key: "asset_sub_category_id" },
-  { title: "MAKE", key: "make" },
-  { title: "SERIAL #", key: "serial_number" },
-  { title: "INSURANCE START", key: "insurance_start_date" },
-  { title: "WARRANTY START", key: "warranty_start_date" },
-  { title: "EXT. WARRANTY", key: "extended_warranty" },
+  { title: "CODE", key: "code" },
+  { title: "DESCRIPTION", key: "description" },
+  { title: "SERIAL NUMBER", key: "serial_number" },
+  { title: "PLATE NUMBER", key: "plate_number" },
+  { title: "MODEL NUMBER", key: "model_number" },
+  { title: "INSURANCE START DATE", key: "insurance_start_date" },
+  { title: "INSURANCE END DATE", key: "insurance_end_date" },
+  { title: "WARRANTY START DATE", key: "warranty_start_date" },
+  { title: "WARRANTY END DATE", key: "warranty_end_date" },
+  { title: "EXTENDED WARRANTY", key: "extended_warranty" },
   { title: "PURCHASE DATE", key: "purchase_date" },
+  { title: "IS RELATED TO IT", key: "is_related_to_it" },
+  { title: "MAKE", key: "make" },
+  { title: "MODEL", key: "model" },
+  { title: "BRAND", key: "brand" },
+  { title: "PRODUCTION DATE", key: "production_date" },
+  { title: "LOCATION", key: "location" },
+  { title: "PRICE", key: "price" },
+  { title: "REPLACEMENT COST", key: "replacement_cost" },
+  { title: "PURCHASE COST", key: "purchase_cost" },
+  { title: "BOOK VALUE", key: "book_value" },
+  { title: "USEFUL LIFE", key: "useful_life" },
+  { title: "CREATED AT", key: "created_at" },
+  { title: "UPDATED AT", key: "updated_at" },
   { title: "ACTIONS", key: "actions", sortable: false },
 ];
 
 const assets = ref([]);
 const errorMessage = ref("");
+const isLoading = ref(true);
 
 // Departments modal state
 const departmentModal = ref(false);
 const departments = ref([]);            // [{id, name}]
-const selectedDepartments = ref([]);    // [ids] (UI selection)
-const originalAssigned = ref([]);       // [ids] (snapshot on open)
+const selectedDepartments = ref([]);    // [ids]
+const originalAssigned = ref([]);       // snapshot
 const currentAssetId = ref(null);
 const departmentsLoading = ref(false);
 
 const page = ref(1);
 
-// ---------------- Utils ----------------
+/* ---------------- Utils ---------------- */
 const getCookie = (name) => {
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
@@ -120,33 +154,24 @@ const getAuthHeaders = () => {
   return { Authorization: `Bearer ${decodedToken}`, Accept: "application/json" };
 };
 
-// ---------------- Fetchers ----------------
+/* ---------------- Fetchers ---------------- */
 const fetchAssets = async () => {
+  isLoading.value = true;
+  errorMessage.value = "";
   try {
     const res = await axios.get(`${apiBaseUrl}/assets`, {
       headers: getAuthHeaders(),
       params: { page: page.value },
     });
 
-    const rows = res?.data?.data?.data ?? [];
-
-    assets.value = rows.map((a) => ({
-      id: a.id,
-      code: a.code,
-      type: a.type,
-      asset_type: a.asset_type,
-      asset_category_id: a.asset_category_id,
-      asset_sub_category_id: a.asset_sub_category_id,
-      make: a.make ?? "—",
-      serial_number: a.serial_number ?? "—",
-      insurance_start_date: a.insurance_start_date ?? "—",
-      warranty_start_date: a.warranty_start_date ?? "—",
-      extended_warranty: a.extended_warranty ?? "—",
-      purchase_date: a.purchase_date ?? "—",
-    }));
+    // Use the raw array from the API without mapping/formatting
+    const rows = res?.data?.data?.data ?? res?.data?.data ?? res?.data ?? [];
+    assets.value = Array.isArray(rows) ? rows : [];
   } catch (err) {
     console.error("Error fetching assets:", err);
     errorMessage.value = err.response?.data?.message || "Failed to fetch assets.";
+  } finally {
+    isLoading.value = false;
   }
 };
 
@@ -155,13 +180,11 @@ const fetchDepartments = async () => {
     const res = await axios.get(`${apiBaseUrl}/departments`, {
       headers: getAuthHeaders(),
     });
-
     const list = Array.isArray(res.data)
       ? res.data
       : Array.isArray(res.data?.data)
       ? res.data.data
       : [];
-
     departments.value = list.map((d) => ({ id: d.id, name: d.name }));
   } catch (error) {
     console.error("Error fetching departments:", error);
@@ -184,7 +207,7 @@ const fetchAssetDepartments = async (assetId) => {
   originalAssigned.value = [...ids];
 };
 
-// ---------------- Modal handlers ----------------
+/* ---------------- Modal handlers ---------------- */
 const openDepartmentModal = async (assetId) => {
   try {
     departmentsLoading.value = true;
@@ -261,7 +284,7 @@ const assignDepartments = async () => {
 
 onMounted(fetchAssets);
 
-// ---------------- Mutations ----------------
+/* ---------------- Mutations ---------------- */
 const deleteAsset = async (id) => {
   if (!confirm("Are you sure you want to delete this asset?")) return;
 
@@ -280,11 +303,12 @@ const deleteAsset = async (id) => {
 </script>
 
 <style>
-.v-data-table { margin-top: 16px; }
+.v-data-table { margin-block-start: 16px; }
 .d-flex { display: flex; }
 .justify-between { justify-content: space-between; }
 .align-center { align-items: center; }
-.ms-auto { margin-left: auto; }
+.ms-auto { margin-inline-start: auto; }
 .gap-2 { gap: 8px; }
-.mb-4 { margin-bottom: 16px; }
+.mb-4 { margin-block-end: 16px; }
+.text-error { color: #c62828; }
 </style>

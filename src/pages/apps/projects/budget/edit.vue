@@ -45,14 +45,14 @@
             <small class="text-medium-emphasis">Selected category ki subcategories (names)</small>
           </VCol>
 
-          <!-- Asset -->
+          <!-- Asset (Optional) -->
           <VCol cols="12" md="4">
             <VSelect
               v-model="selectedAsset"
               :items="assets"
               item-title="code"
               item-value="id"
-              label="Select Asset"
+              label="Select Asset (Optional)"
               :loading="loading.assets || loading.form"
               :disabled="!selectedSubCategoryId || loading.assets || loading.form"
               return-object
@@ -61,11 +61,26 @@
               density="compact"
               clearable
             />
-            <small class="text-medium-emphasis">Selected subcategory ke assets</small>
+            <small class="text-medium-emphasis">Agar asset na select karein tab bhi save ho jayega.</small>
+          </VCol>
+
+          <!-- Quantity -->
+          <VCol cols="12" md="2">
+            <VTextField
+              v-model.number="quantity"
+              label="Qty"
+              type="number"
+              min="1"
+              step="1"
+              variant="outlined"
+              density="compact"
+              hide-details="auto"
+              :disabled="loading.form"
+            />
           </VCol>
 
           <!-- Amount -->
-          <VCol cols="12" md="4">
+          <VCol cols="12" md="2">
             <VTextField
               v-model.number="amount"
               label="Budget Amount"
@@ -80,8 +95,21 @@
             />
           </VCol>
 
+          <!-- Asset Description (Optional) -->
+          <VCol cols="12" md="8">
+            <VTextField
+              v-model="assetDescription"
+              label="Asset Description (Optional)"
+              variant="outlined"
+              density="compact"
+              hide-details="auto"
+              :disabled="loading.form"
+              clearable
+            />
+          </VCol>
+
           <!-- Actions -->
-          <VCol cols="12" md="8" class="d-flex align-end justify-end">
+          <VCol cols="12" class="d-flex align-end justify-end">
             <div class="d-flex gap-2">
               <VBtn variant="text" @click="$router.back()" :disabled="saving || loading.form">Cancel</VBtn>
               <VBtn color="primary" @click="saveBudget" :loading="saving" :disabled="!isFormValid || loading.form">
@@ -104,7 +132,7 @@
 
 <script setup>
 import axios from "axios";
-import { ref, computed, onMounted } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
@@ -140,9 +168,11 @@ const nameById = (id) => {
 // form fields
 const selectedCategoryId    = ref(null);
 const selectedSubCategoryId = ref(null);
-const selectedAsset         = ref(null); // full object from /assets
+const selectedAsset         = ref(null); // full object or null
 const assets                = ref([]);   // assets for current subcategory
 const amount                = ref(0);
+const quantity              = ref(1);
+const assetDescription      = ref("");
 
 // ---------- helpers ----------
 const getAuthHeaders = () => {
@@ -195,19 +225,24 @@ const fetchBudget = async () => {
     if (!b) throw new Error("Budget not found.");
 
     // prefill
-    const catId = Number(b.asset_category_id ?? b.category?.id);
-    const subId = Number(b.asset_subcategory_id ?? b.asset_sub_category_id ?? b.subcategory?.id);
+    const catId   = Number(b.asset_category_id ?? b.category?.id);
+    const subId   = Number(b.asset_subcategory_id ?? b.asset_sub_category_id ?? b.subcategory?.id);
     const assetId = Number(b.asset_id ?? b.asset?.id);
-    const amt = Number(b.amount ?? 0);
+    const amt     = Number(b.amount ?? 0);
+    const qty     = Number(b.quantity ?? 1);
+    const desc    = b.asset_description ?? "";
 
     selectedCategoryId.value    = catId || null;
     selectedSubCategoryId.value = subId || null;
     amount.value                = Number.isFinite(amt) ? amt : 0;
+    quantity.value              = Number.isFinite(qty) && qty > 0 ? qty : 1;
+    assetDescription.value      = typeof desc === "string" ? desc : "";
 
-    // load assets of subcategory, then select the asset
+    // load assets of subcategory, then select the asset (optional)
     if (selectedSubCategoryId.value) {
       await fetchAssetsBySub(selectedSubCategoryId.value);
-      selectedAsset.value = assets.value.find(a => Number(a.id) === assetId) || (assetId ? { id: assetId, code: b.asset?.code ?? `#${assetId}` } : null);
+      selectedAsset.value = assets.value.find(a => Number(a.id) === assetId)
+        || (assetId ? { id: assetId, code: b.asset?.code ?? `#${assetId}` } : null);
     }
   } catch (e) {
     console.error(e);
@@ -231,7 +266,13 @@ const onSubCategoryChange = async (val) => {
 
 // ---------- save ----------
 const isFormValid = computed(() =>
-  !!(projectId.value && budgetId.value && selectedCategoryId.value && selectedSubCategoryId.value && selectedAsset.value && Number(amount.value) >= 0)
+  !!(projectId.value
+     && budgetId.value
+     && selectedCategoryId.value
+     && selectedSubCategoryId.value
+     && Number(amount.value) >= 0
+     && Number(quantity.value || 0) > 0)
+  // NOTE: selectedAsset is OPTIONAL
 );
 
 const saveBudget = async () => {
@@ -241,13 +282,14 @@ const saveBudget = async () => {
   formError.value = "";
   try {
     const payload = {
-      // backend validators often require per-row project_id even on update
       project_id: Number(projectId.value),
-      asset_id: Number(selectedAsset.value.id),
+      asset_id: selectedAsset.value?.id ?? null,                // optional
       asset_category_id: Number(selectedCategoryId.value),
-      asset_subcategory_id: Number(selectedSubCategoryId.value),   // response-style
-      asset_sub_category_id: Number(selectedSubCategoryId.value),  // request-style (just in case)
+      asset_subcategory_id: Number(selectedSubCategoryId.value),
+      asset_sub_category_id: Number(selectedSubCategoryId.value), // tolerate backend spelling
       amount: Number(amount.value),
+      quantity: Number(quantity.value || 1),                    // NEW
+      asset_description: assetDescription.value?.trim() || null // NEW
     };
 
     // Try PUT, fallback to PATCH if necessary
@@ -261,7 +303,7 @@ const saveBudget = async () => {
       }
     }
 
-    alert("Budget updated successfully!");
+    // Success → go back to budgets list
     router.push(`/dashboards/projects/${projectId.value}/budgets`);
   } catch (e) {
     const msg  = e?.response?.data?.message;
@@ -292,7 +334,8 @@ onMounted(async () => {
 .justify-between { justify-content: space-between; }
 .align-center { align-items: center; }
 .gap-2 { gap: 8px; }
-.mb-4 { margin-bottom: 16px; }
-.text-medium-emphasis { opacity: .7; }
+.mb-4 { margin-block-end: 16px; }
+.text-medium-emphasis { opacity: 0.7; }
+
 @media (min-width: 960px) { .pa-4 { padding: 24px !important; } }
 </style>

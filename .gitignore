@@ -1,7 +1,7 @@
 # --- Must ignore ---
 node_modules/
 .vite/
-dist/
+
 coverage/
 *.tsbuildinfo
 src/**/*.generated.*

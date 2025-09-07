@@ -1,6 +1,5 @@
 <script setup>
-import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
-import { VNodeRenderer } from './VNodeRenderer'
+import logo from '@images/logos/astra-logo.png'
 import { layoutConfig } from '@layouts'
 import {
   VerticalNavGroup,
@@ -9,6 +8,7 @@ import {
 } from '@layouts/components'
 import { useLayoutConfigStore } from '@layouts/stores/config'
 import { injectionKeyIsVerticalNavHovered } from '@layouts/symbols'
+import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
 
 const props = defineProps({
   tag: {
@@ -84,19 +84,27 @@ const hideTitleAndIcon = configStore.isVerticalNavMini(isHovered)
       <slot name="nav-header">
         <RouterLink
           to="/"
-          class="app-logo app-title-wrapper"
+          class="app-logo app-title-wrapper flex items-center space-x-2"
         >
-          <VNodeRenderer :nodes="layoutConfig.app.logo" />
+          <!-- PNG/JPG ke liye IMG tag -->
+          <img
+            v-if="logo"
+            :src="logo"
+            alt="Logo"
+            class="" style="block-size: 70px;"
+          />
 
-          <Transition name="vertical-nav-app-title">
+          <!-- Title -->
+          <!-- <Transition name="vertical-nav-app-title">
             <h1
               v-show="!hideTitleAndIcon"
-              class="app-logo-title"
+              class="app-logo-title text-lg font-semibold"
             >
               {{ layoutConfig.app.title }}
             </h1>
-          </Transition>
+          </Transition> -->
         </RouterLink>
+
         <!-- 👉 Vertical nav actions -->
         <!-- Show toggle collapsible in >md and close button in <md -->
         <div class="header-action">

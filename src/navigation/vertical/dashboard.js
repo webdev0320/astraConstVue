@@ -23,7 +23,59 @@ export default [
       //   title: 'Logistics',
       //   to: 'dashboards-logistics',
       // },
-      {
+      // {
+      //   title: 'Assets',
+      //   to: 'dashboards-assets',
+      // },
+      // {
+      //   title: 'Assets Categories',
+      //   to: 'dashboards-assetcategories',
+      // },
+      // {
+      //   title: 'Projects',
+      //   to: 'dashboards-projects',
+      // },
+      // {
+      //   title: 'Asset Investment Request',
+      //   to: 'dashboards-asset-investment-requests',
+      // },
+      // {
+      //   title: 'Asset HandOver',
+      //   to: 'dashboards-assethandovers',
+      // },
+      // {
+      //   title: 'Users',
+      //   to: 'dashboards-users',
+      // },
+      // {
+      //   title: 'Departments',
+      //   to: 'dashboards-departments',
+      // },
+      // {
+      //   title: 'Permissions',
+      //   to: 'apps-permissions',
+      // },
+      // {
+      //   title: 'Faqs',
+      //   to: 'dashboards-faqs',
+      // },
+      // {
+      //   title: 'Settings',
+      //   to: 'dashboards-settings',
+      // },
+      // {
+      //   title: 'Supports',
+      //   to: 'dashboards-supports',
+      // },
+    ],
+    badgeContent: '5',
+    badgeClass: 'bg-error',
+  },
+        {
+        title: 'Dashboard',
+        to: 'dashboards-crm',
+      },
+        {
         title: 'Assets',
         to: 'dashboards-assets',
       },
@@ -67,10 +119,6 @@ export default [
         title: 'Supports',
         to: 'dashboards-supports',
       },
-    ],
-    badgeContent: '5',
-    badgeClass: 'bg-error',
-  },
   // {
   //   title: 'Front Pages',
   //   icon: { icon: 'tabler-files' },
