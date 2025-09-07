@@ -1,5 +1,4 @@
 <script setup>
-import { useTheme } from 'vuetify'
 import BuyNow from '@core/components/BuyNow.vue'
 import ScrollToTop from '@core/components/ScrollToTop.vue'
 import initCore from '@core/initCore'
@@ -8,8 +7,12 @@ import {
   useConfigStore,
 } from '@core/stores/config'
 import { hexToRgb } from '@core/utils/colorConverter'
+import { useTheme } from 'vuetify'
 
 const { global } = useTheme()
+
+console.log('Vuetify Primary HEX:', global.current.value.colors.primary)
+console.log('Vuetify Primary RGB:', hexToRgb(global.current.value.colors.primary))
 
 // ℹ️ Sync current theme with initial loader theme
 initCore()
