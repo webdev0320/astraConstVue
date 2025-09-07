@@ -1,4 +1,13 @@
 # --- Must ignore ---
+node_modules/
+.vite/
+dist/
+coverage/
+*.tsbuildinfo
+src/**/*.generated.*
+src/**/*.d.ts
+node_modules/.vite/
+node_modules/.vue-global-types/
 
 # Logs
 logs
@@ -29,6 +38,8 @@ lerna-debug.log*
 /cypress/screenshots/
 
 # Custom
+src/plugins/iconify/icons.css
+public/mockServiceWorker.js
 
 # Env files
 .env*
