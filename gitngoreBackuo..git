@@ -1,0 +1,46 @@
+# --- Must ignore ---
+node_modules/
+.vite/
+dist/
+coverage/
+*.tsbuildinfo
+src/**/*.generated.*
+src/**/*.d.ts
+node_modules/.vite/
+node_modules/.vue-global-types/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# OS/editor
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/*.code-snippets
+!.vscode/tours
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.yarn
+
+# Cypress
+/cypress/videos/
+/cypress/screenshots/
+
+# Custom
+src/plugins/iconify/icons.css
+public/mockServiceWorker.js
+
+# Env files
+.env*
+!.env.example
