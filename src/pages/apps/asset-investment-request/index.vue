@@ -22,42 +22,33 @@
       v-else-if="assetInvestmentRequests.length > 0"
       :headers="headers"
       :items="assetInvestmentRequests"
+      item-value="id"
       :items-per-page="10"
+      show-expand
+      v-model:expanded="expanded"
+      @update:expanded="onExpandedChange"
+      class="mb-6"
     >
       <!-- DATE -->
       <template #item.date="{ item }">
-        {{ formatDate(item.raw?.date ?? item.date) }}
+        {{ formatDate(item.raw.date) }}
       </template>
 
-      <!-- PLANNED COST -->
-      <template #item.planned_cost="{ item }">
-        {{ formatCurrency(item.raw?.planned_cost ?? item.planned_cost) }}
+      <!-- PLANNED TOTAL -->
+      <template #item.planned_total="{ item }">
+        {{ formatCurrency(item.raw.planned_total) }}
       </template>
 
       <!-- PROJECT -->
       <template #item.project_name="{ item }">
-        {{ item.raw?.project?.name ?? item.project_name ?? '—' }}
+        {{ item.raw.project_name || '—' }}
       </template>
 
       <!-- USER -->
       <template #item.user_display="{ item }">
         <div>
-          <div>{{ item.raw?.user?.name ?? item.user_name ?? '—' }}</div>
-          <small class="muted">{{ item.raw?.user?.email ?? item.user_email ?? '' }}</small>
-        </div>
-      </template>
-
-      <!-- DESCRIPTION -->
-      <template #item.description="{ item }">
-        <div class="desc-cell clamp-2" :title="item.raw?.description ?? item.description">
-          {{ truncateSmart(item.raw?.description ?? item.description, 20, 160) }}
-        </div>
-      </template>
-
-      <!-- REASON -->
-      <template #item.reason="{ item }">
-        <div class="desc-cell clamp-2" :title="item.raw?.reason ?? item.reason">
-          {{ truncateSmart(item.raw?.reason ?? item.reason, 20, 160) }}
+          <div>{{ item.raw.user_name || '—' }}</div>
+          <small class="muted">{{ item.raw.user_email || '' }}</small>
         </div>
       </template>
 
@@ -67,18 +58,51 @@
           <VBtn
             color="warning"
             size="small"
-            @click="$router.push(`/dashboards/asset-investment-requests/edit/${item.raw?.id ?? item.id}`)"
+            @click="$router.push(`/dashboards/asset-investment-requests/edit/${item.raw.id}`)"
           >
             Edit
           </VBtn>
           <VBtn
             color="error"
             size="small"
-            @click="deleteRequest(item.raw?.id ?? item.id)"
+            @click="deleteRequest(item.raw.id)"
           >
             Delete
           </VBtn>
         </div>
+      </template>
+
+      <!-- Expanded row: nested line-items table (lazy loads) -->
+      <template #expanded-row="{ columns, item }">
+        <tr>
+          <td :colspan="columns.length">
+            <div v-if="linesCache[item.raw.id]?.loading" class="pa-4 text-medium-emphasis">
+              Loading lines...
+            </div>
+
+            <VDataTable
+              v-else-if="(linesCache[item.raw.id]?.data || []).length"
+              :headers="lineHeaders"
+              :items="linesCache[item.raw.id].data"
+              item-value="__key"
+              :items-per-page="5"
+              density="compact"
+              class="mt-2"
+              hide-default-footer
+            >
+              <template #item.planned_cost="{ item: li }">
+                {{ formatCurrency(li.raw.planned_cost) }}
+              </template>
+              <template #item.line_total="{ item: li }">
+                {{ formatCurrency(li.raw.line_total) }}
+              </template>
+            </VDataTable>
+
+            <div v-else class="pa-4 text-medium-emphasis">
+              No lines found.
+            </div>
+          </td>
+        </tr>
       </template>
     </VDataTable>
 
@@ -103,26 +127,35 @@ import axios from "axios";
 import { onMounted, ref } from "vue";
 import { VBtn, VCard, VCardText, VCardTitle, VDataTable } from "vuetify/components";
 
-/* ✅ Your API base */
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
+/* ------------ Master headers (one row per request) ------------ */
 const headers = [
   { title: "ID", key: "id", sortable: true },
   { title: "Project", key: "project_name" },
   { title: "User", key: "user_display", sortable: false },
   { title: "Date", key: "date" },
-  { title: "Planned Cost", key: "planned_cost" },
-  { title: "Type", key: "request_type" },
-  { title: "Category", key: "category_name" },          // NEW
-  { title: "Subcategory", key: "subcategory_name" },    // NEW
-  { title: "Asset", key: "asset_code" },                // NEW
-  { title: "Qty", key: "quantity" },                    // NEW
-  { title: "Description", key: "description", sortable: false },
-  { title: "Reason", key: "reason", sortable: false },
+  { title: "Lines", key: "lines_count" },
+  { title: "Planned Total", key: "planned_total" },
   { title: "Actions", key: "actions", sortable: false },
 ];
 
+/* ------------ Line headers (expanded table) ------------ */
+const lineHeaders = [
+  { title: "Asset Code", key: "asset_code" },
+  { title: "Category", key: "category_name" },
+  { title: "Subcategory", key: "subcategory_name" },
+  { title: "Type", key: "request_type" },
+  { title: "Description", key: "description" },
+  { title: "Reason", key: "reason" },
+  { title: "Qty", key: "quantity" },
+  { title: "Planned Cost", key: "planned_cost" },
+  { title: "Line Total", key: "line_total" },
+];
+
 const assetInvestmentRequests = ref([]);
+const expanded = ref([]); // ids of expanded rows
+const linesCache = ref({}); // { [id]: { loading: bool, data: [] } }
 const errorMessage = ref("");
 const isLoading = ref(true);
 
@@ -144,6 +177,11 @@ const getCookie = (name) => {
   const parts = value.split(`; ${name}=`);
   if (parts.length === 2) return parts.pop().split(";").shift();
   return null;
+};
+
+const nn = (n) => {
+  const x = Number(n);
+  return Number.isFinite(x) ? x : 0;
 };
 
 const formatDate = (d) => {
@@ -168,8 +206,31 @@ const formatCurrency = (n) => {
   }).format(num);
 };
 
-/* ---------- API ---------- */
-// GET: /asset-investment-requests (array with nested project, user, category, subcategory, asset)
+/* ---------- normalizers ---------- */
+const normalizeLines = (rawLines, reqId) => {
+  return rawLines.map((r, idx) => {
+    const qty  = nn(r.quantity ?? 1);
+    const cost = nn(r.planned_cost ?? r.cost ?? 0);
+    const lineTotal = cost * qty;
+
+    return {
+      __key: `${reqId}|${idx}`,
+      asset_code: r.asset?.code ?? "—",
+      category_name: r.category?.title ?? r.asset_category?.title ?? "—",
+      subcategory_name: r.subcategory?.title ?? r.asset_subcategory?.title ?? "—",
+      request_type: r.request_type ?? "NEW",
+      description: truncateSmart(r.description ?? "—"),
+      reason: truncateSmart(r.reason ?? "—"),
+      quantity: qty,
+      planned_cost: cost,
+      line_total: lineTotal,
+
+      raw: { ...r, planned_cost: cost, line_total: lineTotal },
+    };
+  });
+};
+
+/* ---------- API: master list ---------- */
 const fetchAssetInvestmentRequests = async () => {
   isLoading.value = true;
   errorMessage.value = "";
@@ -179,10 +240,7 @@ const fetchAssetInvestmentRequests = async () => {
     const decodedToken = decodeURIComponent(accessToken);
 
     const res = await axios.get(`${apiBaseUrl}/asset-investment-requests`, {
-      headers: {
-        Authorization: `Bearer ${decodedToken}`,
-        Accept: "application/json",
-      },
+      headers: { Authorization: `Bearer ${decodedToken}`, Accept: "application/json" },
     });
 
     const list = Array.isArray(res.data)
@@ -191,34 +249,43 @@ const fetchAssetInvestmentRequests = async () => {
         ? res.data.data
         : [];
 
-    assetInvestmentRequests.value = list.map((p) => ({
-      id: p.id,
-      project_id: p.project_id ?? null,
-      project_name: p.project?.name ?? "—",
+    assetInvestmentRequests.value = list.map((p) => {
+      // Lines usually NOT embedded at index endpoint; keep counts if provided
+      const embedded =
+        Array.isArray(p.data)  ? p.data  :
+        Array.isArray(p.lines) ? p.lines :
+        Array.isArray(p.items) ? p.items : null;
 
-      user_id: p.user_id ?? null,
-      user_name: p.user?.name ?? "—",
-      user_email: p.user?.email ?? "",
-      user_display: `${p.user?.name ?? "—"}${p.user?.email ? " (" + p.user.email + ")" : ""}`,
+      const linesCount =
+        Number(p.lines_count ?? p.items_count ?? p.data_count ?? (embedded ? embedded.length : 0)) || 0;
 
-      date: p.date ?? "—",
-      planned_cost: p.planned_cost ?? null, // could be "250000.00"
-      request_type: p.request_type ?? "—",
+      const plannedTotal =
+        nn(p.planned_total); // if API sends it; we'll fill later from cache if missing
 
-      // NEW fields for table
-      category_name: p.category?.title ?? p.asset_category?.title ?? "—",
-      subcategory_name: p.subcategory?.title ?? p.asset_subcategory?.title ?? "—",
-      asset_code: p.asset?.code ?? "—",
-      quantity: p.quantity != null ? Number(p.quantity) : 1,
+      return {
+        id: p.id,
+        project_id: p.project_id ?? null,
+        project_name: p.project?.name ?? "—",
 
-      description: p.description ?? "—",
-      reason: p.reason ?? "—",
+        user_id: p.user_id ?? null,
+        user_name: p.user?.name ?? "—",
+        user_email: p.user?.email ?? "",
+        user_display: `${p.user?.name ?? "—"}${p.user?.email ? " (" + p.user.email + ")" : ""}`,
 
-      created_at: p.created_at,
-      updated_at: p.updated_at,
+        date: p.date ?? "—",
+        lines_count: linesCount,
+        planned_total: plannedTotal || null,
 
-      raw: p, // keep original for slots
-    }));
+        raw: {
+          id: p.id,
+          date: p.date ?? "—",
+          project_name: p.project?.name ?? "—",
+          user_name: p.user?.name ?? "—",
+          user_email: p.user?.email ?? "",
+          planned_total: plannedTotal || null,
+        },
+      };
+    });
   } catch (error) {
     console.error("Error fetching asset investment requests:", error);
     errorMessage.value =
@@ -229,9 +296,58 @@ const fetchAssetInvestmentRequests = async () => {
   }
 };
 
+/* ---------- API: details per row (lazy) ---------- */
+const loadLinesFor = async (reqId) => {
+  if (!reqId) return;
+  if (linesCache.value[reqId]?.data) return; // already loaded
+  linesCache.value[reqId] = { loading: true, data: [] };
+
+  try {
+    const accessToken = getCookie("accessToken");
+    const decodedToken = decodeURIComponent(accessToken);
+
+    const res = await axios.get(`${apiBaseUrl}/asset-investment-requests/${reqId}`, {
+      headers: { Authorization: `Bearer ${decodedToken}`, Accept: "application/json" },
+    });
+
+    const p = res.data?.data ?? res.data ?? {};
+    const rawLines =
+      Array.isArray(p.data)  ? p.data  :
+      Array.isArray(p.lines) ? p.lines :
+      Array.isArray(p.items) ? p.items :
+      Array.isArray(p.details) ? p.details :
+      Array.isArray(p.asset_investment_request_details) ? p.asset_investment_request_details :
+      [];
+
+    const lines = normalizeLines(rawLines, reqId);
+    linesCache.value[reqId] = { loading: false, data: lines };
+
+    // If top-level planned_total missing, compute & patch the row
+    const row = assetInvestmentRequests.value.find(r => r.id === reqId);
+    if (row && (!row.raw.planned_total && !row.planned_total)) {
+      const total = lines.reduce((s, l) => s + nn(l.raw.line_total), 0);
+      row.planned_total = total;
+      row.raw.planned_total = total;
+      row.lines_count = lines.length;
+    }
+  } catch (e) {
+    console.error("Error loading lines for request", reqId, e?.response ?? e);
+    linesCache.value[reqId] = { loading: false, data: [] };
+  }
+};
+
+/* ---------- expand handler ---------- */
+const onExpandedChange = async (ids) => {
+  expanded.value = ids;
+  for (const id of ids) {
+    await loadLinesFor(id);
+  }
+};
+
+/* ---------- init ---------- */
 onMounted(fetchAssetInvestmentRequests);
 
-// DELETE: /asset-investment-requests/:id
+/* ---------- delete ---------- */
 const deleteRequest = async (id) => {
   if (!id) return;
   if (!confirm("Are you sure you want to delete this request?")) return;
@@ -242,13 +358,11 @@ const deleteRequest = async (id) => {
     const decodedToken = decodeURIComponent(accessToken);
 
     await axios.delete(`${apiBaseUrl}/asset-investment-requests/${id}`, {
-      headers: {
-        Authorization: `Bearer ${decodedToken}`,
-        Accept: "application/json",
-      },
+      headers: { Authorization: `Bearer ${decodedToken}`, Accept: "application/json" },
     });
 
     assetInvestmentRequests.value = assetInvestmentRequests.value.filter((r) => r.id !== id);
+    delete linesCache.value[id];
     alert("Request deleted successfully!");
   } catch (error) {
     console.error("Error deleting request:", error);
@@ -267,19 +381,5 @@ const deleteRequest = async (id) => {
 .mb-4 { margin-block-end: 16px; }
 .text-error { color: #c62828; }
 .muted { opacity: 0.7; }
-
-/* Clamp + long strings */
-.desc-cell {
-  overflow: hidden;
-  max-inline-size: 520px;
-  overflow-wrap: anywhere;
-  text-overflow: ellipsis;
-  word-break: break-word;
-}
-
-.clamp-2 {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
+.pa-4 { padding: 16px; }
 </style>
