@@ -14,17 +14,30 @@
       </VBtn>
     </div>
 
+    <!-- Loading -->
+    <p v-if="loading">Loading...</p>
+
+    <!-- Error -->
+    <p v-else-if="errorMessage" class="text-error">{{ errorMessage }}</p>
+
+    <!-- Table -->
     <VDataTable
-      v-if="!loading && mappedBudgets.length > 0"
+      v-else-if="mappedBudgets.length > 0"
       :headers="headers"
       :items="mappedBudgets"
       :items-per-page="10"
     >
+      <template #item.amount="{ item }">
+        {{ formatAmount(item.amount) }}
+      </template>
+
       <template #item.actions="{ item }">
         <div class="d-flex gap-2">
-          <!-- <VBtn color="warning" size="small" @click="editBudget(item.id)">
+          <!--
+          <VBtn color="warning" size="small" @click="editBudget(item.id)">
             Edit
-          </VBtn> -->
+          </VBtn>
+          -->
           <VBtn color="error" size="small" @click="deleteBudget(item.id)">
             Delete
           </VBtn>
@@ -32,56 +45,75 @@
       </template>
     </VDataTable>
 
-    <p v-else-if="!loading && errorMessage">{{ errorMessage }}</p>
-    <p v-else>Loading...</p>
+    <!-- Empty state -->
+    <VCard v-else class="mt-6 pa-6 text-center" variant="tonal">
+      <VCardTitle>No budgets found</VCardTitle>
+      <VCardText>
+        This project does not have any budgets yet. Add a budget to get started.
+      </VCardText>
+      <VBtn
+        color="primary"
+        @click="$router.push(`/dashboards/projects/${projectId}/budgets/create`)"
+      >
+        Add Budget
+      </VBtn>
+    </VCard>
   </div>
 </template>
 
 <script setup>
 import axios from "axios";
-import { ref, onMounted, computed } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { VBtn, VDataTable } from "vuetify/components";
+import {
+  VBtn,
+  VCard, VCardText, VCardTitle,
+  VDataTable,
+} from "vuetify/components";
 
 const route = useRoute();
 const router = useRouter();
 
 const projectId = computed(() => route.params.id);
-const budgetId  = computed(() => route.params.budgetId);
 
 const headers = [
   { title: "ID", key: "id", sortable: true },
   { title: "CATEGORY", key: "category", sortable: true },
   { title: "SUBCATEGORY", key: "subcategory", sortable: true },
   { title: "ASSET CODE", key: "asset", sortable: true },
+  { title: "DESCRIPTION", key: "asset_description", sortable: false }, // NEW
+  { title: "QTY", key: "quantity", sortable: true },                   // NEW
   { title: "AMOUNT", key: "amount", sortable: true },
   { title: "CREATED AT", key: "created_at", sortable: true },
   { title: "ACTIONS", key: "actions", sortable: false },
 ];
 
-const budgets = ref([]);       // raw API array
-const loading = ref(false);
+const budgets = ref([]);
+const loading = ref(true);
 const errorMessage = ref("");
 
-// Map/flatten nested API fields for the table
+// Map nested API fields for table
 const mappedBudgets = computed(() =>
   (budgets.value || []).map(b => ({
     id: b.id,
     category: b.category?.title ?? "-",
     subcategory: b.subcategory?.title ?? "-",
     asset: b.asset?.code ?? "-",
-    amount: formatAmount(b.amount),
+    asset_description: b.asset_description ?? "—",                // NEW
+    quantity: b.quantity != null ? Number(b.quantity) : 1,       // NEW (default 1)
+    amount: b.amount,
     created_at: formatDateTime(b.created_at),
   }))
 );
 
-// Fetch budgets from {{baseUrl}}/api/project-budgets?project_id={id}
 const fetchBudgets = async () => {
   if (!projectId.value) {
     errorMessage.value = "Project ID is missing in the route.";
+    loading.value = false;
     return;
   }
   loading.value = true;
+  errorMessage.value = "";
   try {
     const res = await axios.get(
       `${import.meta.env.VITE_API_BASE_URL}/project-budgets`,
@@ -90,12 +122,7 @@ const fetchBudgets = async () => {
         headers: getAuthHeaders(),
       }
     );
-    // Your sample shows an array at root:
-    // [
-    //   { id, project_id, amount, category: {...}, subcategory: {...}, asset: {...}, user: {...} }
-    // ]
     budgets.value = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
-    errorMessage.value = budgets.value.length ? "" : "No budgets found for this project.";
   } catch (e) {
     errorMessage.value = e.response?.data?.message || "Failed to fetch budgets.";
   } finally {
@@ -105,7 +132,6 @@ const fetchBudgets = async () => {
 
 onMounted(fetchBudgets);
 
-// Auth header helpers
 const getAuthHeaders = () => {
   const access = getCookie("accessToken");
   if (!access) throw new Error("Access token is missing. Please log in.");
@@ -119,12 +145,10 @@ const getCookie = (name) => {
   return null;
 };
 
-// Formatters
 function formatAmount(val) {
   if (val === null || val === undefined || val === "") return "-";
   const num = Number(val);
   if (Number.isNaN(num)) return String(val);
-  // No specific currency provided; keep it generic
   return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
@@ -137,20 +161,21 @@ function formatDateTime(iso) {
   }
 }
 
-// Actions
- const editBudget = (id) => {
-   router.push({
-     name: 'dashboards-project-budgets-edit',
-     params: { id: projectId.value, budgetId: id },
-   });
- };
+const editBudget = (id) => {
+  router.push({
+    name: "dashboards-project-budgets-edit",
+    params: { id: projectId.value, budgetId: id },
+  });
+};
 
-// Delete a budget
 const deleteBudget = async (id) => {
   if (!confirm("Are you sure you want to delete this budget?")) return;
   try {
-    await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/project-budgets/${id}`, { headers: getAuthHeaders() });
-    fetchBudgets();  // Refresh after deletion
+    await axios.delete(
+      `${import.meta.env.VITE_API_BASE_URL}/project-budgets/${id}`,
+      { headers: getAuthHeaders() }
+    );
+    await fetchBudgets();
     alert("Budget deleted successfully!");
   } catch (e) {
     alert(e.response?.data?.message || "Failed to delete budget.");
@@ -163,5 +188,6 @@ const deleteBudget = async (id) => {
 .justify-between { justify-content: space-between; }
 .align-center { align-items: center; }
 .gap-2 { gap: 8px; }
-.mb-4 { margin-bottom: 16px; }
+.mb-4 { margin-block-end: 16px; }
+.text-error { color: #c62828; }
 </style>

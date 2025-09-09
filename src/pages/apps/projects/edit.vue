@@ -38,7 +38,7 @@
       </VCol>
 
       <!-- Budget (optional) -->
-      <VCol cols="12" md="4">
+      <!-- <VCol cols="12" md="4">
         <VTextField
           v-model="project.budget"
           label="Budget"
@@ -47,7 +47,7 @@
           :error-messages="errorMessages.budget"
           clearable
         />
-      </VCol>
+      </VCol> -->
 
       <!-- Description -->
       <VCol cols="12">
@@ -71,10 +71,10 @@
 </template>
 
 <script setup>
-import axios from 'axios'
-import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { VBtn, VCol, VForm, VRow, VTextField, VTextarea } from 'vuetify/components'
+import axios from 'axios';
+import { onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { VBtn, VCol, VForm, VRow, VTextField, VTextarea } from 'vuetify/components';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
@@ -86,7 +86,7 @@ const project = ref({
   name: '',
   start_date: '',
   end_date: '',
-  budget: '',
+  // budget: '',
   description: '',
 })
 
@@ -121,7 +121,7 @@ const loadProject = async () => {
   project.value.start_date = p.start_date ?? ''
   project.value.end_date = p.end_date ?? ''
   project.value.description = p.description ?? ''
-  project.value.budget = p.budget ?? '' // keep as '' if null for editing
+  // project.value.budget = p.budget ?? '' // keep as '' if null for editing
 }
 
 /* --------- Submit (UPDATE) ---------- */
@@ -142,7 +142,7 @@ const submitForm = async () => {
       start_date: project.value.start_date,
       end_date: project.value.end_date,
       description: project.value.description,
-      budget: project.value.budget === '' ? null : Number(project.value.budget),
+      // budget: project.value.budget === '' ? null : Number(project.value.budget),
     }
 
     await axios.put(`${apiBaseUrl}/projects/${projectId}`, payload, {
@@ -179,7 +179,7 @@ onMounted(async () => {
 </script>
 
 <style>
-.mb-4 { margin-bottom: 16px; }
+.mb-4 { margin-block-end: 16px; }
 .d-flex { display: flex; }
 .justify-between { justify-content: space-between; }
 .align-center { align-items: center; }

@@ -1,3 +1,4 @@
+<!-- C:\xampp\htdocs\vue\astra-const\src\pages\apps\asset-handover\create.vue -->
 <template>
   <div class="d-flex justify-between align-center mb-4">
     <h3>Create Asset Handover</h3>
@@ -17,6 +18,21 @@
           :error-messages="errorMessages.asset_investment_requests_id"
           clearable
           :loading="loadingRequests"
+        />
+      </VCol>
+
+      <!-- Project Users (auto-populated after selecting a request) -->
+      <VCol cols="12" md="6">
+        <VSelect
+          v-model="form.user_id"
+          :items="usersOptions"
+          item-title="title"
+          item-value="value"
+          label="Assign To (Project Users)"
+          :loading="loadingUsers"
+          :disabled="!selectedProjectId || loadingUsers"
+          :error-messages="errorMessages.user_id"
+          clearable
         />
       </VCol>
 
@@ -71,14 +87,16 @@
 
 <script setup>
 import axios from 'axios'
-import { ref, onMounted, computed } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
-  VBtn, VCol, VForm, VRow, VTextField, VTextarea, VSelect,
+  VBtn, VCol, VForm, VRow,
+  VSelect,
+  VTextField, VTextarea,
 } from 'vuetify/components'
 
 /* ========= CONFIG ========= */
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL // ends with /api
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL // should end with /api
 const apiCreateUrl = `${apiBaseUrl}/asset-handovers`
 const apiRequestsUrl = `${apiBaseUrl}/asset-investment-requests`
 
@@ -93,8 +111,13 @@ const errorMessages = ref({})
 const loadingRequests = ref(false)
 const assetRequests = ref([])
 
+const selectedProjectId = ref(null)
+const loadingUsers = ref(false)
+const projectUsers = ref([])
+
 const form = ref({
   asset_investment_requests_id: null,
+  user_id: null,              // NEW: selected project user
   handover_date: '',
   quantity: 1,
   remarks: '',
@@ -118,14 +141,24 @@ const getToken = () => {
   return fromLS ? decodeURIComponent(fromLS) : null
 }
 
-/* ========= OPTIONS (Requests) ========= */
+/* ========= OPTIONS (Requests) =========
+   Note: API returns project_id (no embedded project name in your sample) */
 const requestOptions = computed(() =>
   assetRequests.value.map(r => ({
     value: r.id,
-    title: `#${r.id} — ${r.project?.name ?? 'No Project'} — ${r.date} — Qty ${r.quantity}`,
+    title: `#${r.id} — ${r.date} — Qty ${r.quantity} — Project ${r.project_id ?? 'N/A'}`,
   })),
 )
 
+/* ========= OPTIONS (Users) ========= */
+const usersOptions = computed(() =>
+  projectUsers.value.map(u => ({
+    value: u.id,
+    title: `${u.name} — ${u.user_code}`,
+  })),
+)
+
+/* ========= LOADERS ========= */
 const fetchAssetRequests = async () => {
   loadingRequests.value = true
   try {
@@ -152,6 +185,55 @@ const fetchAssetRequests = async () => {
   }
 }
 
+const fetchProjectUsers = async projectId => {
+  if (!projectId) {
+    projectUsers.value = []
+    return
+  }
+  loadingUsers.value = true
+  try {
+    const token = getToken()
+    if (!token) throw new Error('Access token is missing. Please log in.')
+
+    const url = `${apiBaseUrl}/projects/${projectId}/users/sync`
+    const res = await axios.get(url, {
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    // Expected structure: { project: 2, users: [ ... ] }
+    projectUsers.value = Array.isArray(res.data?.users) ? res.data.users : []
+  } catch (err) {
+    console.error('Error loading project users:', err)
+    message.value = err.response?.data?.message || 'Failed to load project users.'
+    projectUsers.value = []
+  } finally {
+    loadingUsers.value = false
+  }
+}
+
+/* ========= WATCHERS ========= */
+watch(
+  () => form.value.asset_investment_requests_id,
+  newVal => {
+    // reset user select when request changes
+    form.value.user_id = null
+    projectUsers.value = []
+    selectedProjectId.value = null
+
+    if (!newVal) return
+
+    // find request and pick project_id
+    const req = assetRequests.value.find(r => r.id === newVal)
+    const projectId = req?.project_id ?? null
+    selectedProjectId.value = projectId
+
+    if (projectId) fetchProjectUsers(projectId)
+  },
+)
+
 /* ========= SUBMIT ========= */
 const submitForm = async () => {
   try {
@@ -170,14 +252,11 @@ const submitForm = async () => {
 
     const payload = {
       asset_investment_requests_id: form.value.asset_investment_requests_id,
-      handover_date: form.value.handover_date, // YYYY-MM-DD
+      user_id: form.value.user_id || undefined,     // send if selected/required by API
+      handover_date: form.value.handover_date,      // YYYY-MM-DD
       quantity: form.value.quantity,
       remarks: form.value.remarks || null,
-      // NOTE:
-      // - Backend likely infers user_id and handover_by from the authenticated token.
-      // - If your API expects them explicitly, add:
-      //   user_id: selectedUserId,
-      //   handover_by: currentUserId,
+      // If API expects different key (e.g., handover_to), rename here accordingly.
     }
 
     const res = await axios.post(apiCreateUrl, payload, {
@@ -189,7 +268,7 @@ const submitForm = async () => {
     })
 
     message.value = res.data?.message || 'Asset Handover created successfully.'
-    router.push('/dashboards/assethandovers')
+    router.push('/dashboards/asset-handovers') // unified route
   } catch (error) {
     console.error('Error submitting handover:', error)
     if (error.response?.data?.errors) {
@@ -210,9 +289,9 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.mb-4 { margin-bottom: 16px; }
+.mb-4 { margin-block-end: 16px; }
 .d-flex { display: flex; }
 .justify-between { justify-content: space-between; }
 .align-center { align-items: center; }
-.ms-2 { margin-left: 8px; }
+.ms-2 { margin-inline-start: 8px; }
 </style>

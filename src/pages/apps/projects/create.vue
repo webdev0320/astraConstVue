@@ -38,7 +38,7 @@
       </VCol>
 
       <!-- Budget (optional) -->
-      <VCol cols="12" md="4">
+      <!-- <VCol cols="12" md="4">
         <VTextField
           v-model="project.budget"
           label="Budget"
@@ -47,7 +47,7 @@
           :error-messages="errorMessages.budget"
           clearable
         />
-      </VCol>
+      </VCol> -->
 
       <!-- Description -->
       <VCol cols="12">
@@ -72,20 +72,22 @@
 
 <script setup>
 
-import axios from 'axios'
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { VBtn, VCol, VForm, VRow, VTextField, VTextarea } from 'vuetify/components'
+import axios from 'axios';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { VBtn, VCol, VForm, VRow, VTextField, VTextarea } from 'vuetify/components';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
 const router = useRouter()
 
+const today = new Date().toISOString().split('T')[0]
+
 const project = ref({
   name: '',
-  start_date: '',
+  start_date: today,
   end_date: '',
-  budget: '',
+  // budget: '',
   description: '',
 })
 
@@ -125,7 +127,7 @@ const submitForm = async () => {
       start_date: project.value.start_date,
       end_date: project.value.end_date,
       description: project.value.description,
-      budget: project.value.budget === '' ? null : Number(project.value.budget),
+      // budget: project.value.budget === '' ? null : Number(project.value.budget),
     }
 
     const res = await axios.post(`${apiBaseUrl}/projects`, payload, {
@@ -154,7 +156,7 @@ const submitForm = async () => {
 </script>
 
 <style>
-.mb-4 { margin-bottom: 16px; }
+.mb-4 { margin-block-end: 16px; }
 .d-flex { display: flex; }
 .justify-between { justify-content: space-between; }
 .align-center { align-items: center; }

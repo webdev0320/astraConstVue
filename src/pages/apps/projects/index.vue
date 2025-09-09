@@ -8,8 +8,15 @@
       </VBtn>
     </div>
 
+    <!-- Loading -->
+    <p v-if="loading">Loading...</p>
+
+    <!-- Error -->
+    <p v-else-if="errorMessage">{{ errorMessage }}</p>
+
+    <!-- Table -->
     <VDataTable
-      v-if="projects.length > 0"
+      v-else-if="projects.length > 0"
       :headers="headers"
       :items="projects"
       :items-per-page="10"
@@ -38,20 +45,17 @@
             Delete
           </VBtn>
 
-          <!-- Assign Users -> route to assign-users page -->
           <VBtn
             color="primary"
             size="small"
-            @click="$router.push(`/dashboards/projects/${item.raw?.id ?? item.id}/assign-users`)"
+            @click="$router.push(`/dashboards/projects/${item.raw?.id ?? item.id}/assignusers`)"
           >
-             Users
+            Users
           </VBtn>
 
-          <!-- Budget button (after Assign Users) -->
           <VBtn
-            color="secondary"
+            color="info"
             size="small"
-            variant="tonal"
             @click="$router.push(`/dashboards/projects/${item.raw?.id ?? item.id}/budgets`)"
           >
             Budget
@@ -60,15 +64,27 @@
       </template>
     </VDataTable>
 
-    <p v-else-if="errorMessage">{{ errorMessage }}</p>
-    <p v-else>Loading...</p>
+    <!-- Empty state -->
+    <VCard v-else class="mt-6 pa-6 text-center" variant="tonal">
+      <VCardTitle>Projects not found</VCardTitle>
+      <VCardText>
+        You do not have any projects yet. Start by creating your first project.
+      </VCardText>
+      <VBtn color="primary" @click="$router.push('/dashboards/projects/create')">
+        Create Project
+      </VBtn>
+    </VCard>
   </div>
 </template>
 
 <script setup>
 import axios from "axios";
-import { ref, onMounted } from "vue";
-import { VBtn, VDataTable } from "vuetify/components";
+import { onMounted, ref } from "vue";
+import {
+  VBtn,
+  VCard, VCardText, VCardTitle,
+  VDataTable,
+} from "vuetify/components";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
@@ -81,6 +97,7 @@ const headers = [
 ];
 
 const projects = ref([]);
+const loading = ref(true);
 const errorMessage = ref("");
 
 const truncateSmart = (text, wordLimit = 20, charFallback = 120) => {
@@ -105,6 +122,8 @@ const getAuthHeaders = () => {
 
 // list
 const fetchProjects = async () => {
+  loading.value = true;
+  errorMessage.value = "";
   try {
     const res = await axios.get(`${apiBaseUrl}/projects`, { headers: getAuthHeaders() });
     const list = Array.isArray(res.data)
@@ -122,6 +141,8 @@ const fetchProjects = async () => {
   } catch (e) {
     console.error("Error fetching projects:", e);
     errorMessage.value = e.response?.data?.message || "Failed to fetch projects.";
+  } finally {
+    loading.value = false;
   }
 };
 onMounted(fetchProjects);
@@ -141,13 +162,13 @@ const deleteProject = async (projectId) => {
 </script>
 
 <style>
-.v-data-table { margin-top: 16px; }
+.v-data-table { margin-block-start: 16px; }
 .d-flex { display: flex; }
 .justify-between { justify-content: space-between; }
 .align-center { align-items: center; }
-.ms-auto { margin-left: auto; }
+.ms-auto { margin-inline-start: auto; }
 .gap-2 { gap: 8px; }
-.mb-4 { margin-bottom: 16px; }
-.desc-cell { max-width: 480px; overflow: hidden; text-overflow: ellipsis; overflow-wrap: anywhere; word-break: break-word; }
-.clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.mb-4 { margin-block-end: 16px; }
+.desc-cell { overflow: hidden; max-inline-size: 480px; overflow-wrap: anywhere; text-overflow: ellipsis; word-break: break-word; }
+.clamp-2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 </style>
