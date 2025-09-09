@@ -20,8 +20,38 @@
         />
       </VCol>
 
+      <!-- Assign To (Project Users) -->
+      <VCol cols="12" md="6">
+        <VSelect
+          v-model="form.user_id"
+          :items="usersOptions"
+          item-title="title"
+          item-value="value"
+          label="Assign To (Project Users)"
+          :loading="loadingUsers"
+          :disabled="!selectedProjectId || loadingUsers"
+          :error-messages="errorMessages.user_id"
+          clearable
+        />
+      </VCol>
+
+      <!-- Department -->
+      <VCol cols="12" md="6">
+        <VSelect
+          v-model="form.department_id"
+          :items="departmentsOptions"
+          item-title="title"
+          item-value="value"
+          label="Department"
+          :rules="[requiredValidator]"
+          :error-messages="errorMessages.department_id"
+          clearable
+          :loading="loadingDepartments"
+        />
+      </VCol>
+
       <!-- Handover Date -->
-      <VCol cols="12" md="3">
+      <VCol cols="12" md="6">
         <VTextField
           v-model="form.handover_date"
           label="Handover Date"
@@ -31,28 +61,99 @@
         />
       </VCol>
 
-      <!-- Quantity -->
-      <VCol cols="12" md="3">
-        <VTextField
-          v-model.number="form.quantity"
-          label="Quantity"
-          type="number"
-          min="1"
-          :rules="[requiredValidator, positiveIntValidator]"
-          :error-messages="errorMessages.quantity"
-          clearable
-        />
+      <!-- Hard-coded message (same as create.vue) -->
+      <VCol cols="12">
+        <p class="notice-text">
+          Dear Sir / Madam<br>
+          Please find the below the assets handed over to you, to support you in carrying out your assignment/work in a most Proficient manner. Please sign also the attached picture.
+        </p>
       </VCol>
 
-      <!-- Remarks -->
+      <!-- Items Table -->
       <VCol cols="12">
-        <VTextarea
-          v-model="form.remarks"
-          label="Remarks"
-          :rows="3"
-          :error-messages="errorMessages.remarks"
-          clearable
-        />
+        <VCard variant="outlined">
+          <VCardTitle class="px-4 py-3">Items</VCardTitle>
+          <VCardText class="px-0">
+            <VTable density="comfortable" fixed-header>
+              <thead>
+                <tr>
+                  <th style="inline-size: 80px;">S.No</th>
+                  <th>Description</th>
+                  <th style="inline-size: 160px;">Asset ID</th>
+                  <th style="inline-size: 180px;">Quantity (Requested)</th>
+                  <th style="inline-size: 180px;">Quantity (Handover)</th>
+                  <th>Remarks</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="loadingItems">
+                  <td colspan="6" class="text-center py-6">Loading items…</td>
+                </tr>
+
+                <tr v-else-if="requestItems.length === 0">
+                  <td colspan="6" class="text-center py-6">No items found for this request.</td>
+                </tr>
+
+                <tr v-for="(row, idx) in requestItems" :key="row.item_id">
+                  <td>{{ idx + 1 }}</td>
+                  <td>{{ row.description }}</td>
+
+                  <!-- Asset ID (readonly, optional) -->
+                  <td>
+                    <VTextField
+                      v-model="row.asset_id"
+                      hide-details="auto"
+                      variant="outlined"
+                      density="compact"
+                      placeholder="(optional)"
+                      readonly
+                    />
+                  </td>
+
+                  <!-- Quantity (Requested) readonly, NOT submitted -->
+                  <td>
+                    <VTextField
+                      v-model.number="row.request_qty"
+                      type="number"
+                      min="0"
+                      hide-details="auto"
+                      variant="outlined"
+                      density="compact"
+                      readonly
+                    />
+                  </td>
+
+                  <!-- Quantity (Handover) input -> submitted -->
+                  <td>
+                    <VTextField
+                      v-model.number="row.handover_qty"
+                      type="number"
+                      min="1"
+                      hide-details="auto"
+                      variant="outlined"
+                      density="compact"
+                      :error-messages="rowErrors[idx]?.handover_qty"
+                      placeholder="Enter qty"
+                    />
+                  </td>
+
+                  <!-- Remarks textarea -> submitted -->
+                  <td>
+                    <VTextarea
+                      v-model="row.remarks"
+                      :rows="2"
+                      hide-details="auto"
+                      variant="outlined"
+                      density="compact"
+                      placeholder="Remarks"
+                      auto-grow
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </VTable>
+          </VCardText>
+        </VCard>
       </VCol>
 
       <VCol cols="12">
@@ -71,17 +172,19 @@
 
 <script setup>
 import axios from 'axios'
-import { ref, onMounted, computed, watch } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
-  VBtn, VCol, VForm, VRow, VTextField, VTextarea, VSelect,
+  VBtn, VCard, VCardText, VCardTitle, VCol, VForm, VRow,
+  VSelect, VTable, VTextField, VTextarea,
 } from 'vuetify/components'
 
 /* ========= CONFIG ========= */
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-const apiShowUrl   = (id) => `${apiBaseUrl}/asset-handovers/${id}`;
-const apiUpdateUrl = (id) => `${apiBaseUrl}/asset-handovers/${id}`;
-const apiRequestsUrl = `${apiBaseUrl}/asset-investment-requests`;
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL // should end with /api
+const apiShowUrl   = id => `${apiBaseUrl}/asset-handovers/${id}`
+const apiUpdateUrl = id => `${apiBaseUrl}/asset-handovers/${id}`
+const apiRequestsUrl = `${apiBaseUrl}/asset-investment-requests`
+const apiDepartmentsUrl = `${apiBaseUrl}/departments`
 
 const router = useRouter()
 const route = useRoute()
@@ -97,17 +200,31 @@ const errorMessages = ref({})
 const loadingRequests = ref(false)
 const assetRequests = ref([])
 
+const selectedProjectId = ref(null)
+const loadingUsers = ref(false)
+const projectUsers = ref([])
+
+const loadingDepartments = ref(false)
+const departments = ref([])
+
+/* items for selected request / existing handover */
+const loadingItems = ref(false)
+const requestItems = ref([])   // [{ item_id, description, request_qty, handover_qty, asset_id|null, remarks, asset_type }]
+const rowErrors = ref([])
+
+/* today as default date (fallback) */
+const today = new Date().toISOString().split('T')[0]
+
 const form = ref({
   asset_investment_requests_id: null,
-  handover_date: '',
-  quantity: 1,
-  remarks: '',
-  user_id: null, // 🔹 required by backend; kept hidden
+  user_id: null,
+  department_id: null,
+  handover_date: today, // default (will be replaced by record)
 })
 
 /* ========= VALIDATORS ========= */
 const requiredValidator = v => (!!v || v === 0) || 'This field is required'
-const positiveIntValidator = v => (Number.isInteger(+v) && +v > 0) || 'Enter a positive integer'
+const posInt = v => Number.isInteger(+v) && +v > 0
 
 /* ========= TOKEN HELPERS ========= */
 const getCookie = name => {
@@ -123,42 +240,34 @@ const getToken = () => {
   return fromLS ? decodeURIComponent(fromLS) : null
 }
 
-/* ========= OPTIONS (Requests) ========= */
+/* ========= OPTIONS ========= */
 const requestOptions = computed(() =>
   assetRequests.value.map(r => ({
     value: r.id,
-    title: `#${r.id} — ${r.project?.name ?? 'No Project'} — ${r.date} — Qty ${r.quantity}`,
+    title: `#${r.id} — ${r.date} — Project ${r.project_id ?? 'N/A'}`,
   })),
 )
+const usersOptions = computed(() =>
+  projectUsers.value.map(u => ({
+    value: u.id,
+    title: `${u.name} — ${u.user_code}`,
+  })),
+)
+const departmentsOptions = computed(() =>
+  departments.value.map(d => ({ value: d.id, title: d.name })),
+)
 
-// helper to find a request by id
-const requestById = (id) => assetRequests.value.find(r => r.id === id) || null
-
-// 🔹 keep form.user_id in sync with selected request
-watch(() => form.value.asset_investment_requests_id, (newId) => {
-  const req = requestById(newId)
-  form.value.user_id = req?.user_id ?? null
-})
-
-/* ========= LOAD DATA ========= */
+/* ========= LOADERS ========= */
 const fetchAssetRequests = async () => {
   loadingRequests.value = true
   try {
     const token = getToken()
     if (!token) throw new Error('Access token is missing. Please log in.')
-
     const res = await axios.get(apiRequestsUrl, {
-      headers: {
-        Accept: 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
     })
-
-    assetRequests.value = Array.isArray(res.data)
-      ? res.data
-      : Array.isArray(res.data?.data)
-        ? res.data.data
-        : []
+    assetRequests.value = Array.isArray(res.data) ? res.data
+      : Array.isArray(res.data?.data) ? res.data.data : []
   } catch (err) {
     console.error('Error loading asset investment requests:', err)
     message.value = err.response?.data?.message || 'Failed to load asset investment requests.'
@@ -167,17 +276,54 @@ const fetchAssetRequests = async () => {
   }
 }
 
+const fetchProjectUsers = async projectId => {
+  if (!projectId) { projectUsers.value = []; return }
+  loadingUsers.value = true
+  try {
+    const token = getToken()
+    if (!token) throw new Error('Access token is missing. Please log in.')
+    const url = `${apiBaseUrl}/projects/${projectId}/users/sync`
+    const res = await axios.get(url, {
+      headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+    })
+    projectUsers.value = Array.isArray(res.data?.users) ? res.data.users : []
+  } catch (err) {
+    console.error('Error loading project users:', err)
+    message.value = err.response?.data?.message || 'Failed to load project users.'
+    projectUsers.value = []
+  } finally {
+    loadingUsers.value = false
+  }
+}
+
+const fetchDepartments = async () => {
+  loadingDepartments.value = true
+  try {
+    const token = getToken()
+    if (!token) throw new Error('Access token is missing. Please log in.')
+    const res = await axios.get(apiDepartmentsUrl, {
+      headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+    })
+    departments.value = Array.isArray(res.data) ? res.data
+      : Array.isArray(res.data?.data) ? res.data.data : []
+  } catch (err) {
+    console.error('Error loading departments:', err)
+    message.value = err.response?.data?.message || 'Failed to load departments.'
+  } finally {
+    loadingDepartments.value = false
+  }
+}
+
+/* Load existing handover, including its items */
 const fetchHandover = async () => {
   loadingInitial.value = true
+  loadingItems.value = true
   try {
     const token = getToken()
     if (!token) throw new Error('Access token is missing. Please log in.')
 
     const res = await axios.get(apiShowUrl(id), {
-      headers: {
-        Accept: 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
     })
 
     const p = res.data?.data ?? res.data
@@ -185,11 +331,16 @@ const fetchHandover = async () => {
     // Pre-fill form
     form.value = {
       asset_investment_requests_id: p.asset_investment_requests_id ?? null,
-      handover_date: (p.handover_date ?? ''), // expect YYYY-MM-DD
-      quantity: p.quantity ?? 1,
-      remarks: p.remarks ?? '',
-      user_id: p.user_id ?? p.user?.id ?? null, // seed from record if present
+      handover_date: p.handover_date || today,
+      department_id: p.department_id ?? null,
+      user_id: p.user_id ?? p.user?.id ?? null,
     }
+
+    // Resolve selected project's users
+    const reqFromList = assetRequests.value.find(r => r.id === form.value.asset_investment_requests_id)
+    const projectId = reqFromList?.project_id ?? p.project_id ?? null
+    selectedProjectId.value = projectId
+    if (projectId) fetchProjectUsers(projectId)
 
     // Ensure select shows existing value even if not in options
     if (
@@ -198,25 +349,106 @@ const fetchHandover = async () => {
     ) {
       assetRequests.value.unshift({
         id: form.value.asset_investment_requests_id,
-        project: { name: 'Current (not in list)' },
-        date: '',
-        quantity: '',
-        user_id: form.value.user_id ?? null,
+        project_id: projectId ?? 'N/A',
+        date: p.handover_date || '',
       })
     }
 
-    // Align user_id with the selected request if possible
-    const req = requestById(form.value.asset_investment_requests_id)
-    if (req?.user_id) form.value.user_id = req.user_id
+    // Map items
+    // Expect p.items like: [{ id:item_id, description, quantity(requested), handover_qty, asset_id, remarks, request_type }]
+    const items = Array.isArray(p?.items) ? p.items : []
+    requestItems.value = items.map(it => ({
+      item_id: it.id,
+      description: it.description,
+      request_qty: Number(it.quantity) || Number(it.request_qty) || 1,
+      handover_qty: Number(it.handover_qty ?? it.quantity) || 1,
+      asset_id: it.asset_id != null ? String(it.asset_id) : null,
+      remarks: it.remarks || '',
+      asset_type: it.request_type || it.asset_type || 'NEW',
+    }))
+    rowErrors.value = requestItems.value.map(() => ({}))
   } catch (err) {
     console.error('Error loading asset handover:', err)
     message.value = err.response?.data?.message || 'Failed to load asset handover.'
+    requestItems.value = []
   } finally {
     loadingInitial.value = false
+    loadingItems.value = false
+  }
+}
+
+/* ========= WATCHERS ========= */
+watch(
+  () => form.value.asset_investment_requests_id,
+  newVal => {
+    form.value.user_id = null
+    requestItems.value = []
+    rowErrors.value = []
+    selectedProjectId.value = null
+
+    if (!newVal) return
+
+    const req = assetRequests.value.find(r => r.id === newVal)
+    const projectId = req?.project_id ?? null
+    selectedProjectId.value = projectId
+
+    if (projectId) fetchProjectUsers(projectId)
+
+    // Also, when changing the request on edit, reload its items fresh
+    fetchInvestmentRequestDetail(newVal)
+  },
+)
+
+/* If user switches request, we need its items like create.vue */
+const fetchInvestmentRequestDetail = async (requestId) => {
+  loadingItems.value = true
+  try {
+    const token = getToken()
+    if (!token) throw new Error('Access token is missing. Please log in.')
+    const url = `${apiRequestsUrl}/${requestId}`
+    const res = await axios.get(url, {
+      headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+    })
+    const detail = res.data?.data || res.data
+    const items = Array.isArray(detail?.items) ? detail.items : []
+    requestItems.value = items.map(it => ({
+      item_id: it.id,
+      description: it.description,
+      request_qty: Number(it.quantity) || 1,
+      handover_qty: Number(it.quantity) || 1,
+      asset_id: it.asset_id != null ? String(it.asset_id) : null,
+      remarks: '',
+      asset_type: it.request_type || 'NEW',
+    }))
+    rowErrors.value = requestItems.value.map(() => ({}))
+  } catch (err) {
+    console.error('Error loading request detail/items:', err)
+    message.value = err.response?.data?.message || 'Failed to load request items.'
+    requestItems.value = []
+  } finally {
+    loadingItems.value = false
   }
 }
 
 /* ========= SUBMIT ========= */
+const validateRows = () => {
+  let ok = true
+  rowErrors.value = requestItems.value.map(r => {
+    const e = {}
+    // asset_id is OPTIONAL; if provided, must be positive integer
+    if (r.asset_id !== null && r.asset_id !== '' && !posInt(r.asset_id)) {
+      e.asset_id = 'Invalid Asset ID'
+      ok = false
+    }
+    if (!posInt(r.handover_qty)) {
+      e.handover_qty = 'Enter a positive integer'
+      ok = false
+    }
+    return e
+  })
+  return ok
+}
+
 const submitForm = async () => {
   try {
     loading.value = true
@@ -224,26 +456,33 @@ const submitForm = async () => {
     errorMessages.value = {}
 
     const { valid } = (await refForm.value?.validate?.()) ?? { valid: true }
-    if (!valid) {
-      loading.value = false
-      return
+    if (!valid) { loading.value = false; return }
+
+    if (requestItems.value.length === 0) {
+      message.value = 'No items to hand over for the selected request.'
+      loading.value = false; return
+    }
+    if (!validateRows()) {
+      message.value = 'Please fix the highlighted row errors.'
+      loading.value = false; return
     }
 
     const token = getToken()
     if (!token) throw new Error('Access token is missing. Please log in.')
 
-    // final guard: make sure user_id is present (derive from request)
-    if (!form.value.user_id && form.value.asset_investment_requests_id) {
-      const req = requestById(form.value.asset_investment_requests_id)
-      form.value.user_id = req?.user_id ?? null
-    }
-
+    // Build PUT payload (same shape as create.vue)
     const payload = {
       asset_investment_requests_id: form.value.asset_investment_requests_id,
       handover_date: form.value.handover_date,
-      quantity: form.value.quantity,
-      remarks: form.value.remarks || null,
-      user_id: form.value.user_id, // 🔹 required by backend
+      department_id: form.value.department_id,
+      user_id: form.value.user_id || undefined,
+      data: requestItems.value.map(r => ({
+        item_id: r.item_id,
+        asset_id: (r.asset_id === null || r.asset_id === '') ? null : Number(r.asset_id),
+        quantity: Number(r.handover_qty),
+        remarks: r.remarks || '',
+        asset_type: r.asset_type,
+      })),
     }
 
     const res = await axios.put(apiUpdateUrl(id), payload, {
@@ -271,14 +510,18 @@ const submitForm = async () => {
 
 /* ========= LIFECYCLE ========= */
 onMounted(async () => {
-  await Promise.all([fetchAssetRequests(), fetchHandover()])
+  await Promise.all([fetchAssetRequests(), fetchDepartments()])
+  await fetchHandover()
 })
 </script>
 
 <style scoped>
-.mb-4 { margin-bottom: 16px; }
+.mb-4 { margin-block-end: 16px; }
 .d-flex { display: flex; }
 .justify-between { justify-content: space-between; }
 .align-center { align-items: center; }
-.ms-2 { margin-left: 8px; }
+.ms-2 { margin-inline-start: 8px; }
+.notice-text { line-height: 1.6; }
+.text-center { text-align: center; }
+.py-6 { padding-block: 24px; }
 </style>

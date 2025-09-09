@@ -21,7 +21,7 @@
         />
       </VCol>
 
-      <!-- Project Users (auto-populated after selecting a request) -->
+      <!-- Assign To (Project Users) -->
       <VCol cols="12" md="6">
         <VSelect
           v-model="form.user_id"
@@ -36,8 +36,23 @@
         />
       </VCol>
 
-      <!-- Handover Date -->
-      <VCol cols="12" md="3">
+      <!-- Department -->
+      <VCol cols="12" md="6">
+        <VSelect
+          v-model="form.department_id"
+          :items="departmentsOptions"
+          item-title="title"
+          item-value="value"
+          label="Department"
+          :rules="[requiredValidator]"
+          :error-messages="errorMessages.department_id"
+          clearable
+          :loading="loadingDepartments"
+        />
+      </VCol>
+
+      <!-- Handover Date (defaults to today) -->
+      <VCol cols="12" md="6">
         <VTextField
           v-model="form.handover_date"
           label="Handover Date"
@@ -47,35 +62,106 @@
         />
       </VCol>
 
-      <!-- Quantity -->
-      <VCol cols="12" md="3">
-        <VTextField
-          v-model.number="form.quantity"
-          label="Quantity"
-          type="number"
-          min="1"
-          :rules="[requiredValidator, positiveIntValidator]"
-          :error-messages="errorMessages.quantity"
-          clearable
-        />
+      <!-- Hard-coded message -->
+      <VCol cols="12">
+        <p class="notice-text">
+          Dear Sir / Madam<br>
+          Please find the below the assets handed over to you, to support you in carrying out your assignment/work in a most Proficient manner. Please sign also the attached picture.
+        </p>
       </VCol>
 
-      <!-- Remarks -->
+      <!-- Items Table -->
       <VCol cols="12">
-        <VTextarea
-          v-model="form.remarks"
-          label="Remarks"
-          :rows="3"
-          :error-messages="errorMessages.remarks"
-          clearable
-        />
+        <VCard variant="outlined">
+          <VCardTitle class="px-4 py-3">Items</VCardTitle>
+          <VCardText class="px-0">
+            <VTable density="comfortable" fixed-header>
+              <thead>
+                <tr>
+                  <th style="inline-size: 80px;">S.No</th>
+                  <th>Description</th>
+                  <th style="inline-size: 160px;">Asset ID</th>
+                  <th style="inline-size: 180px;">Quantity (Requested)</th>
+                  <th style="inline-size: 180px;">Quantity (Handover)</th>
+                  <th>Remarks</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="loadingItems">
+                  <td colspan="6" class="text-center py-6">Loading items…</td>
+                </tr>
+
+                <tr v-else-if="requestItems.length === 0">
+                  <td colspan="6" class="text-center py-6">No items found for this request.</td>
+                </tr>
+
+                <tr v-for="(row, idx) in requestItems" :key="row.item_id">
+                  <td>{{ idx + 1 }}</td>
+                  <td>{{ row.description }}</td>
+
+                  <!-- Asset ID (readonly, optional) -->
+                  <td>
+                    <VTextField
+                      v-model="row.asset_id"
+                      hide-details="auto"
+                      variant="outlined"
+                      density="compact"
+                      placeholder="(optional)"
+                      readonly
+                    />
+                  </td>
+
+                  <!-- Quantity (Requested) readonly, NOT submitted -->
+                  <td>
+                    <VTextField
+                      v-model.number="row.request_qty"
+                      type="number"
+                      min="0"
+                      hide-details="auto"
+                      variant="outlined"
+                      density="compact"
+                      readonly
+                    />
+                  </td>
+
+                  <!-- Quantity (Handover) input -> submitted -->
+                  <td>
+                    <VTextField
+                      v-model.number="row.handover_qty"
+                      type="number"
+                      min="1"
+                      hide-details="auto"
+                      variant="outlined"
+                      density="compact"
+                      :error-messages="rowErrors[idx]?.handover_qty"
+                      placeholder="Enter qty"
+                    />
+                  </td>
+
+                  <!-- Remarks textarea -> submitted -->
+                  <td>
+                    <VTextarea
+                      v-model="row.remarks"
+                      :rows="2"
+                      hide-details="auto"
+                      variant="outlined"
+                      density="compact"
+                      placeholder="Remarks"
+                      auto-grow
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </VTable>
+          </VCardText>
+        </VCard>
       </VCol>
 
       <VCol cols="12">
         <VBtn type="submit" color="primary" :loading="loading" :disabled="loading">
           Submit
         </VBtn>
-        <VBtn class="ms-2" variant="text" @click="router.push('/dashboards/asset-handovers')">
+        <VBtn class="ms-2" variant="text" @click="router.push('/dashboards/assethandovers')">
           Cancel
         </VBtn>
       </VCol>
@@ -90,15 +176,15 @@ import axios from 'axios'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
-  VBtn, VCol, VForm, VRow,
-  VSelect,
-  VTextField, VTextarea,
+  VBtn, VCard, VCardText, VCardTitle, VCol, VForm, VRow,
+  VSelect, VTable, VTextField, VTextarea,
 } from 'vuetify/components'
 
 /* ========= CONFIG ========= */
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL // should end with /api
 const apiCreateUrl = `${apiBaseUrl}/asset-handovers`
 const apiRequestsUrl = `${apiBaseUrl}/asset-investment-requests`
+const apiDepartmentsUrl = `${apiBaseUrl}/departments`
 
 const router = useRouter()
 
@@ -115,17 +201,27 @@ const selectedProjectId = ref(null)
 const loadingUsers = ref(false)
 const projectUsers = ref([])
 
+const loadingDepartments = ref(false)
+const departments = ref([])
+
+/* items for selected request */
+const loadingItems = ref(false)
+const requestItems = ref([])   // [{ item_id, description, request_qty, handover_qty, asset_id|null, remarks, asset_type }]
+const rowErrors = ref([])      // per-row client errors
+
+/* today as default date */
+const today = new Date().toISOString().split('T')[0]
+
 const form = ref({
   asset_investment_requests_id: null,
-  user_id: null,              // NEW: selected project user
-  handover_date: '',
-  quantity: 1,
-  remarks: '',
+  user_id: null,
+  department_id: null,
+  handover_date: today,  // default to today's date
 })
 
 /* ========= VALIDATORS ========= */
 const requiredValidator = v => (!!v || v === 0) || 'This field is required'
-const positiveIntValidator = v => (Number.isInteger(+v) && +v > 0) || 'Enter a positive integer'
+const posInt = v => Number.isInteger(+v) && +v > 0
 
 /* ========= TOKEN HELPERS ========= */
 const getCookie = name => {
@@ -141,21 +237,21 @@ const getToken = () => {
   return fromLS ? decodeURIComponent(fromLS) : null
 }
 
-/* ========= OPTIONS (Requests) =========
-   Note: API returns project_id (no embedded project name in your sample) */
+/* ========= OPTIONS ========= */
 const requestOptions = computed(() =>
   assetRequests.value.map(r => ({
     value: r.id,
-    title: `#${r.id} — ${r.date} — Qty ${r.quantity} — Project ${r.project_id ?? 'N/A'}`,
+    title: `#${r.id} — ${r.date} — Project ${r.project_id ?? 'N/A'}`,
   })),
 )
-
-/* ========= OPTIONS (Users) ========= */
 const usersOptions = computed(() =>
   projectUsers.value.map(u => ({
     value: u.id,
     title: `${u.name} — ${u.user_code}`,
   })),
+)
+const departmentsOptions = computed(() =>
+  departments.value.map(d => ({ value: d.id, title: d.name })),
 )
 
 /* ========= LOADERS ========= */
@@ -164,19 +260,11 @@ const fetchAssetRequests = async () => {
   try {
     const token = getToken()
     if (!token) throw new Error('Access token is missing. Please log in.')
-
     const res = await axios.get(apiRequestsUrl, {
-      headers: {
-        Accept: 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
     })
-
-    assetRequests.value = Array.isArray(res.data)
-      ? res.data
-      : Array.isArray(res.data?.data)
-        ? res.data.data
-        : []
+    assetRequests.value = Array.isArray(res.data) ? res.data
+      : Array.isArray(res.data?.data) ? res.data.data : []
   } catch (err) {
     console.error('Error loading asset investment requests:', err)
     message.value = err.response?.data?.message || 'Failed to load asset investment requests.'
@@ -186,24 +274,15 @@ const fetchAssetRequests = async () => {
 }
 
 const fetchProjectUsers = async projectId => {
-  if (!projectId) {
-    projectUsers.value = []
-    return
-  }
+  if (!projectId) { projectUsers.value = []; return }
   loadingUsers.value = true
   try {
     const token = getToken()
     if (!token) throw new Error('Access token is missing. Please log in.')
-
     const url = `${apiBaseUrl}/projects/${projectId}/users/sync`
     const res = await axios.get(url, {
-      headers: {
-        Accept: 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
     })
-
-    // Expected structure: { project: 2, users: [ ... ] }
     projectUsers.value = Array.isArray(res.data?.users) ? res.data.users : []
   } catch (err) {
     console.error('Error loading project users:', err)
@@ -214,27 +293,102 @@ const fetchProjectUsers = async projectId => {
   }
 }
 
+const fetchDepartments = async () => {
+  loadingDepartments.value = true
+  try {
+    const token = getToken()
+    if (!token) throw new Error('Access token is missing. Please log in.')
+    const res = await axios.get(apiDepartmentsUrl, {
+      headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+    })
+    departments.value = Array.isArray(res.data) ? res.data
+      : Array.isArray(res.data?.data) ? res.data.data : []
+  } catch (err) {
+    console.error('Error loading departments:', err)
+    message.value = err.response?.data?.message || 'Failed to load departments.'
+  } finally {
+    loadingDepartments.value = false
+  }
+}
+
+/* DETAIL + items map */
+const fetchInvestmentRequestDetail = async (id) => {
+  requestItems.value = []
+  rowErrors.value = []
+  if (!id) return
+
+  loadingItems.value = true
+  try {
+    const token = getToken()
+    if (!token) throw new Error('Access token is missing. Please log in.')
+
+    const url = `${apiRequestsUrl}/${id}`
+    const res = await axios.get(url, {
+      headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+    })
+
+    const detail = res.data?.data || res.data
+    const items = Array.isArray(detail?.items) ? detail.items : []
+
+    requestItems.value = items.map(it => ({
+      item_id: it.id,
+      description: it.description,
+      request_qty: Number(it.quantity) || 1,                          // readonly display
+      handover_qty: Number(it.quantity) || 1,                         // editable input (default = requested)
+      asset_id: it.asset_id != null ? String(it.asset_id) : null,     // keep string/null; optional
+      remarks: '',                                                    // textarea (submitted)
+      asset_type: it.request_type || 'NEW',
+    }))
+
+    rowErrors.value = requestItems.value.map(() => ({}))
+  } catch (err) {
+    console.error('Error loading request detail/items:', err)
+    message.value = err.response?.data?.message || 'Failed to load request items.'
+    requestItems.value = []
+  } finally {
+    loadingItems.value = false
+  }
+}
+
 /* ========= WATCHERS ========= */
 watch(
   () => form.value.asset_investment_requests_id,
   newVal => {
-    // reset user select when request changes
     form.value.user_id = null
-    projectUsers.value = []
+    requestItems.value = []
+    rowErrors.value = []
     selectedProjectId.value = null
 
     if (!newVal) return
 
-    // find request and pick project_id
     const req = assetRequests.value.find(r => r.id === newVal)
     const projectId = req?.project_id ?? null
     selectedProjectId.value = projectId
 
     if (projectId) fetchProjectUsers(projectId)
+    fetchInvestmentRequestDetail(newVal)
   },
 )
 
 /* ========= SUBMIT ========= */
+const validateRows = () => {
+  let ok = true
+  rowErrors.value = requestItems.value.map(r => {
+    const e = {}
+    // asset_id is OPTIONAL; if provided, must be positive integer
+    if (r.asset_id !== null && r.asset_id !== '' && !posInt(r.asset_id)) {
+      e.asset_id = 'Invalid Asset ID'
+      ok = false
+    }
+    if (!posInt(r.handover_qty)) {
+      e.handover_qty = 'Enter a positive integer'
+      ok = false
+    }
+    return e
+  })
+  return ok
+}
+
 const submitForm = async () => {
   try {
     loading.value = true
@@ -242,21 +396,33 @@ const submitForm = async () => {
     errorMessages.value = {}
 
     const { valid } = (await refForm.value?.validate?.()) ?? { valid: true }
-    if (!valid) {
-      loading.value = false
-      return
+    if (!valid) { loading.value = false; return }
+
+    if (requestItems.value.length === 0) {
+      message.value = 'No items to hand over for the selected request.'
+      loading.value = false; return
+    }
+    if (!validateRows()) {
+      message.value = 'Please fix the highlighted row errors.'
+      loading.value = false; return
     }
 
     const token = getToken()
     if (!token) throw new Error('Access token is missing. Please log in.')
 
+    // Build payload: quantity = handover_qty; asset_id optional (null if blank)
     const payload = {
       asset_investment_requests_id: form.value.asset_investment_requests_id,
-      user_id: form.value.user_id || undefined,     // send if selected/required by API
-      handover_date: form.value.handover_date,      // YYYY-MM-DD
-      quantity: form.value.quantity,
-      remarks: form.value.remarks || null,
-      // If API expects different key (e.g., handover_to), rename here accordingly.
+      handover_date: form.value.handover_date,
+      department_id: form.value.department_id,
+      user_id: form.value.user_id || undefined,
+      data: requestItems.value.map(r => ({
+        item_id: r.item_id,
+        asset_id: (r.asset_id === null || r.asset_id === '') ? null : Number(r.asset_id),
+        quantity: Number(r.handover_qty),
+        remarks: r.remarks || '',
+        asset_type: r.asset_type,
+      })),
     }
 
     const res = await axios.post(apiCreateUrl, payload, {
@@ -268,7 +434,7 @@ const submitForm = async () => {
     })
 
     message.value = res.data?.message || 'Asset Handover created successfully.'
-    router.push('/dashboards/asset-handovers') // unified route
+    router.push('/dashboards/assethandovers')
   } catch (error) {
     console.error('Error submitting handover:', error)
     if (error.response?.data?.errors) {
@@ -284,7 +450,7 @@ const submitForm = async () => {
 
 /* ========= LIFECYCLE ========= */
 onMounted(async () => {
-  await fetchAssetRequests()
+  await Promise.all([fetchAssetRequests(), fetchDepartments()])
 })
 </script>
 
@@ -294,4 +460,7 @@ onMounted(async () => {
 .justify-between { justify-content: space-between; }
 .align-center { align-items: center; }
 .ms-2 { margin-inline-start: 8px; }
+.notice-text { line-height: 1.6; }
+.text-center { text-align: center; }
+.py-6 { padding-block: 24px; }
 </style>
