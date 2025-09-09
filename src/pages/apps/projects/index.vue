@@ -93,6 +93,8 @@ const headers = [
   { title: "START DATE", key: "start_date" },
   { title: "END DATE", key: "end_date" },
   { title: "DESCRIPTION", key: "description" },
+  { title: "BUDGET", key: "budget" },
+  { title: "CREATED AT", key: "created_at" },
   { title: "ACTIONS", key: "actions", sortable: false },
 ];
 
@@ -137,6 +139,8 @@ const fetchProjects = async () => {
       start_date: p.start_date ?? "—",
       end_date: p.end_date ?? "—",
       description: p.description ?? "—",
+      budget: p.budget ?? "—",
+      created_at: p.created_at ?? "—",
     }));
   } catch (e) {
     console.error("Error fetching projects:", e);

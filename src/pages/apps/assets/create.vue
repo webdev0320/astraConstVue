@@ -41,13 +41,13 @@
         />
       </VCol>
 
-      <!-- Name (REQUIRED) -->
+      <!-- Title (REQUIRED) -->
       <VCol cols="12" md="6">
         <VTextField
-          v-model="asset.name"
-          label="Name"
+          v-model="asset.title"
+          label="Title"
           :rules="[requiredValidator]"
-          :error-messages="errorMessages.name"
+          :error-messages="errorMessages.title"
           clearable
         />
       </VCol>
@@ -343,7 +343,7 @@ const today = new Date().toISOString().split('T')[0]
 const asset = ref({
   asset_investment_requests_id: null,
   code: '',
-  name: '',
+  title: '',
   asset_category_id: null,
   asset_sub_category_id: null,
   description: '',
@@ -408,9 +408,9 @@ const percentOptionalValidator = value => {
 }
 
 /* ---------------- Utils ---------------- */
-const getCookie = name => {
+const getCookie = title => {
   const value = `; ${document.cookie}`
-  const parts = value.split(`; ${name}=`)
+  const parts = value.split(`; ${title}=`)
   if (parts.length === 2) return parts.pop().split(';').shift()
   return null
 }

@@ -31,6 +31,7 @@ declare module 'vue-router/auto-routes' {
     'apps-asset-handover-edit': RouteRecordInfo<'apps-asset-handover-edit', '/apps/asset-handover/edit', Record<never, never>, Record<never, never>>,
     'apps-asset-investment-request': RouteRecordInfo<'apps-asset-investment-request', '/apps/asset-investment-request', Record<never, never>, Record<never, never>>,
     'apps-asset-investment-request-create': RouteRecordInfo<'apps-asset-investment-request-create', '/apps/asset-investment-request/create', Record<never, never>, Record<never, never>>,
+    'apps-asset-investment-request-detail': RouteRecordInfo<'apps-asset-investment-request-detail', '/apps/asset-investment-request/detail', Record<never, never>, Record<never, never>>,
     'apps-asset-investment-request-edit': RouteRecordInfo<'apps-asset-investment-request-edit', '/apps/asset-investment-request/edit', Record<never, never>, Record<never, never>>,
     'apps-assets': RouteRecordInfo<'apps-assets', '/apps/assets', Record<never, never>, Record<never, never>>,
     'apps-assets-create': RouteRecordInfo<'apps-assets-create', '/apps/assets/create', Record<never, never>, Record<never, never>>,

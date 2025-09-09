@@ -58,6 +58,7 @@ const route = useRoute();
 const projectId = computed(() => route.params.id);
 
 const headers = [
+  { title: "Code", key: "user_code", sortable: true },
   { title: "Name", key: "name", sortable: true },
   { title: "Role", key: "role", sortable: true },
 ];
@@ -90,6 +91,7 @@ const fetchUsers = async () => {
 
     users.value = list.map(u => ({
       id: u.id,
+      user_code: u.user_code ?? "-",
       name: u.name ?? "-",
       role: u.role ?? "-",
     }));

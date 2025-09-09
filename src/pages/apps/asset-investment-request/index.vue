@@ -36,7 +36,7 @@
 
       <!-- PLANNED TOTAL -->
       <template #item.planned_total="{ item }">
-        {{ formatCurrency(item.raw.planned_total) }}
+        {{ item.raw.planned_total ?? '—' }}
       </template>
 
       <!-- PROJECT -->
@@ -52,57 +52,41 @@
         </div>
       </template>
 
-      <!-- ACTIONS -->
+      <!-- ACTIONS: dropdown -->
       <template #item.actions="{ item }">
-        <div class="d-flex gap-2">
-          <VBtn
-            color="warning"
-            size="small"
-            @click="$router.push(`/dashboards/asset-investment-requests/edit/${item.raw.id}`)"
-          >
-            Edit
-          </VBtn>
-          <VBtn
-            color="error"
-            size="small"
-            @click="deleteRequest(item.raw.id)"
-          >
-            Delete
-          </VBtn>
-        </div>
-      </template>
+        <VMenu :close-on-content-click="true">
+          <template #activator="{ props }">
+            <VBtn v-bind="props" size="small" color="primary" variant="elevated">
+              Actions
+            </VBtn>
+          </template>
+          <VList density="compact">
+            <VListItem @click="$router.push(`/dashboards/asset-investment-requests/edit/${item.raw.id}`)">
+              <template #prepend><VIcon icon="mdi-pencil" /></template>
+              <VListItemTitle>Edit</VListItemTitle>
+            </VListItem>
 
-      <!-- Expanded row: nested line-items table (lazy loads) -->
-      <template #expanded-row="{ columns, item }">
-        <tr>
-          <td :colspan="columns.length">
-            <div v-if="linesCache[item.raw.id]?.loading" class="pa-4 text-medium-emphasis">
-              Loading lines...
-            </div>
+            <VListItem @click="deleteRequest(item.raw.id)">
+              <template #prepend><VIcon icon="mdi-delete" /></template>
+              <VListItemTitle>Delete</VListItemTitle>
+            </VListItem>
 
-            <VDataTable
-              v-else-if="(linesCache[item.raw.id]?.data || []).length"
-              :headers="lineHeaders"
-              :items="linesCache[item.raw.id].data"
-              item-value="__key"
-              :items-per-page="5"
-              density="compact"
-              class="mt-2"
-              hide-default-footer
-            >
-              <template #item.planned_cost="{ item: li }">
-                {{ formatCurrency(li.raw.planned_cost) }}
-              </template>
-              <template #item.line_total="{ item: li }">
-                {{ formatCurrency(li.raw.line_total) }}
-              </template>
-            </VDataTable>
+            <VListItem @click="openStatusModal(item.raw.id)">
+              <template #prepend><VIcon icon="mdi-flag" /></template>
+              <VListItemTitle>Status</VListItemTitle>
+            </VListItem>
 
-            <div v-else class="pa-4 text-medium-emphasis">
-              No lines found.
-            </div>
-          </td>
-        </tr>
+            <VListItem @click="openAccordanceModal(item.raw.id)">
+              <template #prepend><VIcon icon="mdi-check-decagram" /></template>
+              <VListItemTitle>Mark As</VListItemTitle>
+            </VListItem>
+
+            <VListItem @click="$router.push(`/dashboards/asset-investment-requests/detail/${item.raw.id}`)">
+              <template #prepend><VIcon icon="mdi-file-document" /></template>
+              <VListItemTitle>Detail</VListItemTitle>
+            </VListItem>
+          </VList>
+        </VMenu>
       </template>
     </VDataTable>
 
@@ -119,13 +103,70 @@
         Create Asset Investment Request
       </VBtn>
     </VCard>
+
+    <!-- STATUS MODAL -->
+    <VDialog v-model="statusDialog" max-width="480">
+      <VCard>
+        <VCardTitle>Change Request Status</VCardTitle>
+        <VCardText>
+          <VForm @submit.prevent="submitStatus">
+            <VSelect
+              v-model="statusValue"
+              :items="statusOptions"
+              label="Select status"
+              :disabled="actionLoading"
+              required
+            />
+          </VForm>
+        </VCardText>
+        <VCardActions>
+          <VSpacer />
+          <VBtn variant="text" @click="closeStatusModal" :disabled="actionLoading">Cancel</VBtn>
+          <VBtn color="primary" @click="submitStatus" :loading="actionLoading">Save</VBtn>
+        </VCardActions>
+      </VCard>
+    </VDialog>
+
+    <!-- ACCORDANCE MODAL -->
+    <VDialog v-model="accordanceDialog" max-width="480">
+      <VCard>
+        <VCardTitle>Mark Accordance With Budget</VCardTitle>
+        <VCardText>
+          <VForm @submit.prevent="submitAccordance">
+            <VSelect
+              v-model="accordanceValue"
+              :items="accordanceOptions"
+              label="Select"
+              :disabled="actionLoading"
+              required
+            />
+          </VForm>
+        </VCardText>
+        <VCardActions>
+          <VSpacer />
+          <VBtn variant="text" @click="closeAccordanceModal" :disabled="actionLoading">Cancel</VBtn>
+          <VBtn color="primary" @click="submitAccordance" :loading="actionLoading">Save</VBtn>
+        </VCardActions>
+      </VCard>
+    </VDialog>
   </div>
 </template>
 
 <script setup>
 import axios from "axios";
 import { onMounted, ref } from "vue";
-import { VBtn, VCard, VCardText, VCardTitle, VDataTable } from "vuetify/components";
+import {
+  VBtn, VCard,
+  VCardActions,
+  VCardText, VCardTitle, VDataTable,
+  VDialog,
+  VForm,
+  VIcon,
+  VList, VListItem, VListItemTitle,
+  VMenu,
+  VSelect,
+  VSpacer
+} from "vuetify/components";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
@@ -135,7 +176,6 @@ const headers = [
   { title: "Project", key: "project_name" },
   { title: "User", key: "user_display", sortable: false },
   { title: "Date", key: "date" },
-  { title: "Lines", key: "lines_count" },
   { title: "Planned Total", key: "planned_total" },
   { title: "Actions", key: "actions", sortable: false },
 ];
@@ -158,6 +198,18 @@ const expanded = ref([]); // ids of expanded rows
 const linesCache = ref({}); // { [id]: { loading: bool, data: [] } }
 const errorMessage = ref("");
 const isLoading = ref(true);
+
+/* ------ action dialog state ------ */
+const actionLoading = ref(false);
+const statusDialog = ref(false);
+const accordanceDialog = ref(false);
+const currentRequestId = ref(null);
+
+const statusValue = ref(null);
+const statusOptions = ["APPROVED", "REJECTED"];
+
+const accordanceValue = ref(null);
+const accordanceOptions = ["APPROVED", "REJECTED"];
 
 /* ---------- helpers ---------- */
 const truncateSmart = (text, wordLimit = 20, charFallback = 160) => {
@@ -195,17 +247,6 @@ const formatDate = (d) => {
   }
 };
 
-const formatCurrency = (n) => {
-  if (n === null || n === undefined || n === "") return "—";
-  const num = Number(n);
-  if (isNaN(num)) return n;
-  return new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency: "PKR",
-    maximumFractionDigits: 0,
-  }).format(num);
-};
-
 /* ---------- normalizers ---------- */
 const normalizeLines = (rawLines, reqId) => {
   return rawLines.map((r, idx) => {
@@ -216,15 +257,14 @@ const normalizeLines = (rawLines, reqId) => {
     return {
       __key: `${reqId}|${idx}`,
       asset_code: r.asset?.code ?? "—",
-      category_name: r.category?.title ?? r.asset_category?.title ?? "—",
-      subcategory_name: r.subcategory?.title ?? r.asset_subcategory?.title ?? "—",
+      category_name: r.category_name ?? r.category?.title ?? r.asset_category?.title ?? "—",
+      subcategory_name: r.sub_category ?? r.subcategory?.title ?? r.asset_subcategory?.title ?? "—",
       request_type: r.request_type ?? "NEW",
       description: truncateSmart(r.description ?? "—"),
       reason: truncateSmart(r.reason ?? "—"),
       quantity: qty,
       planned_cost: cost,
       line_total: lineTotal,
-
       raw: { ...r, planned_cost: cost, line_total: lineTotal },
     };
   });
@@ -250,7 +290,6 @@ const fetchAssetInvestmentRequests = async () => {
         : [];
 
     assetInvestmentRequests.value = list.map((p) => {
-      // Lines usually NOT embedded at index endpoint; keep counts if provided
       const embedded =
         Array.isArray(p.data)  ? p.data  :
         Array.isArray(p.lines) ? p.lines :
@@ -259,30 +298,24 @@ const fetchAssetInvestmentRequests = async () => {
       const linesCount =
         Number(p.lines_count ?? p.items_count ?? p.data_count ?? (embedded ? embedded.length : 0)) || 0;
 
-      const plannedTotal =
-        nn(p.planned_total); // if API sends it; we'll fill later from cache if missing
+      const plannedCost = nn(p.planned_cost);
 
       return {
         id: p.id,
-        project_id: p.project_id ?? null,
-        project_name: p.project?.name ?? "—",
-
-        user_id: p.user_id ?? null,
-        user_name: p.user?.name ?? "—",
+        project_name: p.project_name ?? "—",
+        user_name: p.user_name ?? "—",
         user_email: p.user?.email ?? "",
-        user_display: `${p.user?.name ?? "—"}${p.user?.email ? " (" + p.user.email + ")" : ""}`,
-
+        user_display: `${p.user?.name ?? p.user_name ?? "—"}${p.user?.email ? " (" + p.user.email + ")" : ""}`,
         date: p.date ?? "—",
         lines_count: linesCount,
-        planned_total: plannedTotal || null,
-
+        planned_total: plannedCost || null,
         raw: {
           id: p.id,
           date: p.date ?? "—",
-          project_name: p.project?.name ?? "—",
-          user_name: p.user?.name ?? "—",
+          project_name: p.project_name ?? "—",
+          user_name: p.user_name ?? "—",
           user_email: p.user?.email ?? "",
-          planned_total: plannedTotal || null,
+          planned_total: plannedCost || null,
         },
       };
     });
@@ -322,7 +355,7 @@ const loadLinesFor = async (reqId) => {
     const lines = normalizeLines(rawLines, reqId);
     linesCache.value[reqId] = { loading: false, data: lines };
 
-    // If top-level planned_total missing, compute & patch the row
+    // Compute & patch total if missing
     const row = assetInvestmentRequests.value.find(r => r.id === reqId);
     if (row && (!row.raw.planned_total && !row.planned_total)) {
       const total = lines.reduce((s, l) => s + nn(l.raw.line_total), 0);
@@ -369,6 +402,92 @@ const deleteRequest = async (id) => {
     alert(error.response?.data?.message || "Failed to delete request.");
   }
 };
+
+/* ---------- STATUS actions ---------- */
+const openStatusModal = (id) => {
+  currentRequestId.value = id;
+  statusValue.value = null;
+  statusDialog.value = true;
+};
+const closeStatusModal = () => {
+  statusDialog.value = false;
+  currentRequestId.value = null;
+  statusValue.value = null;
+};
+const submitStatus = async () => {
+  if (!currentRequestId.value || !statusValue.value) return;
+  try {
+    actionLoading.value = true;
+    const accessToken = getCookie("accessToken");
+    const decodedToken = decodeURIComponent(accessToken);
+
+    await axios.get(
+      `${apiBaseUrl}/asset-investment-requests/${currentRequestId.value}/changeStatus/${encodeURIComponent(statusValue.value)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${decodedToken}`,
+          Accept: "application/json",
+          // Optional: avoid caches on some setups
+          "Cache-Control": "no-cache",
+        },
+      }
+    );
+
+    closeStatusModal();
+    await fetchAssetInvestmentRequests();
+  } catch (e) {
+    console.error("Status update failed", e);
+    alert(e?.response?.data?.message || "Failed to update status.");
+  } finally {
+    actionLoading.value = false;
+  }
+};
+
+/* ---------- ACCORDANCE actions ---------- */
+const openAccordanceModal = (id) => {
+  currentRequestId.value = id;
+  accordanceValue.value = null;
+  accordanceDialog.value = true;
+};
+/*************  ✨ Windsurf Command ⭐  *************/
+/**
+ * Resets the accordance modal state after use.
+ *
+ * @function closeAccordanceModal
+ */
+/*******  0d21c5e0-f72f-4236-95b1-3756595eaa7d  *******/
+const closeAccordanceModal = () => {
+  accordanceDialog.value = false;
+  currentRequestId.value = null;
+  accordanceValue.value = null;
+};
+const submitAccordance = async () => {
+  if (!currentRequestId.value || !accordanceValue.value) return;
+  try {
+    actionLoading.value = true;
+    const accessToken = getCookie("accessToken");
+    const decodedToken = decodeURIComponent(accessToken);
+
+    await axios.get(
+      `${apiBaseUrl}/asset-investment-requests/${currentRequestId.value}/markAsAccordance/${encodeURIComponent(accordanceValue.value)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${decodedToken}`,
+          Accept: "application/json",
+          "Cache-Control": "no-cache",
+        },
+      }
+    );
+
+    closeAccordanceModal();
+    await fetchAssetInvestmentRequests();
+  } catch (e) {
+    console.error("Accordance update failed", e);
+    alert(e?.response?.data?.message || "Failed to update accordance status.");
+  } finally {
+    actionLoading.value = false;
+  }
+};
 </script>
 
 <style>
@@ -381,5 +500,5 @@ const deleteRequest = async (id) => {
 .mb-4 { margin-block-end: 16px; }
 .text-error { color: #c62828; }
 .muted { opacity: 0.7; }
-.pa-4 { padding: 16px; }
+.pa-6 { padding: 24px; }
 </style>

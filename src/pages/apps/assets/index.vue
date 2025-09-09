@@ -20,6 +20,23 @@
       :items="assets"
       :items-per-page="10"
     >
+      <!-- QR Code image column -->
+      <template #item.qr_code="{ item }">
+        <template v-if="qrSrc(item)">
+          <a :href="qrSrc(item)" target="_blank" rel="noopener">
+            <VImg
+              :src="qrSrc(item)"
+              alt="QR Code"
+              width="80"
+              class="rounded"
+              cover
+            />
+          </a>
+        </template>
+        <template v-else>—</template>
+      </template>
+
+      <!-- Actions -->
       <template #item.actions="{ item }">
         <div class="d-flex gap-2">
           <VBtn color="info" size="small" @click="openDepartmentModal(item.raw?.id ?? item.id)">
@@ -85,7 +102,8 @@ import {
   VCardTitle,
   VDataTable,
   VDialog,
-  VSelect
+  VImg,
+  VSelect,
 } from "vuetify/components";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
@@ -93,35 +111,15 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 /* ---- Headers exactly matching API keys ---- */
 const headers = [
   { title: "ID", key: "id" },
-  { title: "ASSET CATEGORY ID", key: "asset_category_id" },
-  { title: "ASSET SUB CATEGORY ID", key: "asset_sub_category_id" },
-  { title: "ASSET INVESTMENT REQUEST ID", key: "asset_investment_requests_id" },
-  { title: "TYPE", key: "type" },
-  { title: "ASSET TYPE", key: "asset_type" },
+  { title: "Title", key: "title" },
+  { title: "Category Name", key: "category_name" },
+  { title: "SUB CATEGORY", key: "sub_category" },
   { title: "CODE", key: "code" },
-  { title: "DESCRIPTION", key: "description" },
-  { title: "SERIAL NUMBER", key: "serial_number" },
-  { title: "PLATE NUMBER", key: "plate_number" },
-  { title: "MODEL NUMBER", key: "model_number" },
-  { title: "INSURANCE START DATE", key: "insurance_start_date" },
-  { title: "INSURANCE END DATE", key: "insurance_end_date" },
-  { title: "WARRANTY START DATE", key: "warranty_start_date" },
-  { title: "WARRANTY END DATE", key: "warranty_end_date" },
-  { title: "EXTENDED WARRANTY", key: "extended_warranty" },
   { title: "PURCHASE DATE", key: "purchase_date" },
-  { title: "IS RELATED TO IT", key: "is_related_to_it" },
-  { title: "MAKE", key: "make" },
-  { title: "MODEL", key: "model" },
-  { title: "BRAND", key: "brand" },
-  { title: "PRODUCTION DATE", key: "production_date" },
-  { title: "LOCATION", key: "location" },
   { title: "PRICE", key: "price" },
-  { title: "REPLACEMENT COST", key: "replacement_cost" },
   { title: "PURCHASE COST", key: "purchase_cost" },
-  { title: "BOOK VALUE", key: "book_value" },
-  { title: "USEFUL LIFE", key: "useful_life" },
+  { title: "QR Code", key: "qr_code" },
   { title: "CREATED AT", key: "created_at" },
-  { title: "UPDATED AT", key: "updated_at" },
   { title: "ACTIONS", key: "actions", sortable: false },
 ];
 
@@ -153,6 +151,9 @@ const getAuthHeaders = () => {
   const decodedToken = decodeURIComponent(accessToken);
   return { Authorization: `Bearer ${decodedToken}`, Accept: "application/json" };
 };
+
+/** Resolve QR url from either item.raw or item */
+const qrSrc = (item) => item?.raw?.qr_code ?? item?.qr_code ?? "";
 
 /* ---------------- Fetchers ---------------- */
 const fetchAssets = async () => {

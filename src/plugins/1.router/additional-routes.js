@@ -119,6 +119,12 @@ export const routes = [
     component: () => import('@/pages/apps/asset-investment-request/edit.vue'),
     meta: { layout: 'default', navActiveLink: 'dashboards-asset-investment-requests' },
   },
+  {
+    path: '/dashboards/asset-investment-requests/detail/:id',
+    name: 'dashboards-asset-investment-requests-detail',
+    component: () => import('@/pages/apps/asset-investment-request/detail.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-asset-investment-requests' },
+  },
   
   {
     path: '/dashboards/assethandovers',
