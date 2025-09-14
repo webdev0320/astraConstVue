@@ -547,7 +547,7 @@ const submitForm = async () => {
     // Basic client-side required checks (Vuetify rules already run)
     if (!asset.value.asset_investment_requests_id ||
         !asset.value.code ||
-        !asset.value.name ||
+        !asset.value.title ||
         !asset.value.asset_category_id ||
         !asset.value.asset_sub_category_id ||
         !asset.value.description ||
@@ -575,6 +575,7 @@ const submitForm = async () => {
 
       // required in UI
       code: asset.value.code,
+      title: asset.value.title,
       description: asset.value.description,
 
       // optional identity & make
