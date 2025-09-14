@@ -96,6 +96,14 @@ export default [
         to: 'dashboards-assethandovers',
       },
       {
+        title: 'Asset Transfer',
+        to: 'dashboards-assettransfers',
+      },
+      {
+        title: 'Vehicle Handover',
+        to: 'dashboards-vehiclehandovers',
+      },
+      {
         title: 'Users',
         to: 'dashboards-users',
       },

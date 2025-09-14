@@ -145,6 +145,42 @@ export const routes = [
   },
 
   {
+    path: '/dashboards/assettransfers',
+    name: 'dashboards-assettransfers',
+    component: () => import('@/pages/apps/asset-transfer/index.vue'),
+  },
+  {
+    path: '/dashboards/assettransfers/create',
+    name: 'dashboards-assettransfers-create',
+    component: () => import('@/pages/apps/asset-transfer/create.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-assettransfers' },
+  },
+  {
+    path: '/dashboards/assettransfers/edit/:id',
+    name: 'dashboards-assettransfers-edit',
+    component: () => import('@/pages/apps/asset-transfer/edit.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-assettransfers' },
+  },
+
+  {
+    path: '/dashboards/vehiclehandovers',
+    name: 'dashboards-vehiclehandovers',
+    component: () => import('@/pages/apps/vehicle-handover/index.vue'),
+  },
+  {
+    path: '/dashboards/vehiclehandovers/create',
+    name: 'dashboards-vehiclehandovers-create',
+    component: () => import('@/pages/apps/vehicle-handover/create.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-vehiclehandovers' },
+  },
+  {
+    path: '/dashboards/vehiclehandovers/edit/:id',
+    name: 'dashboards-vehiclehandovers-edit',
+    component: () => import('@/pages/apps/vehicle-handover/edit.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-vehiclehandovers' },
+  },
+
+  {
     path: '/dashboards/projects',
     name: 'dashboards-projects',
     component: () => import('@/pages/apps/projects/index.vue'),
