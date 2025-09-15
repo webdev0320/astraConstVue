@@ -1,9 +1,9 @@
 <template>
   <div>
     <div class="d-flex justify-between align-center mb-4">
-      <h3>Asset Tranfer List</h3>
+      <h3>Asset Transfer List</h3>
       <VBtn color="primary" class="ms-auto" @click="$router.push('/dashboards/assettransfers/create')">
-        Create Asset Tranfer
+        Create Asset Transfer
       </VBtn>
     </div>
 
@@ -11,15 +11,8 @@
       v-if="assettransfers.length > 0"
       :headers="headers"
       :items="assettransfers"
-      :items-per-page="10"
+      :items-per-page="20"
     >
-      <!-- DESCRIPTION -->
-      <template #item.description="{ item }">
-        <div class="desc-cell clamp-2" :title="item.raw?.description ?? item.description">
-          {{ truncateSmart(item.raw?.description ?? item.description, 20, 120) }}
-        </div>
-      </template>
-
       <!-- ACTIONS -->
       <template #item.actions="{ item }">
         <div class="d-flex gap-2">
@@ -44,7 +37,7 @@
     <p v-else-if="errorMessage">{{ errorMessage }}</p>
     <p v-else>Loading...</p>
 
-    <!-- 🔹 Modal for User Selection -->
+    <!-- Modal for User Selection (unchanged / optional) -->
     <VDialog v-model="userModal" max-width="500px">
       <VCard>
         <VCardTitle>Select User</VCardTitle>
@@ -83,34 +76,28 @@ import {
 
 const apiBaseUrl = "https://dm.kreashionsoftwarehouse.com/astraConst/public/api";
 
+// Table headers aligned to API fields
 const headers = [
-  { title: "NAME", key: "name" },
-  { title: "CODE", key: "code" },
-  { title: "DESCRIPTION", key: "description" },
+  { title: "ISSUE NO", key: "issue_no" },
+  { title: "FORM NO", key: "form_no" },
+  { title: "REVISION DATE", key: "revision_date" },
+  { title: "DATE", key: "date" },
+  { title: "FROM PROJECT", key: "transferred_from" },
+  { title: "TO PROJECT", key: "transferred_to" },
+  { title: "TRANSFER DATE", key: "transfer_date" },
+  { title: "TRANSFER TIME", key: "transfer_time" },
+  { title: "PREPARED BY", key: "prepared_by" },
   { title: "ACTIONS", key: "actions", sortable: false },
 ];
 
 const assettransfers = ref([]);
 const errorMessage = ref("");
 
-// 🔹 for User Modal
+// Modal state (unchanged / optional)
 const userModal = ref(false);
 const users = ref([]);
 const selectedUser = ref(null);
 const currentdepartmentId = ref(null);
-
-const truncateSmart = (text, wordLimit = 20, charFallback = 120) => {
-  if (!text) return "—";
-  const str = String(text).trim();
-  const words = str.split(/\s+/).filter(Boolean);
-
-  if (words.length > 1) {
-    return words.length > wordLimit
-      ? words.slice(0, wordLimit).join(" ") + "..."
-      : str;
-  }
-  return str.length > charFallback ? str.slice(0, charFallback) + "..." : str;
-};
 
 const getCookie = (name) => {
   const value = `; ${document.cookie}`;
@@ -119,14 +106,37 @@ const getCookie = (name) => {
   return null;
 };
 
-// 🔹 Fetch assettransfers
+// Helpers to format dates/times from ISO strings
+const fmt = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Karachi" });
+const fmtDate = (iso) => {
+  try {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? "—" : fmt.format(d);
+  } catch {
+    return "—";
+  }
+};
+const fmtTime = (iso) => {
+  try {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    return isNaN(d.getTime())
+      ? "—"
+      : d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Karachi" });
+  } catch {
+    return "—";
+  }
+};
+
+// Fetch Asset Transfers (matches /api/asset-transfers)
 const fetchAssetTransfers = async () => {
   try {
     const accessToken = getCookie("accessToken");
     if (!accessToken) throw new Error("Access token is missing. Please log in.");
     const decodedToken = decodeURIComponent(accessToken);
 
-    const res = await axios.get(`${apiBaseUrl}/assettransfers`, {
+    const res = await axios.get(`${apiBaseUrl}/asset-transfers`, {
       headers: { Authorization: `Bearer ${decodedToken}`, Accept: "application/json" },
     });
 
@@ -136,83 +146,65 @@ const fetchAssetTransfers = async () => {
       ? res.data.data
       : [];
 
-    assettransfers.value = list.map((p) => ({
-      id: p.id,
-      name: p.name,
-      code: p.code ?? "—",
-      description: p.description ?? "—",
+    // Map API fields to table items
+    assettransfers.value = list.map((t) => ({
+      id: t.id,
+      issue_no: t.issue_no ?? "—",
+      form_no: t.form_no ?? "—",
+      revision_date: fmtDate(t.revision_date),
+      date: fmtDate(t.date),
+      transferred_from:
+        t.transferredProjectName ??
+        (t.transferred_from_project_id ? `#${t.transferred_from_project_id}` : "—"),
+      transferred_to:
+        t.transferredToProjectName ??
+        (t.transferred_to_project_id ? `#${t.transferred_to_project_id}` : "—"),
+      transfer_date: fmtDate(t.transfer_date),
+      transfer_time: fmtTime(t.transfer_time),
+      prepared_by: t.prepared_by ?? "—",
     }));
   } catch (error) {
-    console.error("Error fetching assettransfers:", error);
+    console.error("Error fetching asset transfers:", error);
     errorMessage.value =
-      error.response?.data?.message || "Failed to fetch assettransfers.";
+      error.response?.data?.message || "Failed to fetch asset transfers.";
   }
 };
 
 onMounted(fetchAssetTransfers);
 
-// 🔹 Delete Department
-const deleteAssetTransfer = async (departmentId) => {
-  if (!confirm("Are you sure you want to delete this department?")) return;
+// Delete Asset Transfer (matches /api/asset-transfers/{id})
+const deleteAssetTransfer = async (id) => {
+  if (!confirm("Are you sure you want to delete this asset transfer?")) return;
   try {
     const accessToken = getCookie("accessToken");
+    if (!accessToken) throw new Error("Access token is missing. Please log in.");
     const decodedToken = decodeURIComponent(accessToken);
 
-    await axios.delete(`${apiBaseUrl}/assettransfers/${departmentId}`, {
+    await axios.delete(`${apiBaseUrl}/asset-transfers/${id}`, {
       headers: { Authorization: `Bearer ${decodedToken}`, Accept: "application/json" },
     });
 
-    assettransfers.value = assettransfers.value.filter((p) => p.id !== departmentId);
-    alert("Department deleted successfully!");
+    assettransfers.value = assettransfers.value.filter((t) => t.id !== id);
+    alert("Asset transfer deleted successfully!");
   } catch (error) {
-    console.error("Error deleting department:", error);
-    alert(error.response?.data?.message || "Failed to delete department.");
+    console.error("Error deleting asset transfer:", error);
+    alert(error.response?.data?.message || "Failed to delete asset transfer.");
   }
 };
 
+// Optional: stub for modal action
+const assignUser = () => {
+  // implement if needed
+  userModal.value = false;
+};
 </script>
 
 <style>
-.v-data-table {
-  margin-block-start: 16px;
-}
-
-.d-flex {
-  display: flex;
-}
-
-.justify-between {
-  justify-content: space-between;
-}
-
-.align-center {
-  align-items: center;
-}
-
-.ms-auto {
-  margin-inline-start: auto;
-}
-
-.gap-2 {
-  gap: 8px;
-}
-
-.mb-4 {
-  margin-block-end: 16px;
-}
-
-/* 🔹 Clamp and handle long unspaced strings */
-.desc-cell {
-  overflow: hidden;
-  max-inline-size: 480px; /* adjust to your layout */
-  overflow-wrap: anywhere; /* break long words with no spaces */
-  text-overflow: ellipsis;
-  word-break: break-word;
-}
-
-.clamp-2 {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2; /* show max 2 lines */
-}
+.v-data-table { margin-block-start: 16px; }
+.d-flex { display: flex; }
+.justify-between { justify-content: space-between; }
+.align-center { align-items: center; }
+.ms-auto { margin-inline-start: auto; }
+.gap-2 { gap: 8px; }
+.mb-4 { margin-block-end: 16px; }
 </style>
