@@ -9,7 +9,7 @@
       <VForm @submit.prevent="saveAll" ref="refForm">
         <VRow dense>
           <!-- Project (RESTORED) -->
-          <VCol cols="12" md="6">
+          <VCol cols="12" md="6" py-5>
             <VSelect
               v-model="selectedProjectId"
               :items="projects"
@@ -38,7 +38,7 @@
           </VCol>
 
           <!-- Category -->
-          <VCol cols="12" md="3">
+          <VCol cols="12" md="3" class="py-5">
             <VSelect
               v-model="selectedCategoryId"
               :items="parentCategoryItems"
@@ -53,11 +53,10 @@
               density="compact"
               clearable
             />
-            <small class="text-medium-emphasis">Category choose karen → subcategories load hongi</small>
           </VCol>
 
           <!-- Subcategory -->
-          <VCol cols="12" md="3">
+          <VCol cols="12" md="3" class="py-5">
             <VSelect
               v-model="selectedSubCategoryId"
               :items="subcategoryItemsForCategory"
@@ -71,11 +70,10 @@
               density="compact"
               clearable
             />
-            <small class="text-medium-emphasis">Selected category ki related subcategories</small>
           </VCol>
 
           <!-- Asset (optional) -->
-          <VCol cols="12" md="3">
+          <VCol cols="12" md="3" class="py-5">
             <VSelect
               v-model="selectedAsset"
               :items="assets"
@@ -90,11 +88,10 @@
               density="compact"
               clearable
             />
-            <small class="text-medium-emphasis">(Optional) Asset na select karne par bhi record add ho jayega.</small>
           </VCol>
 
           <!-- Request Type -->
-          <VCol cols="12" md="2">
+          <VCol cols="12" md="2" class="py-5">
             <VSelect
               v-model="line.request_type"
               :items="REQUEST_TYPE_OPTIONS"
@@ -107,7 +104,7 @@
           </VCol>
 
           <!-- Quantity -->
-          <VCol cols="12" md="1">
+          <VCol cols="12" md="1" class="py-5">
             <VTextField
               v-model.number="line.quantity"
               label="Qty"
@@ -121,7 +118,7 @@
           </VCol>
 
           <!-- Planned Cost -->
-          <VCol cols="12" md="2">
+          <VCol cols="12" md="2" class="py-5">
             <VTextField
               v-model.number="line.planned_cost"
               label="Planned Cost"
@@ -136,7 +133,7 @@
           </VCol>
 
           <!-- Description -->
-          <VCol cols="12" md="4">
+          <VCol cols="12" md="4" class="py-5">
             <VTextField
               v-model="line.description"
               label="Description"
@@ -148,7 +145,7 @@
           </VCol>
 
           <!-- Reason -->
-          <VCol cols="12" md="4">
+          <VCol cols="12" md="4" class="py-5">
             <VTextField
               v-model="line.reason"
               label="Reason"

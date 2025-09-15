@@ -37,7 +37,7 @@
           </VCol>
 
           <!-- Category -->
-          <VCol cols="12" md="3">
+          <VCol cols="12" md="3" class="py-5">
             <VSelect
               v-model="selectedCategoryId"
               :items="parentCategoryItems"
@@ -48,11 +48,10 @@
               @update:modelValue="onCategoryChange"
               variant="outlined" density="compact" hide-details="auto" clearable
             />
-            <small class="text-medium-emphasis">Category choose karen → subcategories load hongi</small>
           </VCol>
 
           <!-- Subcategory -->
-          <VCol cols="12" md="3">
+          <VCol cols="12" md="3" class="py-5">
             <VSelect
               v-model="selectedSubCategoryId"
               :items="subcategoryItemsForCategory"
@@ -62,11 +61,10 @@
               @update:modelValue="onSubCategoryChange"
               variant="outlined" density="compact" hide-details="auto" clearable
             />
-            <small class="text-medium-emphasis">Selected category ki related subcategories</small>
           </VCol>
 
           <!-- Asset (optional) -->
-          <VCol cols="12" md="3">
+          <VCol cols="12" md="3" class="py-5">
             <VSelect
               v-model="selectedAsset"
               :items="assets"
@@ -77,11 +75,10 @@
               return-object
               variant="outlined" density="compact" hide-details="auto" clearable
             />
-            <small class="text-medium-emphasis">(Optional) Asset na select karne par bhi record add/update ho jayega.</small>
           </VCol>
 
           <!-- Request Type -->
-          <VCol cols="12" md="2">
+          <VCol cols="12" md="2" class="py-5">
             <VSelect
               v-model="line.request_type"
               :items="REQUEST_TYPE_OPTIONS"

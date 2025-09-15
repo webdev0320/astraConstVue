@@ -61,6 +61,12 @@
             </VBtn>
           </template>
           <VList density="compact">
+
+             <VListItem @click="$router.push(`/dashboards/asset-investment-requests/detail/${item.raw.id}`)">
+              <template #prepend><VIcon icon="mdi-file-document" /></template>
+              <VListItemTitle>Detail</VListItemTitle>
+            </VListItem>
+            
             <VListItem @click="$router.push(`/dashboards/asset-investment-requests/edit/${item.raw.id}`)">
               <template #prepend><VIcon icon="mdi-pencil" /></template>
               <VListItemTitle>Edit</VListItemTitle>
@@ -78,13 +84,10 @@
 
             <VListItem @click="openAccordanceModal(item.raw.id)">
               <template #prepend><VIcon icon="mdi-check-decagram" /></template>
-              <VListItemTitle>Mark As</VListItemTitle>
+              <VListItemTitle>Mark As Accordance With Budget</VListItemTitle>
             </VListItem>
 
-            <VListItem @click="$router.push(`/dashboards/asset-investment-requests/detail/${item.raw.id}`)">
-              <template #prepend><VIcon icon="mdi-file-document" /></template>
-              <VListItemTitle>Detail</VListItemTitle>
-            </VListItem>
+           
           </VList>
         </VMenu>
       </template>
