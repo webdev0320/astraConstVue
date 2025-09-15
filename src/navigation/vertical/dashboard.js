@@ -100,6 +100,10 @@ export default [
         to: 'dashboards-assettransfers',
       },
       {
+        title: 'Location',
+        to: 'dashboards-locations',
+      },
+      {
         title: 'Vehicle Handover',
         to: 'dashboards-vehiclehandovers',
       },

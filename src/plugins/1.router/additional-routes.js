@@ -181,6 +181,24 @@ export const routes = [
   },
 
   {
+    path: '/dashboards/locations',
+    name: 'dashboards-locations',
+    component: () => import('@/pages/apps/locations/index.vue'),
+  },
+  {
+    path: '/dashboards/locations/create',
+    name: 'dashboards-locations-create',
+    component: () => import('@/pages/apps/locations/create.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-locations' },
+  },
+  {
+    path: '/dashboards/locations/edit/:id',
+    name: 'dashboards-locations-edit',
+    component: () => import('@/pages/apps/locations/edit.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-locations' },
+  },
+
+  {
     path: '/dashboards/projects',
     name: 'dashboards-projects',
     component: () => import('@/pages/apps/projects/index.vue'),
