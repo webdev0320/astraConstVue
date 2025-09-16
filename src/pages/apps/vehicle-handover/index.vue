@@ -18,14 +18,14 @@
       class="mt-3"
     >
       <!-- Handover DateTime (formatted) -->
-    <template #item.handover_dt_display="{ value }">
-      <span>{{ value || '—' }}</span>
-    </template>
+      <template #item.handover_dt_display="{ value }">
+        <span>{{ value || '—' }}</span>
+      </template>
 
       <!-- Receiving DateTime (formatted) -->
-    <template #item.receiving_dt_display="{ value }">
-      <span>{{ value || '—' }}</span>
-    </template>
+      <template #item.receiving_dt_display="{ value }">
+        <span>{{ value || '—' }}</span>
+      </template>
 
       <!-- Images: count + preview -->
       <template #item.images="{ value }">
@@ -43,16 +43,6 @@
       <!-- Actions -->
       <template #item.actions="{ item }">
         <div class="d-flex gap-2">
-          <!-- Uncomment if edit will be added later -->
-          <!--
-          <VBtn
-            color="warning"
-            size="small"
-            @click="$router.push(`/dashboards/vehiclehandovers/edit/${item.raw.id}`)"
-          >
-            Edit
-          </VBtn>
-          -->
           <VBtn
             color="error"
             size="small"
@@ -82,8 +72,10 @@
         <VCardText>
           <div v-if="imagesDialog.urls.length" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             <div v-for="(url, idx) in imagesDialog.urls" :key="idx" class="image-tile">
-              <VImg :src="url" aspect-ratio="16/9" cover />
-              <div class="text-caption mt-1 break-all">{{ url }}</div>
+              <VImg :src="url" :eager="true" aspect-ratio="16/9" cover />
+              <div class="text-caption mt-1 break-all">
+                <a :href="url" target="_blank" rel="noopener">Open original</a>
+              </div>
             </div>
           </div>
           <div v-else class="py-6 text-center">No images available.</div>
@@ -111,6 +103,7 @@ import {
 } from 'vuetify/components'
 
 const apiBaseUrl = 'https://dm.kreashionsoftwarehouse.com/astraConst/public/api'
+const API_ORIGIN = new URL(apiBaseUrl).origin
 
 // Table headers mapped to your API fields
 const headers = [
@@ -169,9 +162,36 @@ const prettyDateTime = (val) => {
   }
 }
 
+// --- image URL normalization ---
+const sanitizeUrl = (raw) => {
+  if (!raw) return ''
+  let s = String(raw).trim()
+
+  // protocol-relative => https
+  if (s.startsWith('//')) s = 'https:' + s
+
+  // make absolute if relative
+  if (!s.startsWith('http')) {
+    if (!s.startsWith('/')) s = '/' + s
+    s = API_ORIGIN + s
+  }
+
+  try {
+    const u = new URL(s)
+    // collapse duplicate slashes in pathname only (keep https://)
+    u.pathname = u.pathname.replace(/\/{2,}/g, '/')
+    return u.toString()
+  } catch {
+    return s
+  }
+}
+
+const normalizeImageArray = (arr) =>
+  Array.isArray(arr) ? arr.map(sanitizeUrl) : []
+
 // --- open images preview ---
 const openImages = (urls = []) => {
-  imagesDialog.value.urls = Array.isArray(urls) ? urls : []
+  imagesDialog.value.urls = normalizeImageArray(urls)
   imagesDialog.value.open = true
 }
 
@@ -208,7 +228,7 @@ const fetchHandovers = async () => {
       releasingName: h.releasingName ?? '—',
       receiverName: h.receiverName ?? '—',
       driverName: h.driverName ?? '—',
-      images: Array.isArray(h.images) ? h.images : [],
+      images: normalizeImageArray(h.images),
     }))
   } catch (error) {
     console.error('Error fetching vehicle handovers:', error)
