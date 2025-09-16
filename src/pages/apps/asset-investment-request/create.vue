@@ -38,7 +38,7 @@
           </VCol>
 
           <!-- Category -->
-          <VCol cols="12" md="3" class="py-5">
+          <VCol cols="12" md="4" class="py-5">
             <VSelect
               v-model="selectedCategoryId"
               :items="parentCategoryItems"
@@ -56,7 +56,7 @@
           </VCol>
 
           <!-- Subcategory -->
-          <VCol cols="12" md="3" class="py-5">
+          <VCol cols="12" md="4" class="py-5">
             <VSelect
               v-model="selectedSubCategoryId"
               :items="subcategoryItemsForCategory"
@@ -73,7 +73,7 @@
           </VCol>
 
           <!-- Asset (optional) -->
-          <VCol cols="12" md="3" class="py-5">
+          <VCol cols="12" md="4" class="py-5">
             <VSelect
               v-model="selectedAsset"
               :items="assets"
@@ -91,7 +91,7 @@
           </VCol>
 
           <!-- Request Type -->
-          <VCol cols="12" md="2" class="py-5">
+          <VCol cols="12" md="4" class="py-5">
             <VSelect
               v-model="line.request_type"
               :items="REQUEST_TYPE_OPTIONS"
@@ -104,7 +104,7 @@
           </VCol>
 
           <!-- Quantity -->
-          <VCol cols="12" md="1" class="py-5">
+          <VCol cols="12" md="4" class="py-5">
             <VTextField
               v-model.number="line.quantity"
               label="Qty"
@@ -118,7 +118,7 @@
           </VCol>
 
           <!-- Planned Cost -->
-          <VCol cols="12" md="2" class="py-5">
+          <VCol cols="12" md="4" class="py-5">
             <VTextField
               v-model.number="line.planned_cost"
               label="Planned Cost"
@@ -133,8 +133,8 @@
           </VCol>
 
           <!-- Description -->
-          <VCol cols="12" md="4" class="py-5">
-            <VTextField
+          <VCol cols="12" md="12" class="py-5">
+            <VTextarea
               v-model="line.description"
               label="Description"
               variant="outlined"
@@ -145,8 +145,8 @@
           </VCol>
 
           <!-- Reason -->
-          <VCol cols="12" md="4" class="py-5">
-            <VTextField
+          <VCol cols="12" md="12" class="py-5">
+            <VTextarea
               v-model="line.reason"
               label="Reason"
               variant="outlined"

@@ -9,7 +9,7 @@
       <VForm @submit.prevent="saveAll" ref="refForm">
         <VRow dense>
           <!-- Project -->
-          <VCol cols="12" md="3">
+          <VCol cols="12" md="6">
             <VSelect
               v-model="selectedProjectId"
               :items="projects"
@@ -24,7 +24,7 @@
           </VCol>
 
           <!-- Date -->
-          <VCol cols="12" md="3">
+          <VCol cols="12" md="6">
             <VTextField
               v-model="date"
               type="date"
@@ -37,7 +37,7 @@
           </VCol>
 
           <!-- Category -->
-          <VCol cols="12" md="3" class="py-5">
+          <VCol cols="12" md="4" class="py-5">
             <VSelect
               v-model="selectedCategoryId"
               :items="parentCategoryItems"
@@ -51,7 +51,7 @@
           </VCol>
 
           <!-- Subcategory -->
-          <VCol cols="12" md="3" class="py-5">
+          <VCol cols="12" md="4" class="py-5">
             <VSelect
               v-model="selectedSubCategoryId"
               :items="subcategoryItemsForCategory"
@@ -64,7 +64,7 @@
           </VCol>
 
           <!-- Asset (optional) -->
-          <VCol cols="12" md="3" class="py-5">
+          <VCol cols="12" md="4" class="py-5">
             <VSelect
               v-model="selectedAsset"
               :items="assets"
@@ -78,7 +78,7 @@
           </VCol>
 
           <!-- Request Type -->
-          <VCol cols="12" md="2" class="py-5">
+          <VCol cols="12" md="4" class="py-5">
             <VSelect
               v-model="line.request_type"
               :items="REQUEST_TYPE_OPTIONS"
@@ -88,28 +88,40 @@
           </VCol>
 
           <!-- Qty -->
-          <VCol cols="12" md="1">
+          <VCol cols="12" md="4" class="py-5">
             <VTextField v-model.number="line.quantity" label="Qty" type="number"
               min="1" step="1" variant="outlined" density="compact" hide-details="auto" />
           </VCol>
 
           <!-- Planned Cost -->
-          <VCol cols="12" md="2">
+          <VCol cols="12" md="4" class="py-5">
             <VTextField v-model.number="line.planned_cost" label="Planned Cost" type="number"
               min="0" step="0.01" prefix="Rs"
               variant="outlined" density="compact" hide-details="auto" />
           </VCol>
 
           <!-- Description -->
-          <VCol cols="12" md="4">
-            <VTextField v-model="line.description" label="Description"
-              variant="outlined" density="compact" hide-details="auto" clearable />
+          <VCol cols="12" md="12">
+            <VTextarea
+              v-model="line.description"
+              label="Description"
+              variant="outlined"
+              density="compact"
+              hide-details="auto"
+              clearable
+            />
           </VCol>
 
           <!-- Reason -->
-          <VCol cols="12" md="4">
-            <VTextField v-model="line.reason" label="Reason"
-              variant="outlined" density="compact" hide-details="auto" clearable />
+          <VCol cols="12" md="12">
+            <VTextarea
+              v-model="line.reason"
+              label="Reason"
+              variant="outlined"
+              density="compact"
+              hide-details="auto"
+              clearable
+            />
           </VCol>
 
           <!-- Add -->
