@@ -1,7 +1,7 @@
-import { fileURLToPath } from 'node:url'
 import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
+import { fileURLToPath } from 'node:url'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { VueRouterAutoImports, getPascalCaseRouteName } from 'unplugin-vue-router'
@@ -18,17 +18,16 @@ export default defineConfig({
     // Docs: https://github.com/posva/unplugin-vue-router
     // ℹ️ This plugin should be placed before vue plugin
     VueRouter({
-      getRouteName: routeNode => {
-        // Convert pascal case to kebab case
-        return getPascalCaseRouteName(routeNode)
-          .replace(/([a-z\d])([A-Z])/g, '$1-$2')
-          .toLowerCase()
-      },
+      importMode: 'async',           // <-- ensure route-level code splitting
+      getRouteName: routeNode => getPascalCaseRouteName(routeNode)
+        .replace(/([a-z\d])([A-Z])/g, '$1-$2')
+        .toLowerCase(),
       beforeWriteFiles: root => {
         root.insert('/apps/email/:filter', '/src/pages/apps/email/index.vue')
         root.insert('/apps/email/:label', '/src/pages/apps/email/index.vue')
       },
     }),
+
     vue({
       template: {
         compilerOptions: {
