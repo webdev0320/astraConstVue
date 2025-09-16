@@ -201,6 +201,21 @@
         </VRow>
       </VCol>
 
+      <!-- Images (multiple) -->
+      <VCol cols="12">
+        <VFileInput
+          v-model="form.images"
+          label="Upload Images"
+          multiple
+          accept="image/*"
+          chips
+          counter
+          show-size
+          prepend-icon="mdi-camera"
+          :error-messages="errorMessages.images"
+        />
+      </VCol>
+
       <VCol cols="12" class="mt-2">
         <VBtn type="submit" color="primary" :loading="loading" :disabled="loading">
           Submit
@@ -217,7 +232,9 @@ import axios from 'axios'
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
-  VBtn, VCheckbox, VCol, VForm, VRow,
+  VBtn, VCheckbox, VCol,
+  VFileInput,
+  VForm, VRow,
   VSelect, VTextField, VTextarea,
 } from 'vuetify/components'
 
@@ -234,7 +251,7 @@ const errorMessages = ref({})
 const investmentOptions = ref([])
 const loadingInvestments = ref(false)
 
-const projectUsers = ref([])         // full list from /projects/:id/users/sync
+const projectUsers = ref([])
 const loadingProjectUsers = ref(false)
 
 const locationOptions = ref([])
@@ -267,6 +284,7 @@ const form = ref({
     jack: false,
     tool_kit: false,
   },
+  images: [], // <— files go here
 })
 
 const checkList = [
@@ -299,11 +317,9 @@ const getCookie = name => {
   return null
 }
 
-// Bearer header helper (fixes 401s)
 const getAccessToken = () => {
   const raw = getCookie('accessToken')
   if (!raw) return null
-  // sometimes cookies end up quoted; strip quotes
   const decoded = decodeURIComponent(raw)
   return decoded.replace(/^"+|"+$/g, '')
 }
@@ -384,7 +400,7 @@ const submitForm = async () => {
     const token = getAccessToken()
     if (!token) throw new Error('Access token is missing. Please log in.')
 
-    // Convert datetime-local (YYYY-MM-DDTHH:mm) to "YYYY-MM-DD HH:mm:ss"
+    // Convert datetime-local to "YYYY-MM-DD HH:mm:ss"
     const toSqlDatetime = (v) => {
       if (!v) return v
       const pad = (n) => String(n).padStart(2, '0')
@@ -401,28 +417,44 @@ const submitForm = async () => {
       return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`
     }
 
-    const payload = {
-      investment_req_id: form.value.investment_req_id,
-      report_date: form.value.report_date,
-      plate_no: form.value.plate_no,
-      driver_id: form.value.driver_id,
-      km_reading: form.value.km_reading,
-      vehicle_type: form.value.vehicle_type,
-      model_no: form.value.model_no,
-      releasing_emp_id: form.value.releasing_emp_id,
-      handover_location_id: form.value.handover_location_id,
-      handover_datetime: toSqlDatetime(form.value.handover_datetime),
-      receiving_emp_id: form.value.receiving_emp_id,
-      receiving_location_id: form.value.receiving_location_id,
-      receiving_datetime: toSqlDatetime(form.value.receiving_datetime),
-      notes: form.value.notes,
-      checks: form.value.checks,
+    // Build multipart form data (supports files)
+    const fd = new FormData()
+    const appendIf = (k, v) => {
+      if (v !== null && v !== undefined && v !== '') fd.append(k, v)
     }
 
-    const res = await axios.post(`${apiBaseUrl}/vehiclehandovers`, payload, {
+    appendIf('investment_req_id', form.value.investment_req_id)
+    appendIf('report_date', form.value.report_date)
+    appendIf('plate_no', form.value.plate_no)
+    appendIf('driver_id', form.value.driver_id)
+    appendIf('km_reading', form.value.km_reading)
+    appendIf('vehicle_type', form.value.vehicle_type)
+    appendIf('model_no', form.value.model_no)
+    appendIf('releasing_emp_id', form.value.releasing_emp_id)
+    appendIf('handover_location_id', form.value.handover_location_id)
+    appendIf('handover_datetime', toSqlDatetime(form.value.handover_datetime))
+    appendIf('receiving_emp_id', form.value.receiving_emp_id)
+    appendIf('receiving_location_id', form.value.receiving_location_id)
+    appendIf('receiving_datetime', toSqlDatetime(form.value.receiving_datetime))
+    appendIf('notes', form.value.notes)
+
+    // Send checks as nested fields: checks[tires]=1, etc.
+    Object.entries(form.value.checks || {}).forEach(([key, val]) => {
+      fd.append(`checks[${key}]`, val ? 1 : 0)
+    })
+
+    // Append multiple images as images[]
+    ;(form.value.images || []).forEach(file => {
+      // Some browsers may pass strings; only append actual File/Blob
+      if (file instanceof File || (file && typeof file === 'object' && 'size' in file)) {
+        fd.append('images[]', file)
+      }
+    })
+
+    const res = await axios.post(`${apiBaseUrl}/vehicle-handovers`, fd, {
       headers: {
         ...authHeaders(),
-        'Content-Type': 'application/json',
+        'Content-Type': 'multipart/form-data',
       },
     })
 
@@ -445,7 +477,6 @@ const submitForm = async () => {
 
 onMounted(async () => {
   try {
-    // simple token presence check before loading dropdowns
     if (!getAccessToken()) throw new Error('Access token is missing. Please log in.')
     await Promise.all([loadInvestments(), loadLocations()])
   } catch (e) {
