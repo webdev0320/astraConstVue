@@ -13,7 +13,7 @@
     <!-- Error -->
     <p v-else-if="errorMessage" class="text-error">{{ errorMessage }}</p>
 
-    <!-- Table (raw API fields, as-is) -->
+    <!-- Table -->
     <VDataTable
       v-else-if="assets.length > 0"
       :headers="headers"
@@ -24,13 +24,7 @@
       <template #item.qr_code="{ item }">
         <template v-if="qrSrc(item)">
           <a :href="qrSrc(item)" target="_blank" rel="noopener">
-            <VImg
-              :src="qrSrc(item)"
-              alt="QR Code"
-              width="80"
-              class="rounded"
-              cover
-            />
+            <VImg :src="qrSrc(item)" alt="QR Code" width="80" class="rounded" cover />
           </a>
         </template>
         <template v-else>—</template>
@@ -39,6 +33,11 @@
       <!-- Actions -->
       <template #item.actions="{ item }">
         <div class="d-flex gap-2">
+          <!-- 1) DETAIL BUTTON in Actions -->
+          <VBtn color="secondary" size="small" @click="openDetail(item.raw?.id ?? item.id)">
+            Detail
+          </VBtn>
+
           <VBtn color="info" size="small" @click="openDepartmentModal(item.raw?.id ?? item.id)">
             Add Department
           </VBtn>
@@ -88,6 +87,92 @@
         </VCardActions>
       </VCard>
     </VDialog>
+
+    <!-- 2) DETAIL MODAL -->
+    <VDialog v-model="detailModal" max-width="900px">
+      <VCard>
+        <VCardTitle class="d-flex justify-between align-center">
+          <span>Asset Detail</span>
+          <VBtn variant="text" @click="detailModal = false">Close</VBtn>
+        </VCardTitle>
+
+        <VCardText>
+          <div v-if="detailLoading">Loading detail…</div>
+          <div v-else-if="detailError" class="text-error">{{ detailError }}</div>
+          <div v-else-if="detail">
+            <div class="detail-grid">
+              <!-- Left column: meta -->
+              <div class="grid-left">
+                <div class="kv"><span class="k">ID</span><span class="v">{{ show(detail.id) }}</span></div>
+                <div class="kv"><span class="k">Title</span><span class="v">{{ show(detail.title) }}</span></div>
+                <div class="kv"><span class="k">Category</span><span class="v">{{ show(detail.category_name) }}</span></div>
+                <div class="kv"><span class="k">Sub Category</span><span class="v">{{ show(detail.sub_category) }}</span></div>
+                <div class="kv"><span class="k">Type</span><span class="v">{{ show(detail.type) }}</span></div>
+                <div class="kv"><span class="k">Asset Type</span><span class="v">{{ show(detail.asset_type) }}</span></div>
+                <div class="kv"><span class="k">Code</span><span class="v">{{ show(detail.code) }}</span></div>
+                <div class="kv"><span class="k">Description</span><span class="v">{{ show(detail.description) }}</span></div>
+                <div class="kv"><span class="k">Serial #</span><span class="v">{{ show(detail.serial_number) }}</span></div>
+                <div class="kv"><span class="k">Plate #</span><span class="v">{{ show(detail.plate_number) }}</span></div>
+                <div class="kv"><span class="k">Model #</span><span class="v">{{ show(detail.model_number) }}</span></div>
+                <div class="kv"><span class="k">Make</span><span class="v">{{ show(detail.make) }}</span></div>
+                <div class="kv"><span class="k">Model</span><span class="v">{{ show(detail.model) }}</span></div>
+                <div class="kv"><span class="k">Brand</span><span class="v">{{ show(detail.brand) }}</span></div>
+                <div class="kv"><span class="k">Production Date</span><span class="v">{{ show(detail.production_date) }}</span></div>
+                <div class="kv"><span class="k">Location</span><span class="v">{{ show(detail.location) }}</span></div>
+              </div>
+
+              <!-- Right column: dates & values -->
+              <div class="grid-right">
+                <div class="kv"><span class="k">Insurance Start</span><span class="v">{{ show(detail.insurance_start_date) }}</span></div>
+                <div class="kv"><span class="k">Insurance End</span><span class="v">{{ show(detail.insurance_end_date) }}</span></div>
+                <div class="kv"><span class="k">Warranty Start</span><span class="v">{{ show(detail.warranty_start_date) }}</span></div>
+                <div class="kv"><span class="k">Warranty End</span><span class="v">{{ show(detail.warranty_end_date) }}</span></div>
+                <div class="kv"><span class="k">Extended Warranty</span><span class="v">{{ show(detail.extended_warranty) }}</span></div>
+                <div class="kv"><span class="k">Purchase Date</span><span class="v">{{ show(detail.purchase_date) }}</span></div>
+                <div class="kv"><span class="k">Is Related to IT?</span><span class="v">{{ boolShow(detail.is_related_to_it) }}</span></div>
+                <div class="kv"><span class="k">Price</span><span class="v">{{ show(detail.price) }}</span></div>
+                <div class="kv"><span class="k">Replacement Cost</span><span class="v">{{ show(detail.replacement_cost) }}</span></div>
+                <div class="kv"><span class="k">Purchase Cost</span><span class="v">{{ show(detail.purchase_cost) }}</span></div>
+                <div class="kv"><span class="k">Book Value</span><span class="v">{{ show(detail.book_value) }}</span></div>
+                <div class="kv"><span class="k">Useful Life</span><span class="v">{{ show(detail.useful_life) }}</span></div>
+                <div class="kv"><span class="k">Created At</span><span class="v">{{ show(detail.created_at) }}</span></div>
+                <div class="kv"><span class="k">Updated At</span><span class="v">{{ show(detail.updated_at) }}</span></div>
+              </div>
+            </div>
+
+            <!-- QR & Media -->
+            <div class="mt-4">
+              <h4 class="mb-2">QR Code</h4>
+              <div v-if="detail.qr_code">
+                <a :href="detail.qr_code" target="_blank" rel="noopener">
+                  <VImg :src="detail.qr_code" width="140" alt="QR" />
+                </a>
+              </div>
+              <div v-else>—</div>
+            </div>
+
+            <div class="mt-4">
+              <h4 class="mb-2">Media</h4>
+              <div v-if="Array.isArray(detail.media) && detail.media.length">
+                <div class="media-grid">
+                  <div v-for="(m, i) in detail.media" :key="i" class="media-item">
+                    <a :href="m?.url || m" target="_blank" rel="noopener">
+                      <VImg :src="m?.url || m" alt="Asset media" width="140" />
+                    </a>
+                  </div>
+                </div>
+              </div>
+              <div v-else>—</div>
+            </div>
+          </div>
+        </VCardText>
+
+        <VCardActions>
+          <VBtn variant="text" @click="detailModal = false">Close</VBtn>
+          <VBtn color="primary" @click="$router.push(`/dashboards/assets/edit/${detail?.id}`)" :disabled="!detail">Edit</VBtn>
+        </VCardActions>
+      </VCard>
+    </VDialog>
   </div>
 </template>
 
@@ -95,15 +180,8 @@
 import axios from "axios";
 import { onMounted, ref } from "vue";
 import {
-  VBtn,
-  VCard,
-  VCardActions,
-  VCardText,
-  VCardTitle,
-  VDataTable,
-  VDialog,
-  VImg,
-  VSelect,
+  VBtn, VCard, VCardActions, VCardText, VCardTitle,
+  VDataTable, VDialog, VImg, VSelect
 } from "vuetify/components";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
@@ -135,6 +213,12 @@ const departmentsLoading = ref(false);
 
 const page = ref(1);
 
+/* ---------- Detail modal state ---------- */
+const detailModal = ref(false);
+const detail = ref(null);
+const detailLoading = ref(false);
+const detailError = ref("");
+
 /* ---------------- Utils ---------------- */
 const getCookie = (name) => {
   const value = `; ${document.cookie}`;
@@ -150,6 +234,9 @@ const getAuthHeaders = () => {
   return { Authorization: `Bearer ${decodedToken}`, Accept: "application/json" };
 };
 
+const show = (v) => (v === null || v === undefined || v === "" ? "—" : v);
+const boolShow = (b) => (b === true ? "Yes" : b === false ? "No" : "—");
+
 /** Resolve QR url from either item.raw or item */
 const qrSrc = (item) => item?.raw?.qr_code ?? item?.qr_code ?? "";
 
@@ -163,7 +250,6 @@ const fetchAssets = async () => {
       params: { page: page.value },
     });
 
-    // Use the raw array from the API without mapping/formatting
     const rows = res?.data?.data?.data ?? res?.data?.data ?? res?.data ?? [];
     assets.value = Array.isArray(rows) ? rows : [];
   } catch (err) {
@@ -171,6 +257,29 @@ const fetchAssets = async () => {
     errorMessage.value = err.response?.data?.message || "Failed to fetch assets.";
   } finally {
     isLoading.value = false;
+  }
+};
+
+/* ---------- DETAIL: fetch & open ---------- */
+const openDetail = async (assetId) => {
+  detailModal.value = true;
+  detail.value = null;
+  detailLoading.value = true;
+  detailError.value = "";
+
+  try {
+    const res = await axios.get(`${apiBaseUrl}/assets/${assetId}`, {
+      headers: getAuthHeaders(),
+    });
+
+    // API format: { success: true, data: { ... } }
+    const d = res?.data?.data ?? res?.data ?? null;
+    detail.value = d;
+  } catch (e) {
+    console.error("Error fetching asset detail:", e);
+    detailError.value = e?.response?.data?.message || "Failed to load asset detail.";
+  } finally {
+    detailLoading.value = false;
   }
 };
 
@@ -310,4 +419,24 @@ const deleteAsset = async (id) => {
 .gap-2 { gap: 8px; }
 .mb-4 { margin-block-end: 16px; }
 .text-error { color: #c62828; }
+
+/* Detail modal layout */
+.detail-grid {
+  display: grid;
+  gap: 12px 24px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.grid-left,
+.grid-right { display: grid; gap: 8px; }
+.kv { display: grid; gap: 8px; grid-template-columns: 180px 1fr; }
+.k { color: rgba(0, 0, 0, 60%); font-weight: 600; }
+.v { word-break: break-word; }
+
+.media-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+}
+.media-item { overflow: hidden; border-radius: 8px; }
 </style>

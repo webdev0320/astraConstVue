@@ -182,8 +182,21 @@
         </VCol>
 
         <VCol cols="12" md="4">
-          <VSwitch v-model="form.project_incharge_status" label="Project In-Charge Status" inset />
+          <VSelect
+            v-model="form.project_incharge_status"
+            :items="[
+              { title: 'Approve', value: 'approved' },
+              { title: 'Disapprove', value: 'disapproved' }
+            ]"
+            label="Project In-Charge Status"
+            item-title="title"
+            item-value="value"
+            :rules="[requiredValidator]"
+            :error-messages="errorMessages.project_incharge_status"
+            clearable
+          />
         </VCol>
+
         <VCol cols="12" md="4">
           <VTextField v-model="form.project_incharge_status_date" type="date" label="Project In-Charge Status Date" />
         </VCol>
@@ -239,11 +252,23 @@
             @change="syncTimeWithSeconds('received')"
           />
         </VCol>
+        
         <VCol cols="12" md="4">
-          <VTextField v-model="form.inspected_by" label="Inspected By" clearable />
+          <VSelect
+            v-model="form.inspected_by"
+            :items="usersToProject"
+            :item-title="userTitle"
+            item-value="id"
+            label="Inspected By"
+            :loading="usersToLoading"
+            :disabled="!form.transferred_to_project_id || usersToLoading || usersToProject.length === 0"
+            :rules="[requiredNumberValidator]"
+            :error-messages="errorMessages.inspected_by"
+            clearable
+          />
         </VCol>
         <VCol cols="12" md="4">
-          <VSwitch v-model="form.equipment_status" label="Equipment OK?" inset />
+          <VSwitch v-model="form.equipment_status" label="is Equipment OK?" inset />
         </VCol>
 
         <!-- Items -->
@@ -344,14 +369,14 @@ const form = ref({
   plant_manager_status: 'Approve',
   plant_manager_remarks: '',
   plant_manager_status_date: today,
-  project_incharge_status: false,
+  project_incharge_status: 'Approve',
   project_incharge_remarks: '',
   project_incharge_status_date: today,
   received_from: null,
   received_by: null,
   received_date: '',
   received_time: '',
-  inspected_by: '',
+  inspected_by: null,
   equipment_status: false,
   items: [],
 })
