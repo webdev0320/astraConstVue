@@ -108,12 +108,8 @@ const API_ORIGIN = new URL(apiBaseUrl).origin
 // Table headers mapped to your API fields
 const headers = [
   { title: 'ID', key: 'id', width: 80 },
-  { title: 'Investment Req', key: 'investment_req_id' },
-  { title: 'Report Date', key: 'report_date' },
   { title: 'Plate No', key: 'plate_no' },
   { title: 'Vehicle', key: 'vehicle_type' },
-  { title: 'Model', key: 'model_no' },
-  { title: 'KM', key: 'km_reading' },
   { title: 'Handover DateTime', key: 'handover_dt_display' },
   { title: 'Receiving DateTime', key: 'receiving_dt_display' },
   { title: 'Releasing By', key: 'releasingName' },

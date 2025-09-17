@@ -93,7 +93,16 @@
 
       <!-- Location (optional) -->
       <VCol cols="12" md="6">
-        <VTextField v-model="asset.location" label="Location" clearable />
+        <VSelect
+          v-model="asset.location_id"
+          :items="locations"
+          item-title="name"
+          item-value="id"
+          label="Location"
+          :loading="loadingLocations"
+          :disabled="loadingLocations"
+          clearable
+        />
       </VCol>
 
       <!-- Description (REQUIRED) -->
@@ -247,7 +256,8 @@ const asset = ref({
   production_date: '',
 
   is_related_to_it: null,  // 'yes' | 'no'
-  location: '',
+  // location: '',         // removed
+  location_id: null,        // NEW
   type: '',
   asset_type: '',
 
@@ -269,6 +279,8 @@ const yesNoOptions = [
 const categories = ref([])
 const subCategories = ref([])
 const investmentRequests = ref([])
+const locations = ref([])            // NEW
+const loadingLocations = ref(false)  // NEW
 
 const loading = ref(false)
 const loadingCategories = ref(false)
@@ -413,6 +425,28 @@ const fetchInvestmentRequests = async () => {
   }
 }
 
+/* Locations */
+const fetchLocations = async () => {
+  try {
+    loadingLocations.value = true
+    const res = await axios.get(`${apiBaseUrl}/locations`, {
+      headers: { ...authHeader(), Accept: 'application/json' },
+    })
+    const list = Array.isArray(res.data?.data) ? res.data.data
+               : Array.isArray(res.data) ? res.data
+               : []
+    locations.value = list
+      .filter(l => l && l.id && l.name)
+      .map(l => ({ id: l.id, name: l.name }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+  } catch (e) {
+    console.error('Failed to load locations', e)
+    locations.value = []
+  } finally {
+    loadingLocations.value = false
+  }
+}
+
 /* Load existing asset */
 const loadRecord = async () => {
   try {
@@ -430,7 +464,7 @@ const loadRecord = async () => {
     asset.value = {
       asset_investment_requests_id: p.asset_investment_requests_id ?? p.asset_investment_request_id ?? null,
       code: p.code ?? '',
-      name: p.name ?? '',
+      name: p.name ?? p.title ?? '',
       asset_category_id: p.asset_category_id ?? p.category_id ?? null,
       asset_sub_category_id: p.asset_sub_category_id ?? p.sub_category_id ?? null,
       description: p.description ?? '',
@@ -452,7 +486,8 @@ const loadRecord = async () => {
 
       is_related_to_it: (p.is_related_to_it === true) ? 'yes' : (p.is_related_to_it === false) ? 'no' : null,
 
-      location:   p.location   ?? '',
+      // location (prefer id; fallback if server nests)
+      location_id: p.location_id ?? p.locationId ?? p.location?.id ?? null,
       type:       p.type       ?? '',
       asset_type: p.asset_type ?? '',
 
@@ -512,7 +547,6 @@ const submitForm = async () => {
       : ''
 
     const fd = new FormData()
-    // helper
     const safeAppend = (k, v) => {
       if (v === null || v === undefined || v === '') return
       fd.append(k, String(v))
@@ -529,7 +563,8 @@ const submitForm = async () => {
     }
 
     safeAppend('code', asset.value.code)
-    safeAppend('title', asset.value.name || asset.value.code) // if your API uses 'title' not 'name'
+    // some APIs use 'title' field; mapping name → title
+    safeAppend('title', asset.value.name || asset.value.code)
     safeAppend('description', asset.value.description)
 
     // optional enums/text
@@ -555,7 +590,13 @@ const submitForm = async () => {
 
     // boolean & misc
     safeAppend('is_related_to_it', itBool)
-    safeAppend('location', asset.value.location || '')
+
+    // NEW: location via dropdown (id), plus optional name for backward-compat
+    if (asset.value.location_id) {
+      safeAppend('location_id', Number(asset.value.location_id))
+      const loc = (locations.value || []).find(l => l.id === asset.value.location_id)
+      if (loc?.name) safeAppend('location', loc.name) // optional, if server still accepts 'location' string
+    }
 
     // numbers
     const numOrEmpty = v => (v === '' || v === null || v === undefined) ? '' : String(Number(v))
@@ -564,7 +605,7 @@ const submitForm = async () => {
     safeAppend('purchase_cost',    numOrEmpty(asset.value.purchase_cost))
     safeAppend('book_value',       numOrEmpty(asset.value.nbv))
     safeAppend('useful_life',      numOrEmpty(asset.value.useful_life))
-    // If backend accepts depreciation_rate:
+    // If backend accepts depreciation_rate as numeric:
     // safeAppend('depreciation_rate', numOrEmpty(asset.value.depreciation_rate))
 
     // images (new uploads)
@@ -578,7 +619,6 @@ const submitForm = async () => {
       headers: {
         Authorization: `Bearer ${decodedToken}`,
         Accept: 'application/json',
-        // do NOT set Content-Type; browser will set multipart boundary
       },
     })
 
@@ -601,6 +641,7 @@ const submitForm = async () => {
 onMounted(async () => {
   await fetchCategories()
   await fetchInvestmentRequests()
+  await fetchLocations()   // NEW
   await loadRecord()
 })
 </script>

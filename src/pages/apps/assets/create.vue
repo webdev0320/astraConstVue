@@ -104,9 +104,14 @@
 
       <!-- Location (optional) -->
       <VCol cols="12" md="6">
-        <VTextField
-          v-model="asset.location"
+        <VSelect
+          v-model="asset.location_id"
+          :items="locations"
+          item-title="name"
+          item-value="id"
           label="Location"
+          :loading="loadingLocations"
+          :disabled="loadingLocations"
           clearable
         />
       </VCol>
@@ -389,7 +394,8 @@ const asset = ref({
 
   // misc
   is_related_to_it: null,   // 'yes' | 'no'
-  location: '',
+  // location: '',          // ⟵ remove this line
+  location_id: null,         // ⟵ NEW
   type: '',
   asset_type: '',
 
@@ -399,11 +405,15 @@ const asset = ref({
   useful_life: '',
   replacement_cost: '',
   purchase_cost: '',
-  nbv: '',                  // maps to book_value
+  nbv: '',
 
   // files
   images: [],
 })
+
+const locations = ref([])          // ⟵ NEW
+const loadingLocations = ref(false) // ⟵ NEW
+
 
 const yesNoOptions = [
   { title: 'Yes', value: 'yes' },
@@ -530,6 +540,32 @@ const fetchSubCategories = async (parentId) => {
   }
 }
 
+/* Locations */
+const fetchLocations = async () => {
+  try {
+    loadingLocations.value = true
+    const res = await axios.get(`${apiBaseUrl}/locations`, {
+      headers: { ...authHeader(), Accept: 'application/json' },
+    })
+
+    // API could be { data: [...] } or plain array — handle both
+    const list = Array.isArray(res.data?.data) ? res.data.data
+               : Array.isArray(res.data) ? res.data
+               : []
+
+    // Normalize: only id & name needed for VSelect
+    locations.value = list
+      .filter(l => l && l.id && l.name)
+      .map(l => ({ id: l.id, name: l.name }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+  } catch (e) {
+    console.error('Failed to load locations', e)
+    locations.value = []
+  } finally {
+    loadingLocations.value = false
+  }
+}
+
 /* Investment Requests (for required select) */
 const formatIRLabel = ir => {
   const proj = ir?.project?.name ? `• ${ir.project.name}` : ''
@@ -635,7 +671,14 @@ const submitForm = async () => {
 
     // booleans & misc
     if (itBool !== null) safeAppend('is_related_to_it', itBool ? '1' : '0')
-    safeAppend('location', asset.value.location || '')
+
+    // ⟵ NEW: Location via dropdown
+    if (asset.value.location_id) {
+      safeAppend('location_id', Number(asset.value.location_id))
+      // (Optional backward-compat) — if API abhi 'location' name bhi accept karta ho
+      const loc = (locations.value || []).find(l => l.id === asset.value.location_id)
+      if (loc?.name) safeAppend('location', loc.name)
+    }
 
     // numbers
     const numOrEmpty = v => (v === '' || v === null || v === undefined) ? '' : String(Number(v))
@@ -644,6 +687,8 @@ const submitForm = async () => {
     safeAppend('purchase_cost', numOrEmpty(asset.value.purchase_cost))
     safeAppend('book_value', numOrEmpty(asset.value.nbv))
     safeAppend('useful_life', numOrEmpty(asset.value.useful_life))
+    // (optional) agar chahen to depreciation_rate bhi bhej dein:
+    // safeAppend('depreciation_rate', numOrEmpty(asset.value.depreciation_rate))
 
     // IMAGES
     ;(asset.value.images || []).forEach(file => {
@@ -683,6 +728,7 @@ const resetForm = () => {
   asset.value.asset_sub_category_id = null
   asset.value.is_related_to_it = null
   asset.value.images = []
+  asset.value.location_id = null
   subCategories.value = []
 }
 
@@ -690,6 +736,7 @@ const resetForm = () => {
 onMounted(() => {
   fetchCategories()
   fetchInvestmentRequests()
+  fetchLocations()
 })
 </script>
 
