@@ -193,8 +193,6 @@ const headers = [
   { title: "Category Name", key: "category_name" },
   { title: "SUB CATEGORY", key: "sub_category" },
   { title: "CODE", key: "code" },
-  { title: "PURCHASE DATE", key: "purchase_date" },
-  { title: "PRICE", key: "price" },
   { title: "PURCHASE COST", key: "purchase_cost" },
   { title: "ACTIONS", key: "actions", sortable: false },
 ];
@@ -274,7 +272,21 @@ const openDetail = async (assetId) => {
 
     // API format: { success: true, data: { ... } }
     const d = res?.data?.data ?? res?.data ?? null;
-    detail.value = d;
+
+    // Normalize images -> media (always an array of URLs)
+    const imgs = Array.isArray(d?.images)
+      ? d.images.filter(Boolean)
+      : (d?.images ? [d.images] : []);
+
+    // Optional: coerce some fields (safety)
+    const normalized = {
+      ...d,
+      media: imgs,                                    // used by modal
+      is_related_to_it: d?.is_related_to_it ?? null,  // keep null/boolean
+      book_value: d?.book_value ?? d?.nbv ?? null,    // fallback if API changes
+    };
+
+    detail.value = normalized;
   } catch (e) {
     console.error("Error fetching asset detail:", e);
     detailError.value = e?.response?.data?.message || "Failed to load asset detail.";

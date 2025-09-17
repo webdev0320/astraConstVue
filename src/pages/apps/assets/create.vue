@@ -5,7 +5,6 @@
 
   <VForm ref="refForm" @submit.prevent="submitForm">
     <VRow>
-
       <!-- ===================== -->
       <!-- Basic Information     -->
       <!-- ===================== -->
@@ -16,19 +15,18 @@
 
       <!-- Asset Investment Request (REQUIRED) -->
       <VCol cols="12" md="6">
-      <VSelect
-        v-model="asset.asset_investment_requests_id"
-        :items="investmentRequests"
-        item-title="label"
-        item-value="id"
-        label="Asset Investment Request"
-        :loading="loadingInvestmentRequests"
-        :disabled="loadingInvestmentRequests"
-        :error-messages="errorMessages.asset_investment_requests_id"
-        clearable
-      />
+        <VSelect
+          v-model="asset.asset_investment_requests_id"
+          :items="investmentRequests"
+          item-title="label"
+          item-value="id"
+          label="Asset Investment Request"
+          :loading="loadingInvestmentRequests"
+          :disabled="loadingInvestmentRequests"
+          :error-messages="errorMessages.asset_investment_requests_id"
+          clearable
+        />
       </VCol>
-
 
       <!-- Code (REQUIRED) -->
       <VCol cols="12" md="6">
@@ -207,7 +205,7 @@
         />
       </VCol>
 
-      <!-- Insurance End Date (NEW) -->
+      <!-- Insurance End Date -->
       <VCol cols="12" md="6">
         <VTextField
           v-model="asset.insurance_end_date"
@@ -227,7 +225,7 @@
         />
       </VCol>
 
-      <!-- Warranty End Date (NEW) -->
+      <!-- Warranty End Date -->
       <VCol cols="12" md="6">
         <VTextField
           v-model="asset.warranty_end_date"
@@ -237,7 +235,7 @@
         />
       </VCol>
 
-      <!-- Extended Warranty (NEW: maps to extended_warranty) -->
+      <!-- Extended Warranty -->
       <VCol cols="12" md="6">
         <VTextField
           v-model="asset.extended_warranty"
@@ -281,17 +279,21 @@
       </VCol>
 
       <!-- ===================== -->
-      <!-- Price (ALWAYS VISIBLE) -->
+      <!-- Price                 -->
       <!-- ===================== -->
       <VCol cols="12">
         <h4 class="section-title">Price</h4>
         <VDivider class="my-3" />
       </VCol>
 
-      <!-- Optional numeric fields -->
-      <!-- (Note: depreciation_rate UI me rakh rahe, payload me send nahi kar rahe) -->
       <VCol cols="12" md="4">
-        <VTextField v-model="asset.depreciation_rate" type="number" label="Depreciation Rate (%)" :rules="[percentOptionalValidator]" clearable />
+        <VTextField
+          v-model="asset.depreciation_rate"
+          type="number"
+          label="Depreciation Rate (%)"
+          :rules="[percentOptionalValidator]"
+          clearable
+        />
       </VCol>
 
       <VCol cols="12" md="4">
@@ -310,9 +312,31 @@
         <VTextField v-model="asset.purchase_cost" type="number" label="Purchase Cost" :rules="[numberOptionalValidator]" clearable />
       </VCol>
 
-      <!-- Book Value (maps from nbv) -->
       <VCol cols="12" md="4">
         <VTextField v-model="asset.nbv" type="number" label="Book Value (NBV)" :rules="[numberOptionalValidator]" clearable />
+      </VCol>
+      
+      <!-- ===================== -->
+      <!-- images                 -->
+      <!-- ===================== -->
+      <VCol cols="12">
+        <h4 class="section-title">Images</h4>
+        <VDivider class="my-3" />
+      </VCol>
+
+      <VCol cols="12">
+        <VFileInput
+          v-model="asset.images"
+          label="Upload Images (optional)"
+          multiple
+          accept="image/*"
+          show-size
+          counter
+          variant="outlined"
+          density="comfortable"
+          :hide-details="'auto'"
+          :error-messages="errorMessages.images"
+        />
       </VCol>
 
       <!-- Submit -->
@@ -326,13 +350,13 @@
 </template>
 
 <script setup>
-import axios from 'axios';
-import { onMounted, ref, watch } from 'vue';
-import { useRouter } from "vue-router";
-import { VBtn, VCol, VDivider, VForm, VRow, VSelect, VTextField, VTextarea } from 'vuetify/components';
+import axios from 'axios'
+import { onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { VBtn, VCol, VDivider, VFileInput, VForm, VRow, VSelect, VTextField, VTextarea } from 'vuetify/components'
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
-const router = useRouter();
+const router = useRouter()
 
 /* ---------------- Options ---------------- */
 const TYPE_OPTIONS = ['Vehicle', 'IT Equipment', 'Machinery', 'Furniture', 'Other']
@@ -359,12 +383,12 @@ const asset = ref({
   insurance_end_date: '',
   warranty_start_date: today,
   warranty_end_date: '',
-  extended_warranty: '',      // API key name
+  extended_warranty: '',
   purchase_date: today,
   production_date: today,
 
   // misc
-  is_related_to_it: null,     // 'yes' | 'no' -> boolean on submit
+  is_related_to_it: null,   // 'yes' | 'no'
   location: '',
   type: '',
   asset_type: '',
@@ -375,17 +399,20 @@ const asset = ref({
   useful_life: '',
   replacement_cost: '',
   purchase_cost: '',
-  nbv: '',                    // maps to book_value
+  nbv: '',                  // maps to book_value
+
+  // files
+  images: [],
 })
 
 const yesNoOptions = [
   { title: 'Yes', value: 'yes' },
-  { title: 'No',  value: 'no'  },
+  { title: 'No', value: 'no' },
 ]
 
 const categories = ref([])
 const subCategories = ref([])
-const investmentRequests = ref([]) // [{id,label}]
+const investmentRequests = ref([])
 
 const loading = ref(false)
 const loadingCategories = ref(false)
@@ -398,7 +425,10 @@ const errorMessages = ref({})
 
 /* ---------------- Validators ---------------- */
 const requiredValidator = value => !!value || 'This field is required'
-const numberOptionalValidator = value => (value === '' || value === null || value === undefined) ? true : (!isNaN(Number(value)) || 'Enter a valid number')
+const numberOptionalValidator = value =>
+  (value === '' || value === null || value === undefined)
+    ? true
+    : (!isNaN(Number(value)) || 'Enter a valid number')
 const percentOptionalValidator = value => {
   if (value === '' || value === null || value === undefined) return true
   const n = Number(value)
@@ -544,7 +574,7 @@ const submitForm = async () => {
     loading.value = true
     errorMessages.value = {}
 
-    // Basic client-side required checks (Vuetify rules already run)
+    // basic required checks
     if (!asset.value.code ||
         !asset.value.title ||
         !asset.value.asset_category_id ||
@@ -558,74 +588,80 @@ const submitForm = async () => {
     if (!token) throw new Error('Access token is missing. Please log in.')
     const decodedToken = decodeURIComponent(token)
 
-    // map yes/no -> boolean
-    const itBool = asset.value.is_related_to_it === 'yes' ? true
-                 : asset.value.is_related_to_it === 'no'  ? false
-                 : null
+    const itBool =
+      asset.value.is_related_to_it === 'yes' ? true
+      : asset.value.is_related_to_it === 'no' ? false
+      : null
 
-    const payload = {
-      asset_category_id: Number(asset.value.asset_category_id),
-      asset_sub_category_id: Number(asset.value.asset_sub_category_id),
-      asset_investment_requests_id: asset.value.asset_investment_requests_id
-      ? Number(asset.value.asset_investment_requests_id)
-      : null,
+    const fd = new FormData()
 
-      // optional enums/text
-      type: asset.value.type || null,
-      asset_type: asset.value.asset_type || null,
-
-      // required in UI
-      code: asset.value.code,
-      title: asset.value.title,
-      description: asset.value.description,
-
-      // optional identity & make
-      serial_number: asset.value.serial_number || null,
-      plate_number: asset.value.plate_number || null,
-      model_number: asset.value.model_number || null,
-      make: asset.value.make || null,
-      model: asset.value.model || null,
-      brand: asset.value.brand || null,
-
-      // dates (optional)
-      insurance_start_date: asset.value.insurance_start_date || null,
-      insurance_end_date: asset.value.insurance_end_date || null,
-      warranty_start_date: asset.value.warranty_start_date || null,
-      warranty_end_date: asset.value.warranty_end_date || null,
-      extended_warranty: asset.value.extended_warranty || null,
-      purchase_date: asset.value.purchase_date || null,
-      production_date: asset.value.production_date || null,
-
-      // booleans & misc
-      is_related_to_it: itBool,
-
-      // location
-      location: asset.value.location || null,
-
-      // numbers (optional)
-      price: asset.value.price === '' ? null : Number(asset.value.price),
-      replacement_cost: asset.value.replacement_cost === '' ? null : Number(asset.value.replacement_cost),
-      purchase_cost: asset.value.purchase_cost === '' ? null : Number(asset.value.purchase_cost),
-      book_value: asset.value.nbv === '' ? null : Number(asset.value.nbv),
-      useful_life: asset.value.useful_life === '' ? null : Number(asset.value.useful_life),
-
-      // NOTE: name & depreciation_rate are not in API example; omitting to avoid backend errors.
-      // If backend supports `name`, uncomment below:
-      // name: asset.value.name,
-      // depreciation_rate: asset.value.depreciation_rate === '' ? null : Number(asset.value.depreciation_rate),
+    // helper to append only if present
+    const safeAppend = (key, val) => {
+      if (val === null || val === undefined || val === '') return
+      fd.append(key, String(val))
     }
 
-    const response = await axios.post(`${apiBaseUrl}/assets`, payload, {
+    // required + ids
+    safeAppend('asset_category_id', Number(asset.value.asset_category_id))
+    safeAppend('asset_sub_category_id', Number(asset.value.asset_sub_category_id))
+    if (asset.value.asset_investment_requests_id) {
+      safeAppend('asset_investment_requests_id', Number(asset.value.asset_investment_requests_id))
+    }
+
+    safeAppend('code', asset.value.code)
+    safeAppend('title', asset.value.title)
+    safeAppend('description', asset.value.description)
+
+    // optional enums/text
+    safeAppend('type', asset.value.type || '')
+    safeAppend('asset_type', asset.value.asset_type || '')
+
+    // identity & make
+    safeAppend('serial_number', asset.value.serial_number || '')
+    safeAppend('plate_number', asset.value.plate_number || '')
+    safeAppend('model_number', asset.value.model_number || '')
+    safeAppend('make', asset.value.make || '')
+    safeAppend('model', asset.value.model || '')
+    safeAppend('brand', asset.value.brand || '')
+
+    // dates
+    safeAppend('insurance_start_date', asset.value.insurance_start_date || '')
+    safeAppend('insurance_end_date', asset.value.insurance_end_date || '')
+    safeAppend('warranty_start_date', asset.value.warranty_start_date || '')
+    safeAppend('warranty_end_date', asset.value.warranty_end_date || '')
+    safeAppend('extended_warranty', asset.value.extended_warranty || '')
+    safeAppend('purchase_date', asset.value.purchase_date || '')
+    safeAppend('production_date', asset.value.production_date || '')
+
+    // booleans & misc
+    if (itBool !== null) safeAppend('is_related_to_it', itBool ? '1' : '0')
+    safeAppend('location', asset.value.location || '')
+
+    // numbers
+    const numOrEmpty = v => (v === '' || v === null || v === undefined) ? '' : String(Number(v))
+    safeAppend('price', numOrEmpty(asset.value.price))
+    safeAppend('replacement_cost', numOrEmpty(asset.value.replacement_cost))
+    safeAppend('purchase_cost', numOrEmpty(asset.value.purchase_cost))
+    safeAppend('book_value', numOrEmpty(asset.value.nbv))
+    safeAppend('useful_life', numOrEmpty(asset.value.useful_life))
+
+    // IMAGES
+    ;(asset.value.images || []).forEach(file => {
+      if (file instanceof File || (file && typeof file === 'object' && 'size' in file)) {
+        fd.append('images[]', file)
+      }
+    })
+
+    const response = await axios.post(`${apiBaseUrl}/assets`, fd, {
       headers: {
-        'Content-Type': 'application/json',
+        // DO NOT set Content-Type; browser will set multipart boundary
         Authorization: `Bearer ${decodedToken}`,
         Accept: 'application/json',
       },
     })
 
     message.value = response.data?.message || 'Asset created successfully!'
-    router.push(`/dashboards/assets`);
-    // resetForm()
+    router.push(`/dashboards/assets`)
   } catch (error) {
     console.error('Error submitting form:', error?.response?.data || error)
     if (error.response?.data?.errors) {
@@ -642,11 +678,11 @@ const submitForm = async () => {
 const resetForm = () => {
   const keepKeys = Object.keys(asset.value)
   for (const k of keepKeys) asset.value[k] = ''
-  // restore defaults
   asset.value.asset_investment_requests_id = null
   asset.value.asset_category_id = null
   asset.value.asset_sub_category_id = null
   asset.value.is_related_to_it = null
+  asset.value.images = []
   subCategories.value = []
 }
 

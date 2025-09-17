@@ -5,7 +5,6 @@
 
   <VForm ref="refForm" @submit.prevent="submitForm">
     <VRow>
-
       <!-- ===================== -->
       <!-- Base Information      -->
       <!-- ===================== -->
@@ -16,17 +15,17 @@
 
       <!-- Asset Investment Request (REQUIRED) -->
       <VCol cols="12" md="6">
-      <VSelect
-        v-model="asset.asset_investment_requests_id"
-        :items="investmentRequests"
-        item-title="label"
-        item-value="id"
-        label="Asset Investment Request"
-        :loading="loadingInvestmentRequests"
-        :disabled="loadingInvestmentRequests"
-        :error-messages="errorMessages.asset_investment_requests_id"
-        clearable
-      />
+        <VSelect
+          v-model="asset.asset_investment_requests_id"
+          :items="investmentRequests"
+          item-title="label"
+          item-value="id"
+          label="Asset Investment Request"
+          :loading="loadingInvestmentRequests"
+          :disabled="loadingInvestmentRequests"
+          :error-messages="errorMessages.asset_investment_requests_id"
+          clearable
+        />
       </VCol>
 
       <!-- Code (REQUIRED) -->
@@ -40,12 +39,11 @@
         />
       </VCol>
 
-      <!-- Name (REQUIRED - UI only; payload may be ignored by API) -->
+      <!-- Name (optional - UI only if backend ignores) -->
       <VCol cols="12" md="6">
         <VTextField
           v-model="asset.name"
           label="Name"
-          :rules="[requiredValidator]"
           :error-messages="errorMessages.name"
           clearable
         />
@@ -85,31 +83,17 @@
 
       <!-- Type (optional) -->
       <VCol cols="12" md="6">
-        <VSelect
-          v-model="asset.type"
-          :items="TYPE_OPTIONS"
-          label="Type"
-          clearable
-        />
+        <VSelect v-model="asset.type" :items="TYPE_OPTIONS" label="Type" clearable />
       </VCol>
 
       <!-- Asset Type (optional) -->
       <VCol cols="12" md="6">
-        <VSelect
-          v-model="asset.asset_type"
-          :items="ASSET_TYPE_OPTIONS"
-          label="Asset Type"
-          clearable
-        />
+        <VSelect v-model="asset.asset_type" :items="ASSET_TYPE_OPTIONS" label="Asset Type" clearable />
       </VCol>
 
       <!-- Location (optional) -->
       <VCol cols="12" md="6">
-        <VTextField
-          v-model="asset.location"
-          label="Location"
-          clearable
-        />
+        <VTextField v-model="asset.location" label="Location" clearable />
       </VCol>
 
       <!-- Description (REQUIRED) -->
@@ -148,10 +132,8 @@
 
       <VCol cols="12" md="6"><VTextField v-model="asset.insurance_start_date" type="date" label="Insurance Start Date" /></VCol>
       <VCol cols="12" md="6"><VTextField v-model="asset.insurance_end_date"   type="date" label="Insurance End Date"   /></VCol>
-
       <VCol cols="12" md="6"><VTextField v-model="asset.warranty_start_date"  type="date" label="Warranty Start Date"  /></VCol>
       <VCol cols="12" md="6"><VTextField v-model="asset.warranty_end_date"    type="date" label="Warranty End Date"    /></VCol>
-
       <VCol cols="12" md="6"><VTextField v-model="asset.extended_warranty"    type="date" label="Extended Warranty Date" /></VCol>
       <VCol cols="12" md="6"><VTextField v-model="asset.purchase_date"        type="date" label="Purchase Date" /></VCol>
       <VCol cols="12" md="6"><VTextField v-model="asset.production_date"      type="date" label="Production Date" clearable /></VCol>
@@ -178,17 +160,41 @@
         <VDivider class="my-3" />
       </VCol>
 
-      <!-- Note: depreciation_rate UI only; not sent if API doesn't accept -->
       <VCol cols="12" md="4">
-        <VTextField v-model="asset.depreciation_rate" type="number" label="Depreciation Rate (%)" :rules="[percentOptionalValidator]" clearable />
+        <VTextField
+          v-model="asset.depreciation_rate"
+          type="number"
+          label="Depreciation Rate (%)"
+          :rules="[percentOptionalValidator]"
+          clearable
+        />
       </VCol>
 
       <VCol cols="12" md="4"><VTextField v-model="asset.price"            type="number" label="Price"             :rules="[numberOptionalValidator]" clearable /></VCol>
       <VCol cols="12" md="4"><VTextField v-model="asset.useful_life"      type="number" label="Useful Life"       :rules="[numberOptionalValidator]" clearable /></VCol>
       <VCol cols="12" md="4"><VTextField v-model="asset.replacement_cost" type="number" label="Replacement Cost"  :rules="[numberOptionalValidator]" clearable /></VCol>
       <VCol cols="12" md="4"><VTextField v-model="asset.purchase_cost"    type="number" label="Purchase Cost"     :rules="[numberOptionalValidator]" clearable /></VCol>
-      <!-- Book Value maps to API: book_value -->
       <VCol cols="12" md="4"><VTextField v-model="asset.nbv"              type="number" label="NBV / Book Value"  :rules="[numberOptionalValidator]" clearable /></VCol>
+
+      <!-- ===================== -->
+      <!-- Images (NEW uploads)  -->
+      <!-- ===================== -->
+      <VCol cols="12">
+        <h4 class="section-title">Images</h4>
+        <VDivider class="my-3" />
+      </VCol>
+      <VCol cols="12">
+        <VFileInput
+          v-model="asset.images"
+          label="Upload Images (optional)"
+          multiple
+          accept="image/*"
+          chips
+          counter
+          show-size
+          :error-messages="errorMessages.images"
+        />
+      </VCol>
 
       <!-- Actions -->
       <VCol cols="12" class="d-flex gap-2">
@@ -205,7 +211,7 @@
 import axios from 'axios'
 import { onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { VBtn, VCol, VDivider, VForm, VRow, VSelect, VTextField, VTextarea } from 'vuetify/components'
+import { VBtn, VCol, VDivider, VFileInput, VForm, VRow, VSelect, VTextField, VTextarea } from 'vuetify/components'
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 const route = useRoute()
@@ -218,14 +224,13 @@ const ASSET_TYPE_OPTIONS = ['Owned', 'Rental', 'Leased', 'Used', 'New']
 
 /* ---------------- State ---------------- */
 const asset = ref({
-  asset_investment_requests_id: null, // REQUIRED
+  asset_investment_requests_id: null,
   code: '',
   name: '',
   asset_category_id: null,
   asset_sub_category_id: null,
   description: '',
 
-  // Identity / make
   serial_number: '',
   plate_number: '',
   make: '',
@@ -233,28 +238,27 @@ const asset = ref({
   brand: '',
   model_number: '',
 
-  // dates
   insurance_start_date: '',
   insurance_end_date: '',
   warranty_start_date: '',
   warranty_end_date: '',
-  extended_warranty: '',   // API key
+  extended_warranty: '',
   purchase_date: '',
   production_date: '',
 
-  // misc
-  is_related_to_it: null,  // 'yes' | 'no' (UI) -> boolean in payload
+  is_related_to_it: null,  // 'yes' | 'no'
   location: '',
   type: '',
   asset_type: '',
 
-  // financials
   depreciation_rate: '',
   price: '',
   useful_life: '',
   replacement_cost: '',
   purchase_cost: '',
-  nbv: '',                 // maps to API: book_value
+  nbv: '',
+
+  images: [], // NEW uploads only
 })
 
 const yesNoOptions = [
@@ -423,15 +427,12 @@ const loadRecord = async () => {
 
     const p = res.data?.data ?? res.data
 
-    // map backend -> UI fields (with sensible fallbacks)
     asset.value = {
       asset_investment_requests_id: p.asset_investment_requests_id ?? p.asset_investment_request_id ?? null,
       code: p.code ?? '',
       name: p.name ?? '',
-
       asset_category_id: p.asset_category_id ?? p.category_id ?? null,
       asset_sub_category_id: p.asset_sub_category_id ?? p.sub_category_id ?? null,
-
       description: p.description ?? '',
 
       serial_number: p.serial_number ?? '',
@@ -445,11 +446,10 @@ const loadRecord = async () => {
       insurance_end_date:   p.insurance_end_date   ?? '',
       warranty_start_date:  p.warranty_start_date  ?? '',
       warranty_end_date:    p.warranty_end_date    ?? '',
-      extended_warranty:    p.extended_warranty    ?? (p.extended_warranty_date ?? ''), // legacy fallback
+      extended_warranty:    p.extended_warranty    ?? (p.extended_warranty_date ?? ''),
       purchase_date:        p.purchase_date        ?? '',
       production_date:      p.production_date      ?? '',
 
-      // boolean -> 'yes'/'no'
       is_related_to_it: (p.is_related_to_it === true) ? 'yes' : (p.is_related_to_it === false) ? 'no' : null,
 
       location:   p.location   ?? '',
@@ -461,10 +461,11 @@ const loadRecord = async () => {
       useful_life:      p.useful_life      ?? '',
       replacement_cost: p.replacement_cost ?? '',
       purchase_cost:    p.purchase_cost    ?? '',
-      nbv:              (p.book_value ?? p.nbv ?? ''), // show in UI
+      nbv:              (p.book_value ?? p.nbv ?? ''),
+
+      images: [], // fresh uploads; existing images are managed server-side
     }
 
-    // ensure subcategories list for current category
     if (asset.value.asset_category_id) {
       await fetchSubCategories(asset.value.asset_category_id)
     }
@@ -488,7 +489,7 @@ watch(
 /* Actions */
 const goBack = () => router.push('/dashboards/assets')
 
-/* Submit (PUT) */
+/* Submit (multipart PUT via _method) */
 const submitForm = async () => {
   try {
     loading.value = true
@@ -505,71 +506,82 @@ const submitForm = async () => {
     if (!token) throw new Error('Access token is missing. Please log in.')
     const decodedToken = decodeURIComponent(token)
 
-    // UI 'yes'/'no' -> boolean
-    const itBool = asset.value.is_related_to_it === 'yes' ? true
-                 : asset.value.is_related_to_it === 'no'  ? false
-                 : null
+    const itBool =
+      asset.value.is_related_to_it === 'yes' ? '1'
+      : asset.value.is_related_to_it === 'no'  ? '0'
+      : ''
 
-    const payload = {
-      asset_category_id: Number(asset.value.asset_category_id),
-      asset_sub_category_id: Number(asset.value.asset_sub_category_id),
-      asset_investment_requests_id: asset.value.asset_investment_requests_id
-        ? Number(asset.value.asset_investment_requests_id)
-        : null,
-
-      // optional enums/text
-      type: asset.value.type || null,
-      asset_type: asset.value.asset_type || null,
-
-      // required in UI
-      code: asset.value.code,
-      description: asset.value.description,
-
-      // identity
-      serial_number: asset.value.serial_number || null,
-      plate_number:  asset.value.plate_number  || null,
-      model_number:  asset.value.model_number  || null,
-      make: asset.value.make || null,
-      model: asset.value.model || null,
-      brand: asset.value.brand || null,
-
-      // dates
-      insurance_start_date: asset.value.insurance_start_date || null,
-      insurance_end_date:   asset.value.insurance_end_date   || null,
-      warranty_start_date:  asset.value.warranty_start_date  || null,
-      warranty_end_date:    asset.value.warranty_end_date    || null,
-      extended_warranty:    asset.value.extended_warranty    || null,
-      purchase_date:        asset.value.purchase_date        || null,
-      production_date:      asset.value.production_date      || null,
-
-      // boolean
-      is_related_to_it: itBool,
-
-      // misc
-      location: asset.value.location || null,
-
-      // numbers
-      price:            asset.value.price            === '' ? null : Number(asset.value.price),
-      replacement_cost: asset.value.replacement_cost === '' ? null : Number(asset.value.replacement_cost),
-      purchase_cost:    asset.value.purchase_cost    === '' ? null : Number(asset.value.purchase_cost),
-      book_value:       asset.value.nbv              === '' ? null : Number(asset.value.nbv),
-      useful_life:      asset.value.useful_life      === '' ? null : Number(asset.value.useful_life),
-
-      // NOTE: name & depreciation_rate intentionally omitted unless backend supports them.
-      // If your API accepts 'name', you can include: name: asset.value.name,
-      // If API accepts 'depreciation_rate', include:
-      // depreciation_rate: asset.value.depreciation_rate === '' ? null : Number(asset.value.depreciation_rate),
+    const fd = new FormData()
+    // helper
+    const safeAppend = (k, v) => {
+      if (v === null || v === undefined || v === '') return
+      fd.append(k, String(v))
     }
 
-    await axios.put(`${apiBaseUrl}/assets/${encodeURIComponent(id)}`, payload, {
+    // method override for Laravel
+    fd.append('_method', 'PUT')
+
+    // ids + required
+    safeAppend('asset_category_id', Number(asset.value.asset_category_id))
+    safeAppend('asset_sub_category_id', Number(asset.value.asset_sub_category_id))
+    if (asset.value.asset_investment_requests_id) {
+      safeAppend('asset_investment_requests_id', Number(asset.value.asset_investment_requests_id))
+    }
+
+    safeAppend('code', asset.value.code)
+    safeAppend('title', asset.value.name || asset.value.code) // if your API uses 'title' not 'name'
+    safeAppend('description', asset.value.description)
+
+    // optional enums/text
+    safeAppend('type', asset.value.type || '')
+    safeAppend('asset_type', asset.value.asset_type || '')
+
+    // identity
+    safeAppend('serial_number', asset.value.serial_number || '')
+    safeAppend('plate_number',  asset.value.plate_number  || '')
+    safeAppend('model_number',  asset.value.model_number  || '')
+    safeAppend('make', asset.value.make || '')
+    safeAppend('model', asset.value.model || '')
+    safeAppend('brand', asset.value.brand || '')
+
+    // dates
+    safeAppend('insurance_start_date', asset.value.insurance_start_date || '')
+    safeAppend('insurance_end_date',   asset.value.insurance_end_date   || '')
+    safeAppend('warranty_start_date',  asset.value.warranty_start_date  || '')
+    safeAppend('warranty_end_date',    asset.value.warranty_end_date    || '')
+    safeAppend('extended_warranty',    asset.value.extended_warranty    || '')
+    safeAppend('purchase_date',        asset.value.purchase_date        || '')
+    safeAppend('production_date',      asset.value.production_date      || '')
+
+    // boolean & misc
+    safeAppend('is_related_to_it', itBool)
+    safeAppend('location', asset.value.location || '')
+
+    // numbers
+    const numOrEmpty = v => (v === '' || v === null || v === undefined) ? '' : String(Number(v))
+    safeAppend('price',            numOrEmpty(asset.value.price))
+    safeAppend('replacement_cost', numOrEmpty(asset.value.replacement_cost))
+    safeAppend('purchase_cost',    numOrEmpty(asset.value.purchase_cost))
+    safeAppend('book_value',       numOrEmpty(asset.value.nbv))
+    safeAppend('useful_life',      numOrEmpty(asset.value.useful_life))
+    // If backend accepts depreciation_rate:
+    // safeAppend('depreciation_rate', numOrEmpty(asset.value.depreciation_rate))
+
+    // images (new uploads)
+    ;(asset.value.images || []).forEach(file => {
+      if (file instanceof File || (file && typeof file === 'object' && 'size' in file)) {
+        fd.append('images[]', file)
+      }
+    })
+
+    await axios.post(`${apiBaseUrl}/assets/${encodeURIComponent(id)}`, fd, {
       headers: {
-        'Content-Type': 'application/json',
         Authorization: `Bearer ${decodedToken}`,
         Accept: 'application/json',
+        // do NOT set Content-Type; browser will set multipart boundary
       },
     })
 
-    // alert('Asset updated successfully!')
     goBack()
   } catch (error) {
     console.error('Error updating asset:', error?.response?.data || error)

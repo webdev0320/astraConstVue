@@ -75,14 +75,6 @@ export default [
         title: 'Dashboard',
         to: 'dashboards-crm',
       },
-        {
-        title: 'Assets',
-        to: 'dashboards-assets',
-      },
-      {
-        title: 'Assets Categories',
-        to: 'dashboards-assetcategories',
-      },
       {
         title: 'Projects',
         to: 'dashboards-projects',
@@ -90,6 +82,10 @@ export default [
       {
         title: 'Asset Investment Request',
         to: 'dashboards-asset-investment-requests',
+      },
+        {
+        title: 'Assets',
+        to: 'dashboards-assets',
       },
       {
         title: 'Asset HandOver',
@@ -100,20 +96,24 @@ export default [
         to: 'dashboards-assettransfers',
       },
       {
-        title: 'Location',
-        to: 'dashboards-locations',
-      },
-      {
         title: 'Vehicle Handover',
         to: 'dashboards-vehiclehandovers',
       },
       {
-        title: 'Users',
-        to: 'dashboards-users',
+        title: 'Assets Categories',
+        to: 'dashboards-assetcategories',
       },
       {
         title: 'Departments',
         to: 'dashboards-departments',
+      },
+      {
+        title: 'Location',
+        to: 'dashboards-locations',
+      },
+      {
+        title: 'Users',
+        to: 'dashboards-users',
       },
       {
         title: 'Permissions',
