@@ -118,8 +118,6 @@ const headers = [
   { title: "PURCHASE DATE", key: "purchase_date" },
   { title: "PRICE", key: "price" },
   { title: "PURCHASE COST", key: "purchase_cost" },
-  { title: "QR Code", key: "qr_code" },
-  { title: "CREATED AT", key: "created_at" },
   { title: "ACTIONS", key: "actions", sortable: false },
 ];
 

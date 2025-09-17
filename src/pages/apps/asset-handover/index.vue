@@ -73,7 +73,7 @@
 
 <script setup>
 import axios from "axios";
-import { ref, onMounted } from "vue";
+import { onMounted, ref } from "vue";
 import { VBtn, VDataTable } from "vuetify/components";
 
 /* ========= CONFIG ========= */
@@ -91,7 +91,7 @@ const headers = [
   { title: "ID", key: "id", width: 80 },
   { title: "Handover Date", key: "handover_date" },
   { title: "Asset Request ID", key: "asset_investment_requests_id" },
-  { title: "Quantity", key: "quantity" },
+  // { title: "Quantity", key: "quantity" },
   { title: "Handover By", key: "handover_by_name" },
   { title: "User", key: "user_name" },
   { title: "Remarks", key: "remarks" },
@@ -210,25 +210,26 @@ onMounted(fetchHandovers);
 </script>
 
 <style scoped>
-.v-data-table { margin-top: 16px; }
+.v-data-table { margin-block-start: 16px; }
 .d-flex { display: flex; }
 .justify-between { justify-content: space-between; }
 .align-center { align-items: center; }
-.ms-auto { margin-left: auto; }
+.ms-auto { margin-inline-start: auto; }
 .gap-2 { gap: 8px; }
-.mb-4 { margin-bottom: 16px; }
+.mb-4 { margin-block-end: 16px; }
 
 .desc-cell {
-  max-width: 520px;
   overflow: hidden;
-  text-overflow: ellipsis;
+  max-inline-size: 520px;
   overflow-wrap: anywhere;
+  text-overflow: ellipsis;
   word-break: break-word;
 }
+
 .clamp-2 {
   display: -webkit-box;
-  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 .text-danger { color: #d32f2f; }
 </style>

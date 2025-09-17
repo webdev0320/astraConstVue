@@ -36,7 +36,7 @@
           />
         </VCol>
 
-        <VCol cols="12" md="4">
+        <VCol cols="12" md="6">
           <VTextField
             v-model="form.date"
             type="date"
@@ -45,7 +45,7 @@
             :error-messages="errorMessages.date"
           />
         </VCol>
-        <VCol cols="12" md="4">
+        <VCol cols="12" md="6">
           <VTextField
             v-model="form.tag_no"
             label="Tag No"
@@ -125,7 +125,7 @@
         <VCol cols="12" md="6">
           <VSelect
             v-model="form.driver_id"
-            :items="usersToProject"
+            :items="usersToProject.filter(u => u.role === 'Drivers')"
             :item-title="userTitle"
             item-value="id"
             label="Driver"
@@ -136,14 +136,6 @@
           />
         </VCol>
 
-        <VCol cols="12" md="6">
-          <VTextField
-            v-model="form.driver_signature"
-            label="Driver Signature"
-            :error-messages="errorMessages.driver_signature"
-            clearable
-          />
-        </VCol>
         <VCol cols="12" md="6">
           <VTextField
             v-model="form.contact_details"
@@ -167,8 +159,21 @@
         </VCol>
 
         <VCol cols="12" md="4">
-          <VSwitch v-model="form.plant_manager_status" label="Plant Manager Status" inset />
+          <VSelect
+            v-model="form.plant_manager_status"
+            :items="[
+              { title: 'Approve', value: 'approved' },
+              { title: 'Disapprove', value: 'disapproved' }
+            ]"
+            label="Plant Manager Status"
+            item-title="title"
+            item-value="value"
+            :rules="[requiredValidator]"
+            :error-messages="errorMessages.plant_manager_status"
+            clearable
+          />
         </VCol>
+
         <VCol cols="12" md="4">
           <VTextField v-model="form.plant_manager_status_date" type="date" label="Plant Manager Status Date" />
         </VCol>
@@ -190,12 +195,38 @@
         <VCol cols="12">
           <h4 class="mb-2">Receiving</h4>
         </VCol>
+
         <VCol cols="12" md="4">
-          <VTextField v-model="form.received_from" label="Received From" clearable />
+          <VSelect
+            v-model="form.received_from"
+            :items="usersToProject"
+            :item-title="userTitle"
+            item-value="id"
+            label="Received From"
+            :loading="usersToLoading"
+            :disabled="!form.transferred_to_project_id || usersToLoading || usersToProject.length === 0"
+            :rules="[requiredNumberValidator]"
+            :error-messages="errorMessages.received_from"
+            clearable
+          />
         </VCol>
+        
+
         <VCol cols="12" md="4">
-          <VTextField v-model="form.received_by" label="Received By" clearable />
+          <VSelect
+            v-model="form.received_by"
+            :items="usersToProject"
+            :item-title="userTitle"
+            item-value="id"
+            label="Received By"
+            :loading="usersToLoading"
+            :disabled="!form.transferred_to_project_id || usersToLoading || usersToProject.length === 0"
+            :rules="[requiredNumberValidator]"
+            :error-messages="errorMessages.received_by"
+            clearable
+          />
         </VCol>
+
         <VCol cols="12" md="4">
           <VTextField v-model="form.received_date" type="date" label="Received Date" />
         </VCol>
@@ -290,6 +321,8 @@ const usersFromLoading = ref(false)
 const usersToLoading = ref(false)
 const userTitle = u => (u?.user_code ? `${u.name} — ${u.user_code}` : u?.name ?? '')
 
+const today = new Date().toISOString().split('T')[0]
+
 // 🔹 Assets for items[].asset_id
 const assets = ref([])            // [{ id, label }]
 const assetsLoading = ref(false)
@@ -298,7 +331,7 @@ const form = ref({
   issue_no: '',
   revision_date: '',
   form_no: '',
-  date: '',
+  date: today,
   tag_no: '',
   transferred_from_project_id: null,
   transferred_to_project_id: null,
@@ -306,17 +339,16 @@ const form = ref({
   transfer_time: '',
   prepared_by: null,
   driver_id: null,
-  driver_signature: '',
   contact_details: '',
   vehicle_plate_no: '',
-  plant_manager_status: false,
+  plant_manager_status: 'Approve',
   plant_manager_remarks: '',
-  plant_manager_status_date: '',
+  plant_manager_status_date: today,
   project_incharge_status: false,
   project_incharge_remarks: '',
-  project_incharge_status_date: '',
-  received_from: '',
-  received_by: '',
+  project_incharge_status_date: today,
+  received_from: null,
+  received_by: null,
   received_date: '',
   received_time: '',
   inspected_by: '',
@@ -451,12 +483,21 @@ watch(() => form.value.transferred_from_project_id, async (pid) => {
 
 watch(() => form.value.transferred_to_project_id, async (pid) => {
   form.value.driver_id = null
+  form.value.received_from = null
+  form.value.received_by = null
   usersToProject.value = []
   if (!pid) return
   usersToLoading.value = true
-  usersToProject.value = (await fetchProjectUsers(pid)).map(u => ({
-    id: u.id, name: u.name, user_code: u.user_code
+
+  const rawUsers = await fetchProjectUsers(pid)
+
+  usersToProject.value = rawUsers.map(u => ({
+    id: u.id,
+    name: u.name,
+    user_code: u.user_code,
+    role: u.role
   }))
+
   usersToLoading.value = false
 })
 

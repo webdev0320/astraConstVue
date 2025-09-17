@@ -16,18 +16,17 @@
 
       <!-- Asset Investment Request (REQUIRED) -->
       <VCol cols="12" md="6">
-        <VSelect
-          v-model="asset.asset_investment_requests_id"
-          :items="investmentRequests"
-          item-title="label"
-          item-value="id"
-          label="Asset Investment Request"
-          :rules="[requiredValidator]"
-          :loading="loadingInvestmentRequests"
-          :disabled="loadingInvestmentRequests"
-          :error-messages="errorMessages.asset_investment_requests_id"
-          clearable
-        />
+      <VSelect
+        v-model="asset.asset_investment_requests_id"
+        :items="investmentRequests"
+        item-title="label"
+        item-value="id"
+        label="Asset Investment Request"
+        :loading="loadingInvestmentRequests"
+        :disabled="loadingInvestmentRequests"
+        :error-messages="errorMessages.asset_investment_requests_id"
+        clearable
+      />
       </VCol>
 
       <!-- Code (REQUIRED) -->
@@ -514,7 +513,9 @@ const submitForm = async () => {
     const payload = {
       asset_category_id: Number(asset.value.asset_category_id),
       asset_sub_category_id: Number(asset.value.asset_sub_category_id),
-      asset_investment_requests_id: Number(asset.value.asset_investment_requests_id),
+      asset_investment_requests_id: asset.value.asset_investment_requests_id
+        ? Number(asset.value.asset_investment_requests_id)
+        : null,
 
       // optional enums/text
       type: asset.value.type || null,

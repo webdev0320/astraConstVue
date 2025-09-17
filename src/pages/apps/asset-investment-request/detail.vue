@@ -36,7 +36,7 @@
                   </div>
                 </div>
 
-                <div class="d-flex flex-column align-end gap-2">
+                <!-- <div class="d-flex flex-column align-end gap-2">
                   <VChip :color="statusColor(request.status)" size="small" label>
                     {{ request.status ?? '—' }}
                   </VChip>
@@ -48,7 +48,7 @@
                   >
                     Accordance: {{ humanYesNo(request.is_accordance_with_budget) }}
                   </VChip>
-                </div>
+                </div> -->
               </div>
 
               <div class="divider my-3" />
@@ -60,7 +60,7 @@
                 </div>
                 <div class="kv">
                   <div class="k">Planned Cost</div>
-                  <div class="v">{{ formatCurrency(request.planned_cost) }}</div>
+                  <div class="v">{{ request.planned_cost }}</div>
                 </div>
                 <div class="kv">
                   <div class="k">Created At</div>
@@ -79,7 +79,7 @@
                 </div>
                 <div class="kv">
                   <div class="k">Computed Total</div>
-                  <div class="v">{{ formatCurrency(itemsTotal) }}</div>
+                  <div class="v">{{ itemsTotal }}</div>
                 </div>
               </div>
             </VCardText>
@@ -112,16 +112,16 @@
             class="elev-1"
           >
             <template #item.planned_cost="{ item }">
-              {{ formatCurrency(item.raw.planned_cost) }}
+              {{ item.raw.planned_cost }}
             </template>
             <template #item.line_total="{ item }">
-              {{ formatCurrency(item.raw.line_total) }}
+              {{ item.raw.line_total }}
             </template>
             <template #bottom>
               <div class="d-flex justify-end pa-4">
                 <div class="total-row">
                   <span>Subtotal:</span>
-                  <strong>{{ formatCurrency(itemsTotal) }}</strong>
+                  <strong>{{ itemsTotal }}</strong>
                 </div>
               </div>
             </template>
@@ -144,7 +144,7 @@ import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import {
   VAlert, VBtn, VCard, VCardText, VCardTitle,
-  VChip, VCol, VDataTable, VRow, VSkeletonLoader
+  VCol, VDataTable, VRow, VSkeletonLoader
 } from "vuetify/components";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
@@ -284,8 +284,8 @@ onMounted(fetchDetail);
 .kv .v { font-weight: 600; }
 
 .summary-card,
- .side-card,
- .elev-1 { border-radius: 16px; }
+.side-card,
+.elev-1 { border-radius: 16px; }
 .total-row { display: flex; align-items: baseline; font-size: 16px; gap: 12px; }
 .gap-2 { gap: 8px; }
 .mb-4 { margin-block-end: 16px; }
