@@ -24,9 +24,6 @@
       :items="assetInvestmentRequests"
       item-value="id"
       :items-per-page="10"
-      show-expand
-      v-model:expanded="expanded"
-      @update:expanded="onExpandedChange"
       class="mb-6"
     >
       <!-- DATE -->
@@ -55,24 +52,32 @@
       <!-- ACTIONS: dropdown -->
       <template #item.actions="{ item }">
         <VMenu :close-on-content-click="true">
-          <template #activator="{ props }">
-            <VBtn v-bind="props" size="small" color="primary" variant="elevated">
+          <!-- use isActive from slot -->
+          <template #activator="{ props, isActive }">
+            <VBtn
+              v-bind="props"
+              size="small"
+              color="primary"
+              variant="elevated"
+              class="d-flex align-center gap-1"
+            >
               Actions
+              <VIcon :icon="isActive ? 'mdi-chevron-up' : 'mdi-chevron-down'" />
             </VBtn>
           </template>
-          <VList density="compact">
 
-             <VListItem @click="$router.push(`/dashboards/asset-investment-requests/detail/${item.raw.id}`)">
+          <VList density="compact">
+            <VListItem @click="$router.push(`/dashboards/asset-investment-requests/detail/${item.raw.id}`)">
               <template #prepend><VIcon icon="mdi-file-document" /></template>
               <VListItemTitle>Detail</VListItemTitle>
             </VListItem>
-            
+
             <VListItem @click="$router.push(`/dashboards/asset-investment-requests/edit/${item.raw.id}`)">
               <template #prepend><VIcon icon="mdi-pencil" /></template>
               <VListItemTitle>Edit</VListItemTitle>
             </VListItem>
 
-            <VListItem @click="deleteRequest(item.raw.id)">
+            <VListItem @click="openDeleteDialog(item.raw.id)">
               <template #prepend><VIcon icon="mdi-delete" /></template>
               <VListItemTitle>Delete</VListItemTitle>
             </VListItem>
@@ -87,10 +92,20 @@
               <VListItemTitle>Mark As Accordance With Budget</VListItemTitle>
             </VListItem>
 
-           
+            <!-- ✅ New Buttons -->
+            <VListItem @click="approveRequest(item.raw.id)">
+              <template #prepend><VIcon icon="mdi-thumb-up" /></template>
+              <VListItemTitle>Approve</VListItemTitle>
+            </VListItem>
+
+            <VListItem @click="rejectRequest(item.raw.id)">
+              <template #prepend><VIcon icon="mdi-thumb-down" /></template>
+              <VListItemTitle>Reject</VListItemTitle>
+            </VListItem>
           </VList>
         </VMenu>
       </template>
+
     </VDataTable>
 
     <!-- Empty State -->
@@ -152,6 +167,20 @@
         </VCardActions>
       </VCard>
     </VDialog>
+
+        <!-- DELETE CONFIRMATION DIALOG -->
+    <VDialog v-model="deleteDialog" max-width="420">
+      <VCard>
+        <VCardTitle class="text-h6">Confirm Delete</VCardTitle>
+        <VCardText>Are you sure you want to delete this request? This action cannot be undone.</VCardText>
+        <VCardActions>
+          <VSpacer />
+          <VBtn variant="text" @click="closeDeleteDialog" :disabled="actionLoading">No</VBtn>
+          <VBtn color="error" @click="confirmDelete" :loading="actionLoading">Yes, Delete</VBtn>
+        </VCardActions>
+      </VCard>
+    </VDialog>
+
   </div>
 </template>
 
@@ -201,6 +230,10 @@ const expanded = ref([]); // ids of expanded rows
 const linesCache = ref({}); // { [id]: { loading: bool, data: [] } }
 const errorMessage = ref("");
 const isLoading = ref(true);
+const deleteDialog = ref(false);
+const deleteId = ref(null);
+
+const openMenuId = ref(null);
 
 /* ------ action dialog state ------ */
 const actionLoading = ref(false);
@@ -383,26 +416,33 @@ const onExpandedChange = async (ids) => {
 /* ---------- init ---------- */
 onMounted(fetchAssetInvestmentRequests);
 
-/* ---------- delete ---------- */
-const deleteRequest = async (id) => {
-  if (!id) return;
-  if (!confirm("Are you sure you want to delete this request?")) return;
-
+/* ---------- DELETE HANDLER ---------- */
+const openDeleteDialog = (id) => {
+  deleteId.value = id;
+  deleteDialog.value = true;
+};
+const closeDeleteDialog = () => {
+  deleteDialog.value = false;
+  deleteId.value = null;
+};
+const confirmDelete = async () => {
+  if (!deleteId.value) return;
   try {
+    actionLoading.value = true;
     const accessToken = getCookie("accessToken");
-    if (!accessToken) throw new Error("Access token is missing.");
     const decodedToken = decodeURIComponent(accessToken);
 
-    await axios.delete(`${apiBaseUrl}/asset-investment-requests/${id}`, {
+    await axios.delete(`${apiBaseUrl}/asset-investment-requests/${deleteId.value}`, {
       headers: { Authorization: `Bearer ${decodedToken}`, Accept: "application/json" },
     });
 
-    assetInvestmentRequests.value = assetInvestmentRequests.value.filter((r) => r.id !== id);
-    delete linesCache.value[id];
-    alert("Request deleted successfully!");
+    assetInvestmentRequests.value = assetInvestmentRequests.value.filter((r) => r.id !== deleteId.value);
+    closeDeleteDialog();
   } catch (error) {
     console.error("Error deleting request:", error);
     alert(error.response?.data?.message || "Failed to delete request.");
+  } finally {
+    actionLoading.value = false;
   }
 };
 

@@ -2,6 +2,17 @@
   <div>
     <div class="d-flex justify-between align-center mb-4">
       <h3>Asset Transfer List</h3>
+
+      <VTextField
+        v-model="searchQuery"
+        placeholder="Search asset tranfer..."
+        density="comfortable"
+        variant="outlined"
+        hide-details
+        class="mx-4 flex-grow-1"
+        @input="filterAssetranfer"
+      />
+
       <VBtn color="primary" class="ms-auto" @click="$router.push('/dashboards/assettransfers/create')">
         Create Asset Transfer
       </VBtn>
@@ -13,25 +24,50 @@
       :items="assettransfers"
       :items-per-page="20"
     >
-      <!-- ACTIONS -->
+      <!-- Actions -->
       <template #item.actions="{ item }">
-        <div class="d-flex gap-2">
-          <VBtn
-            color="warning"
-            size="small"
-            @click="$router.push(`/dashboards/assettransfers/edit/${item.raw?.id ?? item.id}`)"
-          >
-            Edit
-          </VBtn>
-          <VBtn
-            color="error"
-            size="small"
-            @click="deleteAssetTransfer(item.raw?.id ?? item.id)"
-          >
-            Delete
-          </VBtn>
-        </div>
+        <VMenu :close-on-content-click="true">
+          <!-- Activator with arrow toggle -->
+          <template #activator="{ props, isActive }">
+            <VBtn
+              v-bind="props"
+              size="small"
+              color="primary"
+              variant="elevated"
+              class="d-flex align-center gap-1"
+            >
+              Actions
+              <VIcon :icon="isActive ? 'mdi-chevron-up' : 'mdi-chevron-down'" />
+            </VBtn>
+          </template>
+
+          <VList density="compact">
+            <!-- Edit -->
+            <VListItem @click="$router.push(`/dashboards/assettransfers/edit/${item.raw?.id ?? item.id}`)">
+              <template #prepend><VIcon icon="mdi-pencil" /></template>
+              <VListItemTitle>Edit</VListItemTitle>
+            </VListItem>
+
+            <!-- Delete -->
+            <VListItem @click="deleteAssetTransfer(item.raw?.id ?? item.id)">
+              <template #prepend><VIcon icon="mdi-delete" /></template>
+              <VListItemTitle>Delete</VListItemTitle>
+            </VListItem>
+
+            <!-- ✅ Optional Approve / Reject buttons -->
+            <VListItem @click="approveAssetTransfer(item.raw?.id ?? item.id)">
+              <template #prepend><VIcon icon="mdi-thumb-up" /></template>
+              <VListItemTitle>Approve</VListItemTitle>
+            </VListItem>
+
+            <VListItem @click="rejectAssetTransfer(item.raw?.id ?? item.id)">
+              <template #prepend><VIcon icon="mdi-thumb-down" /></template>
+              <VListItemTitle>Reject</VListItemTitle>
+            </VListItem>
+          </VList>
+        </VMenu>
       </template>
+
     </VDataTable>
 
     <p v-else-if="errorMessage">{{ errorMessage }}</p>

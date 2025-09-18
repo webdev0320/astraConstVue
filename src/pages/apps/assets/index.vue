@@ -1,11 +1,28 @@
 <template>
   <div>
     <div class="d-flex justify-between align-center mb-4">
-      <h3>Assets List</h3>
-      <VBtn color="primary" class="ms-auto" @click="$router.push('/dashboards/assets/create')">
+      <!-- Heading -->
+      <h3 class="shrink-0">Assets List</h3>
+
+      <VTextField
+        placeholder="Search assets..."
+        density="comfortable"
+        variant="outlined"
+        hide-details
+        class="mx-4 flex-grow-1"
+        @input=""
+      />
+
+      <!-- Create Button -->
+      <VBtn
+        color="primary"
+        class="shrink-0"
+        @click="$router.push('/dashboards/assets/create')"
+      >
         Create Asset
       </VBtn>
     </div>
+
 
     <!-- Loading -->
     <p v-if="isLoading">Loading...</p>
@@ -32,23 +49,56 @@
 
       <!-- Actions -->
       <template #item.actions="{ item }">
-        <div class="d-flex gap-2">
-          <!-- 1) DETAIL BUTTON in Actions -->
-          <VBtn color="secondary" size="small" @click="openDetail(item.raw?.id ?? item.id)">
-            Detail
-          </VBtn>
+        <VMenu :close-on-content-click="true">
+          <!-- Activator with toggle arrow -->
+          <template #activator="{ props, isActive }">
+            <VBtn
+              v-bind="props"
+              size="small"
+              color="primary"
+              variant="elevated"
+              class="d-flex align-center gap-1"
+            >
+              Actions
+              <VIcon :icon="isActive ? 'mdi-chevron-up' : 'mdi-chevron-down'" />
+            </VBtn>
+          </template>
 
-          <VBtn color="info" size="small" @click="openDepartmentModal(item.raw?.id ?? item.id)">
-            Add Department
-          </VBtn>
-          <VBtn color="warning" size="small" @click="$router.push(`/dashboards/assets/edit/${item.raw?.id ?? item.id}`)">
-            Edit
-          </VBtn>
-          <VBtn color="error" size="small" @click="deleteAsset(item.raw?.id ?? item.id)">
-            Delete
-          </VBtn>
-        </div>
+          <VList density="compact">
+            <VListItem @click="openDetail(item.raw?.id ?? item.id)">
+              <template #prepend><VIcon icon="mdi-file-document" /></template>
+              <VListItemTitle>Detail</VListItemTitle>
+            </VListItem>
+
+            <VListItem @click="openDepartmentModal(item.raw?.id ?? item.id)">
+              <template #prepend><VIcon icon="mdi-office-building" /></template>
+              <VListItemTitle>Add Department</VListItemTitle>
+            </VListItem>
+
+            <VListItem @click="$router.push(`/dashboards/assets/edit/${item.raw?.id ?? item.id}`)">
+              <template #prepend><VIcon icon="mdi-pencil" /></template>
+              <VListItemTitle>Edit</VListItemTitle>
+            </VListItem>
+
+            <VListItem @click="deleteAsset(item.raw?.id ?? item.id)">
+              <template #prepend><VIcon icon="mdi-delete" /></template>
+              <VListItemTitle>Delete</VListItemTitle>
+            </VListItem>
+
+            <!-- ✅ NEW BUTTONS -->
+            <VListItem @click="approveAsset(item.raw?.id ?? item.id)">
+              <template #prepend><VIcon icon="mdi-thumb-up" /></template>
+              <VListItemTitle>Approve</VListItemTitle>
+            </VListItem>
+
+            <VListItem @click="rejectAsset(item.raw?.id ?? item.id)">
+              <template #prepend><VIcon icon="mdi-thumb-down" /></template>
+              <VListItemTitle>Reject</VListItemTitle>
+            </VListItem>
+          </VList>
+        </VMenu>
       </template>
+
     </VDataTable>
 
     <!-- Empty State -->

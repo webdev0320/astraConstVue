@@ -2,6 +2,17 @@
   <div>
     <div class="d-flex justify-between align-center mb-4">
       <h3>Vehicle Handover List</h3>
+
+      <VTextField
+        v-model="searchQuery"
+        placeholder="Search vehicle handover..."
+        density="comfortable"
+        variant="outlined"
+        hide-details
+        class="mx-4 flex-grow-1"
+        @input="filtervehiclehandover"
+      />
+
       <VBtn
         color="primary"
         class="ms-auto"
@@ -42,15 +53,39 @@
 
       <!-- Actions -->
       <template #item.actions="{ item }">
-        <div class="d-flex gap-2">
-          <VBtn
-            color="error"
-            size="small"
-            @click="deleteHandover(item.raw.id)"
-          >
-            Delete
-          </VBtn>
-        </div>
+        <VMenu :close-on-content-click="true">
+          <!-- Activator with arrow toggle -->
+          <template #activator="{ props, isActive }">
+            <VBtn
+              v-bind="props"
+              size="small"
+              color="primary"
+              variant="elevated"
+              class="d-flex align-center gap-1"
+            >
+              Actions
+              <VIcon :icon="isActive ? 'mdi-chevron-up' : 'mdi-chevron-down'" />
+            </VBtn>
+          </template>
+
+          <VList density="compact">
+            <!-- Delete -->
+            <VListItem @click="deleteHandover(item.raw.id)">
+              <template #prepend><VIcon icon="mdi-delete" /></template>
+              <VListItemTitle>Delete</VListItemTitle>
+            </VListItem>
+
+            <VListItem @click="approveVehicleHandover(item.raw.id)">
+              <template #prepend><VIcon icon="mdi-thumb-up" /></template>
+              <VListItemTitle>Approve</VListItemTitle>
+            </VListItem>
+
+            <VListItem @click="rejectVehicleHandover(item.raw.id)">
+              <template #prepend><VIcon icon="mdi-thumb-down" /></template>
+              <VListItemTitle>Reject</VListItemTitle>
+            </VListItem>
+          </VList>
+        </VMenu>
       </template>
 
       <template #no-data>

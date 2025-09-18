@@ -3,6 +3,16 @@
     <div class="d-flex justify-between align-center mb-4">
       <h3>Asset Handovers List</h3>
 
+      <VTextField
+        v-model="searchQuery"
+        placeholder="Search asset handOver..."
+        density="comfortable"
+        variant="outlined"
+        hide-details
+        class="mx-4 flex-grow-1"
+        @input="filterAssethadnover"
+      />
+
       <VBtn
         color="primary"
         class="ms-auto"
@@ -42,26 +52,49 @@
         </div>
       </template>
 
-      <!-- Actions -->
-      <template #item.actions="{ item }">
-        <div class="d-flex gap-2">
+    <!-- Actions -->
+    <template #item.actions="{ item }">
+      <VMenu :close-on-content-click="true">
+        <!-- Activator with arrow toggle -->
+        <template #activator="{ props, isActive }">
           <VBtn
-            color="warning"
+            v-bind="props"
             size="small"
-            @click="$router.push(`/dashboards/assethandovers/edit/${item.raw?.id ?? item.id}`)"
+            color="primary"
+            variant="elevated"
+            class="d-flex align-center gap-1"
           >
-            Edit
+            Actions
+            <VIcon :icon="isActive ? 'mdi-chevron-up' : 'mdi-chevron-down'" />
           </VBtn>
+        </template>
 
-          <VBtn
-            color="error"
-            size="small"
-            @click="deleteHandover(item.raw?.id ?? item.id)"
-          >
-            Delete
-          </VBtn>
-        </div>
-      </template>
+        <VList density="compact">
+          <!-- Edit -->
+          <VListItem @click="$router.push(`/dashboards/assethandovers/edit/${item.raw?.id ?? item.id}`)">
+            <template #prepend><VIcon icon="mdi-pencil" /></template>
+            <VListItemTitle>Edit</VListItemTitle>
+          </VListItem>
+
+          <!-- Delete -->
+          <VListItem @click="deleteHandover(item.raw?.id ?? item.id)">
+            <template #prepend><VIcon icon="mdi-delete" /></template>
+            <VListItemTitle>Delete</VListItemTitle>
+          </VListItem>
+
+          <VListItem @click="approveHandover(item.raw?.id ?? item.id)">
+            <template #prepend><VIcon icon="mdi-thumb-up" /></template>
+            <VListItemTitle>Approve</VListItemTitle>
+          </VListItem>
+
+          <VListItem @click="rejectHandover(item.raw?.id ?? item.id)">
+            <template #prepend><VIcon icon="mdi-thumb-down" /></template>
+            <VListItemTitle>Reject</VListItemTitle>
+          </VListItem>
+        </VList>
+      </VMenu>
+    </template>
+
     </VDataTable>
 
     <!-- Empty / Loading / Error states -->
