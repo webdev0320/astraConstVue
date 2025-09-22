@@ -179,6 +179,24 @@ export const routes = [
     component: () => import('@/pages/apps/vehicle-handover/edit.vue'),
     meta: { layout: 'default', navActiveLink: 'dashboards-vehiclehandovers' },
   },
+  
+  {
+    path: '/dashboards/rental-required',
+    name: 'dashboards-rental-required',
+    component: () => import('@/pages/apps/rental-required/index.vue'),
+  },
+  {
+    path: '/dashboards/rental-required/create',
+    name: 'dashboards-rental-required-create',
+    component: () => import('@/pages/apps/rental-required/create.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-rental-required' },
+  },
+  {
+    path: '/dashboards/rental-required/edit/:id',
+    name: 'dashboards-rental-required-edit',
+    component: () => import('@/pages/apps/rental-required/edit.vue'),
+    meta: { layout: 'default', navActiveLink: 'dashboards-rental-required' },
+  },
 
   {
     path: '/dashboards/locations',

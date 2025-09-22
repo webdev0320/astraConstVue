@@ -100,6 +100,10 @@ export default [
         to: 'dashboards-vehiclehandovers',
       },
       {
+        title: 'Rental Equipment',
+        to: 'dashboards-rental-required',
+      },
+      {
         title: 'Assets Categories',
         to: 'dashboards-assetcategories',
       },

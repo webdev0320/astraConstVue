@@ -1,6 +1,6 @@
 <script setup>
-import { useTheme } from 'vuetify'
 import { hexToRgb } from '@layouts/utils'
+import { useTheme } from 'vuetify'
 
 const vuetifyTheme = useTheme()
 
@@ -162,7 +162,7 @@ const chartOptions = computed(() => {
 })
 </script>
 
-<template>
+<!-- <template>
   <VCard>
     <VCardText class="d-flex justify-space-between">
       <div class="d-flex flex-column">
@@ -197,4 +197,4 @@ const chartOptions = computed(() => {
       </div>
     </VCardText>
   </VCard>
-</template>
+</template> -->
