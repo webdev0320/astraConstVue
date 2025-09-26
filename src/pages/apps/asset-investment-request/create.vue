@@ -15,7 +15,8 @@
               :items="projects"
               item-title="name"
               item-value="id"
-              label="Select Project"
+              label="PROJECT NAME"
+              placeholder="Select Project"
               :error-messages="topErrors.project_id"
               variant="outlined"
               density="compact"
@@ -23,6 +24,7 @@
               clearable
             />
           </VCol>
+          
 
           <!-- Date -->
           <VCol cols="12" md="6">
@@ -34,6 +36,18 @@
               density="compact"
               hide-details="auto"
               :error-messages="topErrors.date"
+            />
+          </VCol>
+
+          <!-- Description -->
+          <VCol cols="12" md="12" class="py-5">
+            <VTextarea
+              v-model="line.description"
+              label="Description"
+              variant="outlined"
+              density="compact"
+              hide-details="auto"
+              clearable
             />
           </VCol>
 
@@ -129,18 +143,6 @@
               variant="outlined"
               density="compact"
               hide-details="auto"
-            />
-          </VCol>
-
-          <!-- Description -->
-          <VCol cols="12" md="12" class="py-5">
-            <VTextarea
-              v-model="line.description"
-              label="Description"
-              variant="outlined"
-              density="compact"
-              hide-details="auto"
-              clearable
             />
           </VCol>
 

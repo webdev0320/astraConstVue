@@ -15,7 +15,8 @@
               :items="projects"
               item-title="name"
               item-value="id"
-              label="Select Project"
+              label="PROJECT NAME"
+              placeholder="Select Project"
               :error-messages="topErrors.project_id"
               :loading="loading.form"
               :disabled="loading.form"
@@ -33,6 +34,18 @@
               :loading="loading.form"
               :disabled="loading.form"
               variant="outlined" density="compact" hide-details="auto"
+            />
+          </VCol>
+
+          <!-- Description -->
+          <VCol cols="12" md="12">
+            <VTextarea
+              v-model="line.description"
+              label="Description"
+              variant="outlined"
+              density="compact"
+              hide-details="auto"
+              clearable
             />
           </VCol>
 
@@ -98,18 +111,6 @@
             <VTextField v-model.number="line.planned_cost" label="Planned Cost" type="number"
               min="0" step="0.01" prefix="Rs"
               variant="outlined" density="compact" hide-details="auto" />
-          </VCol>
-
-          <!-- Description -->
-          <VCol cols="12" md="12">
-            <VTextarea
-              v-model="line.description"
-              label="Description"
-              variant="outlined"
-              density="compact"
-              hide-details="auto"
-              clearable
-            />
           </VCol>
 
           <!-- Reason -->

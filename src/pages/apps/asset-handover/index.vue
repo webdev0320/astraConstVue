@@ -30,6 +30,19 @@
       :items-per-page="10"
       class="mt-4"
     >
+      <!-- Custom header slot -->
+      <template #headers="{ columns }">
+        <tr>
+          <th
+            v-for="column in columns"
+            :key="column.key"
+            class="handover-th"
+          >
+            {{ column.title }}
+          </th>
+        </tr>
+      </template>
+
       <!-- Handover Date -->
       <template #item.handover_date="{ item }">
         {{ formatDate(item.raw?.handover_date ?? item.handover_date) }}
@@ -52,49 +65,45 @@
         </div>
       </template>
 
-    <!-- Actions -->
-    <template #item.actions="{ item }">
-      <VMenu :close-on-content-click="true">
-        <!-- Activator with arrow toggle -->
-        <template #activator="{ props, isActive }">
-          <VBtn
-            v-bind="props"
-            size="small"
-            color="primary"
-            variant="elevated"
-            class="d-flex align-center gap-1"
-          >
-            Actions
-            <VIcon :icon="isActive ? 'mdi-chevron-up' : 'mdi-chevron-down'" />
-          </VBtn>
-        </template>
+      <!-- Actions -->
+      <template #item.actions="{ item }">
+        <VMenu :close-on-content-click="true">
+          <template #activator="{ props, isActive }">
+            <VBtn
+              v-bind="props"
+              size="small"
+              color="primary"
+              variant="elevated"
+              class="d-flex align-center gap-1"
+            >
+              Actions
+              <VIcon :icon="isActive ? 'mdi-chevron-up' : 'mdi-chevron-down'" />
+            </VBtn>
+          </template>
 
-        <VList density="compact">
-          <!-- Edit -->
-          <VListItem @click="$router.push(`/dashboards/assethandovers/edit/${item.raw?.id ?? item.id}`)">
-            <template #prepend><VIcon icon="mdi-pencil" /></template>
-            <VListItemTitle>Edit</VListItemTitle>
-          </VListItem>
+          <VList density="compact">
+            <VListItem @click="$router.push(`/dashboards/assethandovers/edit/${item.raw?.id ?? item.id}`)">
+              <template #prepend><VIcon icon="mdi-pencil" /></template>
+              <VListItemTitle>Edit</VListItemTitle>
+            </VListItem>
 
-          <!-- Delete -->
-          <VListItem @click="deleteHandover(item.raw?.id ?? item.id)">
-            <template #prepend><VIcon icon="mdi-delete" /></template>
-            <VListItemTitle>Delete</VListItemTitle>
-          </VListItem>
+            <VListItem @click="deleteHandover(item.raw?.id ?? item.id)">
+              <template #prepend><VIcon icon="mdi-delete" /></template>
+              <VListItemTitle>Delete</VListItemTitle>
+            </VListItem>
 
-          <VListItem @click="approveHandover(item.raw?.id ?? item.id)">
-            <template #prepend><VIcon icon="mdi-thumb-up" /></template>
-            <VListItemTitle>Approve</VListItemTitle>
-          </VListItem>
+            <VListItem @click="approveHandover(item.raw?.id ?? item.id)">
+              <template #prepend><VIcon icon="mdi-thumb-up" /></template>
+              <VListItemTitle>Approve</VListItemTitle>
+            </VListItem>
 
-          <VListItem @click="rejectHandover(item.raw?.id ?? item.id)">
-            <template #prepend><VIcon icon="mdi-thumb-down" /></template>
-            <VListItemTitle>Reject</VListItemTitle>
-          </VListItem>
-        </VList>
-      </VMenu>
-    </template>
-
+            <VListItem @click="rejectHandover(item.raw?.id ?? item.id)">
+              <template #prepend><VIcon icon="mdi-thumb-down" /></template>
+              <VListItemTitle>Reject</VListItemTitle>
+            </VListItem>
+          </VList>
+        </VMenu>
+      </template>
     </VDataTable>
 
     <!-- Empty / Loading / Error states -->
@@ -265,4 +274,13 @@ onMounted(fetchHandovers);
   -webkit-line-clamp: 2;
 }
 .text-danger { color: #d32f2f; }
+
+.handover-th {
+  padding: 10px;
+  background-color: #c9c7c7;
+  color: #000;
+  font-weight: bold;
+  text-align: start;
+}
+
 </style>

@@ -1,10 +1,21 @@
 <template>
   <div class="d-flex justify-between align-center mb-4">
-    <h3>Edit Asset Handover</h3>
+    <h3>Create Asset Handover</h3>
   </div>
 
   <VForm ref="refForm" @submit.prevent="submitForm">
     <VRow>
+      <!-- Name of Employee (from logged-in user) -->
+      <VCol cols="12" md="6">
+        <VTextField
+          v-model="form.employee_name"
+          label="Name of Employee"
+          readonly
+          :error-messages="errorMessages.employee_name"
+          hide-details="auto"
+        />
+      </VCol>
+
       <!-- Asset Investment Request -->
       <VCol cols="12" md="6">
         <VSelect
@@ -20,18 +31,25 @@
         />
       </VCol>
 
-      <!-- Assign To (Project Users) -->
+      <!-- Employee Code No (from logged-in user.user_code) -->
       <VCol cols="12" md="6">
-        <VSelect
-          v-model="form.user_id"
-          :items="usersOptions"
-          item-title="title"
-          item-value="value"
-          label="Assign To (Project Users)"
-          :loading="loadingUsers"
-          :disabled="!selectedProjectId || loadingUsers"
-          :error-messages="errorMessages.user_id"
-          clearable
+        <VTextField
+          v-model="form.employee_code"
+          label="Employee Code No"
+          readonly
+          :error-messages="errorMessages.employee_code"
+          hide-details="auto"
+        />
+      </VCol>
+
+      <!-- Handover Date (defaults to today) -->
+      <VCol cols="12" md="6">
+        <VTextField
+          v-model="form.handover_date"
+          label="Handover Date"
+          type="date"
+          :rules="[requiredValidator]"
+          :error-messages="errorMessages.handover_date"
         />
       </VCol>
 
@@ -50,18 +68,22 @@
         />
       </VCol>
 
-      <!-- Handover Date -->
+      <!-- Handover By -->
       <VCol cols="12" md="6">
-        <VTextField
-          v-model="form.handover_date"
-          label="Handover Date"
-          type="date"
-          :rules="[requiredValidator]"
-          :error-messages="errorMessages.handover_date"
+        <VSelect
+          v-model="form.user_id"
+          :items="usersOptions"
+          item-title="title"
+          item-value="value"
+          label="Handover By"
+          :loading="loadingUsers"
+          :disabled="!selectedProjectId || loadingUsers"
+          :error-messages="errorMessages.user_id"
+          clearable
         />
       </VCol>
 
-      <!-- Hard-coded message (same as create.vue) -->
+      <!-- Notice -->
       <VCol cols="12">
         <p class="notice-text">
           Dear Sir / Madam<br>
@@ -110,7 +132,7 @@
                     />
                   </td>
 
-                  <!-- Quantity (Requested) readonly, NOT submitted -->
+                  <!-- Quantity (Requested) readonly -->
                   <td>
                     <VTextField
                       v-model.number="row.request_qty"
@@ -123,7 +145,7 @@
                     />
                   </td>
 
-                  <!-- Quantity (Handover) input -> submitted -->
+                  <!-- Quantity (Handover) -->
                   <td>
                     <VTextField
                       v-model.number="row.handover_qty"
@@ -137,11 +159,11 @@
                     />
                   </td>
 
-                  <!-- Remarks textarea -> submitted -->
+                  <!-- Remarks -->
                   <td>
                     <VTextarea
                       v-model="row.remarks"
-                      :rows="2"
+                      :rows="1"
                       hide-details="auto"
                       variant="outlined"
                       density="compact"
@@ -156,9 +178,33 @@
         </VCard>
       </VCol>
 
+      <!-- Authorized Signatory Section -->
+      <VCol cols="12">
+        <div class="auth-signatory">
+          <span>Authorized Signatory <br /> (Person Requesting)</span>
+          <span>Authorized Signatory <br /> (Approver)</span>
+        </div>
+      </VCol>
+
+      <!-- ACKNOWLEDGEMENT AND DECLARATION BY EMPLOYEE: -->
+      <VCol cols="12">
+        <h5>ACKNOWLEDGEMENT AND DECLARATION BY EMPLOYEE:</h5>
+        <p>
+          I,
+          <strong>
+            {{
+              usersOptions.find(u => u.value === form.user_id)?.title?.split(' — ')[0]
+              || form.employee_name
+              || '________'
+            }}
+          </strong>
+          acknowledge that I have received the above mentioned assets. I understand that this asset belongs to ASTRA CONSTRUCTION and is under my possession for carrying out my work. I hereby assure that I will take care of the assets of the company to the best possible extent and will handover/transfer or return back to the company before my vacation or end of contract clearance (termination/resignation).
+        </p>
+      </VCol>
+
       <VCol cols="12">
         <VBtn type="submit" color="primary" :loading="loading" :disabled="loading">
-          Update
+          Submit
         </VBtn>
         <VBtn class="ms-2" variant="text" @click="router.push('/dashboards/assethandovers')">
           Cancel
@@ -173,7 +219,7 @@
 <script setup>
 import axios from 'axios'
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import {
   VBtn, VCard, VCardText, VCardTitle, VCol, VForm, VRow,
   VSelect, VTable, VTextField, VTextarea,
@@ -181,19 +227,15 @@ import {
 
 /* ========= CONFIG ========= */
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL // should end with /api
-const apiShowUrl   = id => `${apiBaseUrl}/asset-handovers/${id}`
-const apiUpdateUrl = id => `${apiBaseUrl}/asset-handovers/${id}`
+const apiCreateUrl = `${apiBaseUrl}/asset-handovers`
 const apiRequestsUrl = `${apiBaseUrl}/asset-investment-requests`
 const apiDepartmentsUrl = `${apiBaseUrl}/departments`
 
 const router = useRouter()
-const route = useRoute()
-const id = route.params.id
 
 /* ========= STATE ========= */
 const refForm = ref()
 const loading = ref(false)
-const loadingInitial = ref(false)
 const message = ref('')
 const errorMessages = ref({})
 
@@ -207,19 +249,23 @@ const projectUsers = ref([])
 const loadingDepartments = ref(false)
 const departments = ref([])
 
-/* items for selected request / existing handover */
+/* items for selected request */
 const loadingItems = ref(false)
 const requestItems = ref([])   // [{ item_id, description, request_qty, handover_qty, asset_id|null, remarks, asset_type }]
-const rowErrors = ref([])
+const rowErrors = ref([])      // per-row client errors
 
-/* today as default date (fallback) */
+/* today as default date */
 const today = new Date().toISOString().split('T')[0]
 
+/* include employee_id/employee_name/employee_code */
 const form = ref({
+  employee_id: null,           // hidden, captured from logged-in user.id
+  employee_name: '',           // shown (readonly)
+  employee_code: '',           // shown (readonly)
   asset_investment_requests_id: null,
   user_id: null,
   department_id: null,
-  handover_date: today, // default (will be replaced by record)
+  handover_date: today,
 })
 
 /* ========= VALIDATORS ========= */
@@ -238,6 +284,49 @@ const getToken = () => {
   if (fromCookie) return decodeURIComponent(fromCookie)
   const fromLS = localStorage.getItem('accessToken')
   return fromLS ? decodeURIComponent(fromLS) : null
+}
+
+/* ========= CURRENT USER (fill Name/Code) ========= */
+const currentUser = ref(null)
+
+const fetchCurrentUser = async () => {
+  const token = getToken()
+  if (!token) return
+
+  const candidates = [
+    `${apiBaseUrl}/me`,
+    `${apiBaseUrl}/auth/me`,
+    `${apiBaseUrl}/user`,
+    `${apiBaseUrl}/profile`,
+  ]
+
+  for (const url of candidates) {
+    try {
+      const res = await axios.get(url, {
+        headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+      })
+      const u = res.data?.data ?? res.data?.user ?? res.data
+      if (u && (u.name || u.user_code || u.id)) {
+        currentUser.value = u
+        form.value.employee_id = u.id ?? null
+        form.value.employee_name = u.name ?? ''
+        form.value.employee_code = u.user_code ?? (u.id ? String(u.id) : '')
+        return
+      }
+    } catch (e) { /* try next */ }
+  }
+
+  // Fallback: if you stored login payload in localStorage as "user"
+  try {
+    const fromLS = localStorage.getItem('user')
+    if (fromLS) {
+      const u = JSON.parse(fromLS)
+      currentUser.value = u
+      form.value.employee_id = u.id ?? null
+      form.value.employee_name = u.name ?? ''
+      form.value.employee_code = u.user_code ?? (u.id ? String(u.id) : '')
+    }
+  } catch (e) {}
 }
 
 /* ========= OPTIONS ========= */
@@ -314,65 +403,41 @@ const fetchDepartments = async () => {
   }
 }
 
-/* Load existing handover, including its items */
-const fetchHandover = async () => {
-  loadingInitial.value = true
+/* DETAIL + items map */
+const fetchInvestmentRequestDetail = async (id) => {
+  requestItems.value = []
+  rowErrors.value = []
+  if (!id) return
+
   loadingItems.value = true
   try {
     const token = getToken()
     if (!token) throw new Error('Access token is missing. Please log in.')
 
-    const res = await axios.get(apiShowUrl(id), {
+    const url = `${apiRequestsUrl}/${id}`
+    const res = await axios.get(url, {
       headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
     })
 
-    const p = res.data?.data ?? res.data
+    const detail = res.data?.data || res.data
+    const items = Array.isArray(detail?.items) ? detail.items : []
 
-    // Pre-fill form
-    form.value = {
-      asset_investment_requests_id: p.asset_investment_requests_id ?? null,
-      handover_date: p.handover_date || today,
-      department_id: p.department_id ?? null,
-      user_id: p.user_id ?? p.user?.id ?? null,
-    }
-
-    // Resolve selected project's users
-    const reqFromList = assetRequests.value.find(r => r.id === form.value.asset_investment_requests_id)
-    const projectId = reqFromList?.project_id ?? p.project_id ?? null
-    selectedProjectId.value = projectId
-    if (projectId) fetchProjectUsers(projectId)
-
-    // Ensure select shows existing value even if not in options
-    if (
-      form.value.asset_investment_requests_id &&
-      !assetRequests.value.some(r => r.id === form.value.asset_investment_requests_id)
-    ) {
-      assetRequests.value.unshift({
-        id: form.value.asset_investment_requests_id,
-        project_id: projectId ?? 'N/A',
-        date: p.handover_date || '',
-      })
-    }
-
-    // Map items
-    // Expect p.items like: [{ id:item_id, description, quantity(requested), handover_qty, asset_id, remarks, request_type }]
-    const items = Array.isArray(p?.items) ? p.items : []
     requestItems.value = items.map(it => ({
       item_id: it.id,
       description: it.description,
-      request_qty: Number(it.quantity) || Number(it.request_qty) || 1,
-      handover_qty: Number(it.handover_qty ?? it.quantity) || 1,
+      request_qty: Number(it.quantity) || 1,      // readonly
+      handover_qty: Number(it.quantity) || 1,     // editable default
       asset_id: it.asset_id != null ? String(it.asset_id) : null,
-      remarks: it.remarks || '',
-      asset_type: it.request_type || it.asset_type || 'NEW',
+      remarks: '',
+      asset_type: it.request_type || 'NEW',
     }))
+
     rowErrors.value = requestItems.value.map(() => ({}))
   } catch (err) {
-    console.error('Error loading asset handover:', err)
-    message.value = err.response?.data?.message || 'Failed to load asset handover.'
+    console.error('Error loading request detail/items:', err)
+    message.value = err.response?.data?.message || 'Failed to load request items.'
     requestItems.value = []
   } finally {
-    loadingInitial.value = false
     loadingItems.value = false
   }
 }
@@ -393,49 +458,15 @@ watch(
     selectedProjectId.value = projectId
 
     if (projectId) fetchProjectUsers(projectId)
-
-    // Also, when changing the request on edit, reload its items fresh
     fetchInvestmentRequestDetail(newVal)
   },
 )
-
-/* If user switches request, we need its items like create.vue */
-const fetchInvestmentRequestDetail = async (requestId) => {
-  loadingItems.value = true
-  try {
-    const token = getToken()
-    if (!token) throw new Error('Access token is missing. Please log in.')
-    const url = `${apiRequestsUrl}/${requestId}`
-    const res = await axios.get(url, {
-      headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
-    })
-    const detail = res.data?.data || res.data
-    const items = Array.isArray(detail?.items) ? detail.items : []
-    requestItems.value = items.map(it => ({
-      item_id: it.id,
-      description: it.description,
-      request_qty: Number(it.quantity) || 1,
-      handover_qty: Number(it.quantity) || 1,
-      asset_id: it.asset_id != null ? String(it.asset_id) : null,
-      remarks: '',
-      asset_type: it.request_type || 'NEW',
-    }))
-    rowErrors.value = requestItems.value.map(() => ({}))
-  } catch (err) {
-    console.error('Error loading request detail/items:', err)
-    message.value = err.response?.data?.message || 'Failed to load request items.'
-    requestItems.value = []
-  } finally {
-    loadingItems.value = false
-  }
-}
 
 /* ========= SUBMIT ========= */
 const validateRows = () => {
   let ok = true
   rowErrors.value = requestItems.value.map(r => {
     const e = {}
-    // asset_id is OPTIONAL; if provided, must be positive integer
     if (r.asset_id !== null && r.asset_id !== '' && !posInt(r.asset_id)) {
       e.asset_id = 'Invalid Asset ID'
       ok = false
@@ -470,8 +501,12 @@ const submitForm = async () => {
     const token = getToken()
     if (!token) throw new Error('Access token is missing. Please log in.')
 
-    // Build PUT payload (same shape as create.vue)
     const payload = {
+      // include employee metadata
+      employee_id: form.value.employee_id,
+      employee_name: form.value.employee_name,
+      employee_code: form.value.employee_code,
+
       asset_investment_requests_id: form.value.asset_investment_requests_id,
       handover_date: form.value.handover_date,
       department_id: form.value.department_id,
@@ -485,7 +520,7 @@ const submitForm = async () => {
       })),
     }
 
-    const res = await axios.put(apiUpdateUrl(id), payload, {
+    const res = await axios.post(apiCreateUrl, payload, {
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
@@ -493,15 +528,15 @@ const submitForm = async () => {
       },
     })
 
-    message.value = res.data?.message || 'Asset Handover updated successfully.'
+    message.value = res.data?.message || 'Asset Handover created successfully.'
     router.push('/dashboards/assethandovers')
   } catch (error) {
-    console.error('Error updating handover:', error)
+    console.error('Error submitting handover:', error)
     if (error.response?.data?.errors) {
       errorMessages.value = error.response.data.errors
       message.value = 'Please fix the highlighted errors.'
     } else {
-      message.value = error.response?.data?.message || 'Failed to update asset handover.'
+      message.value = error.response?.data?.message || 'Failed to create asset handover.'
     }
   } finally {
     loading.value = false
@@ -510,8 +545,11 @@ const submitForm = async () => {
 
 /* ========= LIFECYCLE ========= */
 onMounted(async () => {
-  await Promise.all([fetchAssetRequests(), fetchDepartments()])
-  await fetchHandover()
+  await Promise.all([
+    fetchCurrentUser(),     // fill employee name + code from logged-in user
+    fetchAssetRequests(),
+    fetchDepartments(),
+  ])
 })
 </script>
 
@@ -524,4 +562,11 @@ onMounted(async () => {
 .notice-text { line-height: 1.6; }
 .text-center { text-align: center; }
 .py-6 { padding-block: 24px; }
+
+.auth-signatory {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  margin-block-start: 16px;
+}
 </style>

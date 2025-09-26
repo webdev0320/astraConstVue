@@ -24,10 +24,22 @@
       :items="assettransfers"
       :items-per-page="20"
     >
+      <!-- Custom header slot to apply background color -->
+      <template #headers="{ columns }">
+        <tr>
+          <th
+            v-for="column in columns"
+            :key="column.key"
+            class="custom-th"
+          >
+            {{ column.title }}
+          </th>
+        </tr>
+      </template>
+
       <!-- Actions -->
       <template #item.actions="{ item }">
         <VMenu :close-on-content-click="true">
-          <!-- Activator with arrow toggle -->
           <template #activator="{ props, isActive }">
             <VBtn
               v-bind="props"
@@ -42,19 +54,16 @@
           </template>
 
           <VList density="compact">
-            <!-- Edit -->
             <VListItem @click="$router.push(`/dashboards/assettransfers/edit/${item.raw?.id ?? item.id}`)">
               <template #prepend><VIcon icon="mdi-pencil" /></template>
               <VListItemTitle>Edit</VListItemTitle>
             </VListItem>
 
-            <!-- Delete -->
             <VListItem @click="deleteAssetTransfer(item.raw?.id ?? item.id)">
               <template #prepend><VIcon icon="mdi-delete" /></template>
               <VListItemTitle>Delete</VListItemTitle>
             </VListItem>
 
-            <!-- ✅ Optional Approve / Reject buttons -->
             <VListItem @click="approveAssetTransfer(item.raw?.id ?? item.id)">
               <template #prepend><VIcon icon="mdi-thumb-up" /></template>
               <VListItemTitle>Approve</VListItemTitle>
@@ -67,8 +76,8 @@
           </VList>
         </VMenu>
       </template>
-
     </VDataTable>
+
 
     <p v-else-if="errorMessage">{{ errorMessage }}</p>
     <p v-else>Loading...</p>
@@ -243,4 +252,13 @@ const assignUser = () => {
 .ms-auto { margin-inline-start: auto; }
 .gap-2 { gap: 8px; }
 .mb-4 { margin-block-end: 16px; }
+
+.custom-th {
+  padding: 10px;
+  background-color: #99de64;
+  color: #000;
+  font-weight: bold;
+  text-align: start;
+}
+
 </style>
