@@ -7,40 +7,55 @@
 
     <VCard class="pa-4">
       <VForm @submit.prevent="saveAll" ref="refForm">
-        <VRow dense>
-          <!-- Project (RESTORED) -->
-          <VCol cols="12" md="6" py-5>
-            <VSelect
-              v-model="selectedProjectId"
-              :items="projects"
-              item-title="name"
-              item-value="id"
-              label="PROJECT NAME"
-              placeholder="Select Project"
-              :error-messages="topErrors.project_id"
-              variant="outlined"
-              density="compact"
-              hide-details="auto"
-              clearable
-            />
-          </VCol>
-          
+        <!-- === TOP: PROJECT / IR No / DATE (Box) === -->
+        <div class="form-box">
+          <div class="box-title">PROJECT/NAME:</div>
+          <VRow dense class="box-body">
+            <VCol cols="12" md="6">
+              <VSelect
+                v-model="selectedProjectId"
+                :items="projects"
+                item-title="name"
+                item-value="id"
+                label="PROJECT NAME"
+                placeholder="Select Project"
+                :error-messages="topErrors.project_id"
+                variant="outlined"
+                density="compact"
+                hide-details="auto"
+                clearable
+              />
+            </VCol>
 
-          <!-- Date -->
-          <VCol cols="12" md="6">
-            <VTextField
-              v-model="date"
-              type="date"
-              label="Date"
-              variant="outlined"
-              density="compact"
-              hide-details="auto"
-              :error-messages="topErrors.date"
-            />
-          </VCol>
+            <VCol cols="12" md="3">
+              <VTextField
+                v-model="formTop.req_number"
+                label="INVESTMENT REQUEST NUMBER"
+                placeholder="(Auto/Manual)"
+                variant="outlined"
+                density="compact"
+                hide-details="auto"
+              />
+            </VCol>
 
-          <!-- Description -->
-          <VCol cols="12" md="12" class="py-5">
+            <VCol cols="12" md="3">
+              <VTextField
+                v-model="date"
+                type="date"
+                label="DATE"
+                variant="outlined"
+                density="compact"
+                hide-details="auto"
+                :error-messages="topErrors.date"
+              />
+            </VCol>
+          </VRow>
+        </div>
+
+        <!-- === DETAILED ASSET DESCRIPTION (Box) === -->
+        <div class="form-box">
+          <div class="box-title">DETAILED ASSET DESCRIPTION: <span class="sub">(As Per Quotation)</span></div>
+          <div class="box-body">
             <VTextarea
               v-model="line.description"
               label="Description"
@@ -49,8 +64,205 @@
               hide-details="auto"
               clearable
             />
-          </VCol>
+          </div>
+        </div>
 
+        <!-- === PLANNED COST + REQUEST TYPE (Box) === -->
+        <div class="form-box">
+          <div class="box-title">PLANNED COST (in SAR):</div>
+          <VRow dense class="box-body">
+            <VCol cols="12" md="6" class="pt-2">
+              <VRadioGroup v-model="line.request_type" inline>
+                <VRadio label="NEW ASSET"   value="NEW" />
+                <VRadio label="LEASED ASSET" value="LEASED" />
+                <VRadio label="USED ASSET"   value="USED" />
+              </VRadioGroup>
+            </VCol>
+            <VCol cols="12" md="6">
+              <VTextField
+                v-model.number="line.planned_cost"
+                label="Planned Cost"
+                type="number"
+                min="0"
+                step="0.01"
+                prefix="SAR "
+                variant="outlined"
+                density="compact"
+                hide-details="auto"
+              />
+            </VCol>
+
+            <VCol cols="12">
+              <VTextarea
+                v-model="line.reason"
+                label="Reason/Purpose of the investment"
+                hint="(with an investment over 100,000 SAR a cost effective analysis has to be done and agreed with Board of Directors)"
+                persistent-hint
+                variant="outlined"
+                density="compact"
+                hide-details="auto"
+                clearable
+              />
+            </VCol>
+          </VRow>
+        </div>
+
+        <!-- === FINANCE + CHECKED BY FINANCE (Two columns Box) === -->
+        <div class="form-box">
+          <VRow dense class="box-body">
+            <VCol cols="12" md="6" class="right-border">
+              <div class="box-title thin">THIS PART TO BE FILLED BY FINANCE</div>
+              <VTextField
+                v-model="finance.asset_life_period"
+                label="Asset Life/Period"
+                placeholder="e.g. 6–8 Years"
+                variant="outlined"
+                density="compact"
+                hide-details="auto"
+              />
+            </VCol>
+
+            <VCol cols="12" md="6">
+              <div class="box-title thin">CHECKED BY FINANCIAL DEPARTMENT</div>
+              <VRow dense>
+                <VCol cols="12" md="8">
+                  <VTextField
+                    v-model="finance.checked_by_name"
+                    label="Name"
+                    placeholder="Finance Representative"
+                    variant="outlined"
+                    density="compact"
+                    hide-details="auto"
+                  />
+                </VCol>
+                <VCol cols="12" md="4">
+                  <VTextField
+                    v-model="finance.checked_date"
+                    type="date"
+                    label="Date"
+                    variant="outlined"
+                    density="compact"
+                    hide-details="auto"
+                  />
+                </VCol>
+              </VRow>
+            </VCol>
+          </VRow>
+        </div>
+
+        <!-- === SIGNATURES + BUDGET COMPLIANCE (Two columns Box) === -->
+        <div class="form-box">
+          <VRow dense class="box-body">
+            <!-- LEFT: Signatures / Approvals -->
+            <VCol cols="12" md="6" class="right-border">
+              <div class="box-title thin">SIGNATURES: Approval</div>
+
+              <div class="sig-row">
+                <div class="sig-label">NAME:</div>
+                <div class="sig-value">
+                  <VTextField
+                    v-model="signatures.ceo_name"
+                    placeholder="Eng. Baher Jaber (CEO)"
+                    variant="outlined"
+                    density="compact"
+                    hide-details="auto"
+                  />
+                </div>
+                <div class="sig-date">
+                  <VTextField
+                    v-model="signatures.ceo_date"
+                    type="date"
+                    label="Date"
+                    variant="outlined"
+                    density="compact"
+                    hide-details="auto"
+                  />
+                </div>
+              </div>
+
+              <div class="sig-row">
+                <div class="sig-label">NAME:</div>
+                <div class="sig-value">
+                  <VTextField
+                    v-model="signatures.bod_name"
+                    placeholder="BOD Signature (As per Authority Matrix)"
+                    variant="outlined"
+                    density="compact"
+                    hide-details="auto"
+                  />
+                </div>
+                <div class="sig-date">
+                  <VTextField
+                    v-model="signatures.bod_date"
+                    type="date"
+                    label="Date"
+                    variant="outlined"
+                    density="compact"
+                    hide-details="auto"
+                  />
+                </div>
+              </div>
+
+              <div class="sig-row">
+                <div class="sig-label">Requesting Department Head</div>
+                <div class="sig-value">
+                  <VTextField
+                    v-model="signatures.req_dept_head"
+                    placeholder="Name"
+                    variant="outlined"
+                    density="compact"
+                    hide-details="auto"
+                  />
+                </div>
+                <div class="sig-date">
+                  <VTextField
+                    v-model="signatures.req_dept_date"
+                    type="date"
+                    label="Date"
+                    variant="outlined"
+                    density="compact"
+                    hide-details="auto"
+                  />
+                </div>
+              </div>
+            </VCol>
+
+            <!-- RIGHT: Budget compliance -->
+            <VCol cols="12" md="6">
+              <div class="box-title thin">In accordance with budget:</div>
+              <VRadioGroup v-model="finance.in_budget" inline>
+                <VRadio label="Yes" :value="true" />
+                <VRadio label="No"  :value="false" />
+              </VRadioGroup>
+
+              <VRow dense class="mt-2">
+                <VCol cols="12" md="8">
+                  <VTextField
+                    v-model="finance.dceo_name"
+                    label="Name"
+                    placeholder="Mr. Mohammed Irfan (D-CEO)"
+                    variant="outlined"
+                    density="compact"
+                    hide-details="auto"
+                  />
+                </VCol>
+                <VCol cols="12" md="4">
+                  <VTextField
+                    v-model="finance.dceo_date"
+                    type="date"
+                    label="Date"
+                    variant="outlined"
+                    density="compact"
+                    hide-details="auto"
+                  />
+                </VCol>
+              </VRow>
+            </VCol>
+          </VRow>
+        </div>
+
+        <!-- === YOUR EXISTING ENTRY AREA (Category/Sub/Asset/Qty/Cost/Reason) === -->
+        <VRow dense class="mt-4">
           <!-- Category -->
           <VCol cols="12" md="4" class="py-5">
             <VSelect
@@ -104,7 +316,7 @@
             />
           </VCol>
 
-          <!-- Request Type -->
+          <!-- Request Type (mirrors the box above; optional to change per-line) -->
           <VCol cols="12" md="4" class="py-5">
             <VSelect
               v-model="line.request_type"
@@ -139,18 +351,18 @@
               type="number"
               min="0"
               step="0.01"
-              prefix="Rs"
+              prefix="SAR "
               variant="outlined"
               density="compact"
               hide-details="auto"
             />
           </VCol>
 
-          <!-- Reason -->
+          <!-- Reason (optional per-line) -->
           <VCol cols="12" md="12" class="py-5">
             <VTextarea
               v-model="line.reason"
-              label="Reason"
+              label="Reason (per-line)"
               variant="outlined"
               density="compact"
               hide-details="auto"
@@ -158,20 +370,17 @@
             />
           </VCol>
 
-          <!-- Add Button -->
+          <!-- Add Button + Summary -->
           <VCol cols="12" md="3" class="d-flex align-end">
             <VBtn color="primary" @click="addRecord" :disabled="!canAddLine">
               Add
             </VBtn>
           </VCol>
-
-          <!-- Summary -->
           <VCol cols="12" md="5" class="d-flex align-end justify-end">
             <div class="text-end">
               <div class="text-medium-emphasis">Records: <b>{{ records.length }}</b></div>
               <div class="text-medium-emphasis">
-                Planned Total:
-                <b>{{ formatAmount(plannedTotal) }}</b>
+                Planned Total: <b>{{ formatAmount(plannedTotal) }}</b>
               </div>
             </div>
           </VCol>
@@ -242,9 +451,30 @@ const routeProjectId = computed(() => route.params.id ?? route.params.projectId 
 const REQUEST_TYPE_OPTIONS = ["NEW", "LEASED", "USED"];
 const today = new Date().toISOString().split("T")[0];
 
+/* ===== NEW meta (for top/finance/signatures) ===== */
+const formTop = ref({
+  req_number: "",      // Investment Request Number (optional / display)
+});
+const finance = ref({
+  asset_life_period: "",
+  checked_by_name: "",
+  checked_date: today,
+  in_budget: true,
+  dceo_name: "",
+  dceo_date: today,
+});
+const signatures = ref({
+  ceo_name: "",
+  ceo_date: today,
+  bod_name: "",
+  bod_date: today,
+  req_dept_head: "",
+  req_dept_date: today,
+});
+
 // ---------------- State ----------------
 const projects = ref([]);
-const selectedProjectId = ref(null); // (RESTORED)
+const selectedProjectId = ref(null);
 const date = ref(today);
 const refForm = ref(null);
 const saving = ref(false);
@@ -282,7 +512,7 @@ const headers = [
   { title: "Actions", key: "actions", sortable: false },
 ];
 
-// ------------- Fetch Projects (RESTORED) -------------
+// ------------- Fetch Projects -------------
 const fetchProjects = async () => {
   try {
     const res = await axios.get(`${apiBaseUrl}/projects`, { headers: getAuthHeaders() });
@@ -483,6 +713,26 @@ const saveAll = async () => {
     const payload = {
       project_id: Number(selectedProjectId.value),
       date: date.value,
+      // New meta block to capture the "printed form" fields
+      meta: {
+        req_number: formTop.value.req_number || null,
+        finance: {
+          asset_life_period: finance.value.asset_life_period || null,
+          checked_by_name: finance.value.checked_by_name || null,
+          checked_date: finance.value.checked_date || null,
+          in_budget: finance.value.in_budget,
+          dceo_name: finance.value.dceo_name || null,
+          dceo_date: finance.value.dceo_date || null,
+        },
+        signatures: {
+          ceo_name: signatures.value.ceo_name || null,
+          ceo_date: signatures.value.ceo_date || null,
+          bod_name: signatures.value.bod_name || null,
+          bod_date: signatures.value.bod_date || null,
+          req_dept_head: signatures.value.req_dept_head || null,
+          req_dept_date: signatures.value.req_dept_date || null,
+        },
+      },
       data: records.value.map(r => ({
         asset_category_id: Number(r.asset_category_id),
         asset_sub_category_id: Number(r.asset_sub_category_id),
@@ -531,7 +781,6 @@ function formatAmount(val) {
 // Init
 onMounted(async () => {
   await Promise.all([fetchProjects(), fetchAssetCategories()]);
-  // if route had project id but projects fetched later, keep the preselection
   if (routeProjectId.value && !selectedProjectId.value) {
     selectedProjectId.value = Number(routeProjectId.value);
   }
@@ -539,6 +788,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* layout helpers */
 .d-flex { display: flex; }
 .justify-between { justify-content: space-between; }
 .align-center { align-items: center; }
@@ -546,5 +796,54 @@ onMounted(async () => {
 .mb-4 { margin-block-end: 16px; }
 .text-medium-emphasis { opacity: 0.7; }
 
-@media (min-width: 960px) { .pa-4 { padding: 24px !important; } }
+/* === print-like boxes === */
+.form-box {
+  border: 1px solid #000;
+  border-radius: 2px;
+  margin-block: 10px;
+}
+
+.box-title {
+  background: #e3e3e3;
+  border-block-end: 1px solid #000;
+  font-weight: 700;
+  line-height: 1.2;
+  padding-block: 6px;
+  padding-inline: 10px;
+}
+
+.box-title.thin {
+  font-weight: 600;
+}
+
+.box-title .sub {
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.box-body {
+  padding: 10px;
+}
+
+.right-border {
+  border-inline-end: 1px solid #000;
+}
+
+/* signature rows (label | value | date) */
+.sig-row {
+  display: grid;
+  align-items: center;
+  gap: 8px;
+  grid-template-columns: 130px 1fr 180px;
+  margin-block: 6px;
+}
+
+.sig-label {
+  font-weight: 600;
+}
+
+/* tighter paddings on large screens so it looks like the form */
+@media (min-width: 960px) {
+  .pa-4 { padding: 24px !important; }
+}
 </style>
