@@ -182,7 +182,7 @@ const formatDateTime = (d) => { if (!d) return "—"; try { const dt = new Date(
 const formatCurrency = (n) => {
   if (n === null || n === undefined || n === "") return "—";
   const num = Number(n); if (isNaN(num)) return n;
-  return new Intl.NumberFormat(undefined, { style: "currency", currency: "PKR", maximumFractionDigits: 0 }).format(num);
+  return new Intl.NumberFormat(undefined, { style: "currency", currency: "SAR", maximumFractionDigits: 0 }).format(num);
 };
 const humanYesNo = (val) => {
   const s = String(val ?? "").toLowerCase();

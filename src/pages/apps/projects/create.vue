@@ -16,6 +16,17 @@
         />
       </VCol>
 
+      <!-- Project Code -->
+      <VCol cols="12" md="4">
+        <VTextField
+          v-model="project.project_code"
+          label="Project Code"
+          :rules="[requiredValidator]"
+          :error-messages="errorMessages.project_code"
+          clearable
+        />
+      </VCol>
+
       <!-- Start Date -->
       <VCol cols="12" md="4">
         <VTextField
@@ -85,8 +96,9 @@ const today = new Date().toISOString().split('T')[0]
 
 const project = ref({
   name: '',
+  project_code: '',
   start_date: today,
-  end_date: '',
+  //end_date: '',
   // budget: '',
   description: '',
 })
@@ -124,6 +136,7 @@ const submitForm = async () => {
     // Normalize budget: send null instead of empty string
     const payload = {
       name: project.value.name,
+      project_code: project.value.project_code,
       start_date: project.value.start_date,
       end_date: project.value.end_date,
       description: project.value.description,

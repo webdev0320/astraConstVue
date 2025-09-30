@@ -16,6 +16,17 @@
         />
       </VCol>
 
+      <!-- Project Code -->
+      <VCol cols="12" md="4">
+        <VTextField
+          v-model="project.project_code"
+          label="Project Code"
+          :rules="[requiredValidator]"
+          :error-messages="errorMessages.project_code"
+          clearable
+        />
+      </VCol>
+
       <!-- Start Date -->
       <VCol cols="12" md="4">
         <VTextField
@@ -84,8 +95,9 @@ const projectId = Number(route.params.id)
 
 const project = ref({
   name: '',
+  project_code: '',
   start_date: '',
-  end_date: '',
+  // end_date: '',
   // budget: '',
   description: '',
 })
@@ -118,6 +130,7 @@ const loadProject = async () => {
   const p = res.data?.data ?? res.data?.project ?? res.data
 
   project.value.name = p.name ?? ''
+  project.value.project_code = p.project_code ?? ''
   project.value.start_date = p.start_date ?? ''
   project.value.end_date = p.end_date ?? ''
   project.value.description = p.description ?? ''
@@ -139,6 +152,7 @@ const submitForm = async () => {
 
     const payload = {
       name: project.value.name,
+      project_code: project.value.project_code,
       start_date: project.value.start_date,
       end_date: project.value.end_date,
       description: project.value.description,

@@ -68,6 +68,21 @@
         />
       </VCol>
 
+      <!-- Location (dynamic) -->
+      <VCol cols="12" md="6">
+        <VSelect
+          v-model="user.location_id"
+          :items="locationOptions"
+          item-title="name"
+          item-value="id"
+          label="Location"
+          :loading="locationsLoading"
+          :disabled="locationsLoading"
+          :rules="[requiredValidator]"
+          :error-messages="errorMessages.location_id"
+        />
+      </VCol>
+
       <!-- Latitude -->
       <VCol cols="12" md="6">
         <VTextField
@@ -126,9 +141,9 @@
 
 <script setup>
 import axios from "axios";
-import { ref, onMounted } from "vue";
-import { useRouter, useRoute } from "vue-router";
-import { VForm, VRow, VCol, VTextField, VSelect, VBtn } from "vuetify/components";
+import { onMounted, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { VBtn, VCol, VForm, VRow, VSelect, VTextField } from "vuetify/components";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
@@ -143,6 +158,7 @@ const user = ref({
   password_confirmation: "",
   mobile_number: "",
   language_id: null,
+  location_id: null, // NEW
   latitude: "",
   longitude: "",
   address: "",
@@ -151,13 +167,17 @@ const user = ref({
 
 const roleOptions = ref([]);
 const languageOptions = ref([]);
+const locationOptions = ref([]); // NEW
+
 const rolesLoading = ref(false);
 const languagesLoading = ref(false);
+const locationsLoading = ref(false); // NEW
+
 const saving = ref(false);
 const message = ref("");
 const errorMessages = ref({});
 
-// validators (FIXED: 'const emailValidator', not 'the emailValidator')
+// validators
 const requiredValidator = (v) => !!v || "This field is required";
 const emailValidator = (v) => /^\S+@\S+\.\S+$/.test(v) || "Invalid email address";
 const mobileNumberValidator = (v) => /^\+\d{10,15}$/.test(v) || "Invalid mobile number format. Include country code.";
@@ -206,6 +226,21 @@ const fetchLanguages = async () => {
   }
 };
 
+// NEW: Locations
+const fetchLocations = async () => {
+  locationsLoading.value = true;
+  try {
+    // If apiBaseUrl === {{baseUrl}}/api, this hits {{baseUrl}}/api/locations
+    const res = await axios.get(`${apiBaseUrl}/locations`, { headers: getHeaders() });
+    const arr = Array.isArray(res?.data) ? res.data : (res?.data?.data ?? []);
+    locationOptions.value = arr.map((l) => ({ id: l.id, name: l.name }));
+  } catch (e) {
+    console.error("Error loading locations:", e);
+  } finally {
+    locationsLoading.value = false;
+  }
+};
+
 // role picker from various shapes
 const pickRole = (u) => {
   if (typeof u?.role === "string" && u.role) return u.role;
@@ -235,6 +270,7 @@ const loadUser = async () => {
       password_confirmation: "",
       mobile_number: dataUser.mobile_number ?? "",
       language_id: dataUser.language_id ?? null,
+      location_id: dataUser.location_id ?? null, // NEW
       latitude: dataUser.latitude ?? "",
       longitude: dataUser.longitude ?? "",
       address: dataUser.address ?? "",
@@ -256,6 +292,7 @@ const submitForm = async () => {
       email: user.value.email,
       mobile_number: user.value.mobile_number,
       language_id: user.value.language_id,
+      location_id: user.value.location_id, // NEW
       latitude: user.value.latitude || null,
       longitude: user.value.longitude || null,
       address: user.value.address,
@@ -285,11 +322,11 @@ const submitForm = async () => {
 };
 
 onMounted(async () => {
-  await Promise.all([fetchRoles(), fetchLanguages()]);
+  await Promise.all([fetchRoles(), fetchLanguages(), fetchLocations()]); // include locations
   await loadUser();
 });
 </script>
 
 <style>
-.mt-4 { margin-top: 16px; }
+.mt-4 { margin-block-start: 16px; }
 </style>

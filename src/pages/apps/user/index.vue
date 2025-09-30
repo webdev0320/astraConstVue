@@ -49,7 +49,7 @@
 
 <script setup>
 import axios from "axios";
-import { ref, onMounted } from "vue";
+import { onMounted, ref } from "vue";
 import {
   VBtn,
   VDataTable,
@@ -65,6 +65,7 @@ const loading = ref(false);
 // table headers
 const headers = [
   { title: "ID", key: "id" },
+  { title: "Code", key: "user_code" },
   { title: "Name", key: "name" },
   { title: "Email", key: "email" },
   { title: "Mobile", key: "mobile_number" },
@@ -121,6 +122,7 @@ const fetchUsers = async () => {
 
     users.value = rows.map((u) => ({
       id: u.id,
+      user_code: u.user_code,
       name: u.name,
       email: u.email,
       mobile_number: u.mobile_number ?? "—",
@@ -180,8 +182,8 @@ const onPageChange = async (p) => {
 .d-flex { display: flex; }
 .justify-between { justify-content: space-between; }
 .align-center { align-items: center; }
-.ms-auto { margin-left: auto; }
+.ms-auto { margin-inline-start: auto; }
 .gap-2 { gap: 8px; }
-.mb-4 { margin-bottom: 16px; }
-.mt-3 { margin-top: 12px; }
+.mb-4 { margin-block-end: 16px; }
+.mt-3 { margin-block-start: 12px; }
 </style>

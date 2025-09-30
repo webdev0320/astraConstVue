@@ -90,11 +90,11 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
 const headers = [
   { title: "NAME", key: "name" },
+  { title: "Project Code", key: "project_code" },
   { title: "START DATE", key: "start_date" },
   { title: "END DATE", key: "end_date" },
   { title: "DESCRIPTION", key: "description" },
   { title: "BUDGET", key: "budget" },
-  { title: "CREATED AT", key: "created_at" },
   { title: "ACTIONS", key: "actions", sortable: false },
 ];
 
@@ -136,11 +136,12 @@ const fetchProjects = async () => {
     projects.value = list.map(p => ({
       id: p.id,
       name: p.name,
+      project_code: p.project_code,
       start_date: p.start_date ?? "—",
       end_date: p.end_date ?? "—",
       description: p.description ?? "—",
       budget: p.budget ?? "—",
-      created_at: p.created_at ?? "—",
+      // created_at: p.created_at ?? "—",
     }));
   } catch (e) {
     console.error("Error fetching projects:", e);

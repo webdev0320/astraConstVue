@@ -68,6 +68,21 @@
         />
       </VCol>
 
+      <!-- Location (dynamic) -->
+      <VCol cols="12" md="6">
+        <VSelect
+          v-model="user.location_id"
+          :items="locationOptions"
+          item-title="name"
+          item-value="id"
+          label="Location"
+          :loading="locationsLoading"
+          :disabled="locationsLoading"
+          :rules="[requiredValidator]"
+          :error-messages="errorMessages.location_id"
+        />
+      </VCol>
+
       <!-- Latitude -->
       <VCol cols="12" md="6">
         <VTextField
@@ -126,12 +141,11 @@
 
 <script setup>
 import axios from "axios";
-import { ref, onMounted } from "vue";
+import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import { VForm, VRow, VCol, VTextField, VSelect, VBtn } from "vuetify/components";
+import { VBtn, VCol, VForm, VRow, VSelect, VTextField } from "vuetify/components";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-
 const router = useRouter();
 
 const user = ref({
@@ -141,16 +155,20 @@ const user = ref({
   password_confirmation: "",
   mobile_number: "",
   language_id: null,
+  location_id: null, // <-- NEW
   latitude: "",
   longitude: "",
   address: "",
   role: "", // role NAME string (backend expects name in assignRole)
 });
 
-const roleOptions = ref([]);       
-const languageOptions = ref([]);   
+const roleOptions = ref([]);
+const languageOptions = ref([]);
+const locationOptions = ref([]); // <-- NEW
+
 const rolesLoading = ref(false);
 const languagesLoading = ref(false);
+const locationsLoading = ref(false); // <-- NEW
 
 const refForm = ref();
 const loading = ref(false);
@@ -207,6 +225,22 @@ const fetchLanguages = async () => {
   }
 };
 
+// NEW: load locations from /api/locations
+const fetchLocations = async () => {
+  locationsLoading.value = true;
+  try {
+    const res = await axios.get(`${apiBaseUrl}/locations`, { headers: getHeaders() });
+    // if your full URL is {{baseUrl}}/api/locations and apiBaseUrl === {{baseUrl}}/api
+    // then `${apiBaseUrl}/locations` is correct.
+    const arr = Array.isArray(res?.data) ? res.data : (res?.data?.data ?? []);
+    locationOptions.value = arr.map(l => ({ id: l.id, name: l.name }));
+  } catch (e) {
+    console.error("Error loading locations:", e);
+  } finally {
+    locationsLoading.value = false;
+  }
+};
+
 // --- submit ---
 const submitForm = async () => {
   try {
@@ -220,6 +254,7 @@ const submitForm = async () => {
       password_confirmation: user.value.password_confirmation,
       mobile_number: user.value.mobile_number,
       language_id: user.value.language_id,
+      location_id: user.value.location_id, // <-- NEW
       latitude: user.value.latitude || null,
       longitude: user.value.longitude || null,
       address: user.value.address,
@@ -246,10 +281,10 @@ const submitForm = async () => {
 };
 
 onMounted(async () => {
-  await Promise.all([fetchRoles(), fetchLanguages()]);
+  await Promise.all([fetchRoles(), fetchLanguages(), fetchLocations()]);
 });
 </script>
 
 <style>
-.mt-4 { margin-top: 16px; }
+.mt-4 { margin-block-start: 16px; }
 </style>
