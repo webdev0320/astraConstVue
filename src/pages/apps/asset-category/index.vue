@@ -1,50 +1,62 @@
 <template>
   <div>
-    <div class="d-flex justify-between align-center mb-4">
-      <h3>Asset Categories</h3>
+    <div class="mb-4">
+      <!-- Title -->
+      <h3 class="mb-3">Asset Categories</h3>
 
-      <div class="d-flex gap-2 ms-auto">
-        <!-- Search (by slug) -->
+      <!-- Filter + Buttons Row -->
+      <div class="d-flex gap-3 align-center filter-bar">
+        <!-- Search -->
         <VTextField
           v-model="search"
-          placeholder="Search by slug…"
-          density="comfortable"
+          placeholder="Search by title…"
+          variant="outlined"
+          density="default"
           clearable
           hide-details
-          style="max-inline-size: 260px;"
+          class="filter-input"
         />
 
-        <!-- Status filter -->
+        <!-- Status -->
         <VSelect
           v-model="statusFilter"
           :items="statusOptions"
           item-title="label"
           item-value="value"
           label="Status"
-          density="comfortable"
+          variant="outlined"
+          density="default"
           hide-details
           clearable
-          style="max-inline-size: 180px;"
+          class="filter-input"
         />
 
-        <!-- Parent filter -->
+        <!-- Parent -->
         <VSelect
           v-model="parentFilter"
           :items="parentOptions"
           item-title="label"
           item-value="value"
           label="Type"
-          density="comfortable"
+          variant="outlined"
+          density="default"
           hide-details
           clearable
-          style="max-inline-size: 180px;"
+          class="filter-input"
         />
 
-        <VBtn color="primary" @click="$router.push('/dashboards/assetcategories/create')">
+        <!-- Export -->
+        <VBtn color="primary" variant="outlined" :loading="exporting" class="filter-btn" @click="exportToExcel">
+          Export to Excel
+        </VBtn>
+
+        <!-- Create -->
+        <VBtn color="primary" class="filter-btn" @click="$router.push('/dashboards/assetcategories/create')">
           Create Asset Category
         </VBtn>
       </div>
     </div>
+
 
     <VDataTable
       v-if="rows.length"
@@ -54,14 +66,14 @@
       :loading="loading"
       class="mt-3"
     >
-      <!-- SLUG (safe access) -->
-      <template #item.slug="{ item }">
-        <div class="fw-600">{{ cell(item, 'slug') ?? '—' }}</div>
+      <!-- TITLE -->
+      <template #item.title="{ item }">
+        <div class="fw-600">{{ cell(item, 'title') ?? '—' }}</div>
       </template>
 
-      <!-- PARENT ID -->
-      <template #item.parent_id="{ item }">
-        {{ cell(item, 'parent_id') ?? '—' }}
+      <!-- PARENT NAME -->
+      <template #item.parent_name="{ item }">
+        {{ cell(item, 'parent_name') ?? '—' }}
       </template>
 
       <!-- IS PARENT -->
@@ -76,13 +88,6 @@
         <VChip :color="truthy(cell(item, 'status')) ? 'success' : 'error'" size="small" label>
           {{ truthy(cell(item, 'status')) ? 'Active' : 'Inactive' }}
         </VChip>
-      </template>
-
-      <!-- DESCRIPTION -->
-      <template #item.description="{ item }">
-        <div class="desc-cell clamp-2" :title="cell(item, 'description') || '—'">
-          {{ truncateSmart(cell(item, 'description'), 20, 120) }}
-        </div>
       </template>
 
       <!-- ACTIONS -->
@@ -108,22 +113,22 @@
 </template>
 
 <script setup>
-import axios from 'axios';
-import { computed, onMounted, ref } from 'vue';
+import axios from 'axios'
+import { computed, onMounted, ref } from 'vue'
 import {
   VBtn,
   VChip,
   VDataTable,
   VSelect,
   VTextField,
-} from 'vuetify/components';
+} from 'vuetify/components'
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 
 /* ---------------- Table headers ---------------- */
 const headers = [
   { title: 'Title', key: 'title' },
-  { title: 'PARENT Name', key: 'parent_name', align: 'start', width: 120 },
+  { title: 'PARENT Name', key: 'parent_name', align: 'start', width: 160 },
   { title: 'IS PARENT', key: 'is_parent', width: 120 },
   { title: 'STATUS', key: 'status', width: 120 },
   { title: 'ACTIONS', key: 'actions', sortable: false, width: 160 },
@@ -132,10 +137,11 @@ const headers = [
 /* ---------------- State ---------------- */
 const rows = ref([])   // normalized categories for table
 const loading = ref(false)
+const exporting = ref(false)
 const errorMessage = ref('')
 
 /* Filters */
-const search = ref('')          // search by slug
+const search = ref('')          // search by title
 const statusFilter = ref(null)  // true/false/null
 const parentFilter = ref(null)  // 'parent' | 'child' | null
 
@@ -149,7 +155,6 @@ const parentOptions = [
 ]
 
 /* ---------------- Utils ---------------- */
-/** Safely read a cell value regardless of Vuetify's internal item shape */
 const cell = (it, key) => it?.raw?.[key] ?? it?.columns?.[key] ?? it?.[key] ?? null
 const truthy = v => v === true || v === 1 || v === '1'
 
@@ -158,16 +163,6 @@ const getCookie = name => {
   const parts = value.split(`; ${name}=`)
   if (parts.length === 2) return parts.pop().split(';').shift()
   return null
-}
-
-const truncateSmart = (text, wordLimit = 20, charFallback = 120) => {
-  if (!text) return '—'
-  const str = String(text).trim()
-  const words = str.split(/\s+/).filter(Boolean)
-  if (words.length > 1) {
-    return words.length > wordLimit ? words.slice(0, wordLimit).join(' ') + '…' : str
-  }
-  return str.length > charFallback ? str.slice(0, charFallback) + '…' : str
 }
 
 /* ---------------- Fetch all pages ---------------- */
@@ -210,14 +205,14 @@ const load = async () => {
     rows.value = raw.map(c => ({
       id: c.id,
       title: c.title,
-      description: c.description,
+      description: c.description ?? '',
       is_parent: !!c.is_parent,
-      parent_name: c.parent_name, // null for root
+      parent_name: c.parent_name ?? null, // null for root
       status: !!c.status,
     }))
 
-    // sort by slug asc
-    rows.value.sort((a, b) => (a.slug || '').localeCompare(b.slug || ''))
+    // sort by title asc
+    rows.value.sort((a, b) => (a.title || '').localeCompare(b.title || ''))
   } catch (e) {
     console.error('Error loading asset categories:', e)
     errorMessage.value = e.response?.data?.message || 'Failed to fetch asset categories.'
@@ -232,10 +227,10 @@ onMounted(load)
 const filteredRows = computed(() => {
   let data = rows.value
 
-  // search (slug only)
+  // search (title)
   const q = (search.value || '').toLowerCase().trim()
   if (q) {
-    data = data.filter(r => (r.slug || '').toLowerCase().includes(q))
+    data = data.filter(r => (r.title || '').toLowerCase().includes(q))
   }
 
   // status
@@ -269,9 +264,71 @@ const deleteCategory = async (id) => {
     alert(error.response?.data?.message || 'Failed to delete category.')
   }
 }
+
+/* ---------------- Export to Excel (filtered rows) ---------------- */
+const exportToExcel = async () => {
+  try {
+    exporting.value = true
+    const data = filteredRows.value
+
+    if (!data.length) {
+      alert('No rows to export.')
+      return
+    }
+
+    // Shape rows for Excel (human-readable)
+    const excelRows = data.map(r => ({
+      ID: r.id,
+      Title: r.title || '',
+      'Parent Name': r.parent_name || '',
+      'Is Parent': r.is_parent ? 'Yes' : 'No',
+      Status: r.status ? 'Active' : 'Inactive',
+    }))
+
+    // dynamic import to keep bundle light
+    const xlsx = await import('xlsx')
+    const ws = xlsx.utils.json_to_sheet(excelRows, {
+      header: ['Title', 'Parent Name'],
+      skipHeader: false,
+    })
+    const wb = xlsx.utils.book_new()
+    xlsx.utils.book_append_sheet(wb, ws, 'Asset Categories')
+
+    const stamp = new Date()
+      .toISOString()
+      .slice(0, 19)
+      .replace(/[:T]/g, '-')
+    const filename = `asset-categories-${stamp}.xlsx`
+
+    xlsx.writeFile(wb, filename)
+  } catch (err) {
+    console.error('Export failed:', err)
+    alert('Failed to export Excel.')
+  } finally {
+    exporting.value = false
+  }
+}
 </script>
 
 <style>
+.filter-bar {
+  display: flex;
+  flex-wrap: nowrap;  /* ek hi line me rakhega */
+  align-items: center;
+}
+
+.filter-input {
+  block-size: 44px;
+  max-inline-size: 240px;
+  min-inline-size: 200px;
+}
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  block-size: 44px;
+}
+
 .v-data-table { margin-block-start: 16px; }
 .fw-600 { font-weight: 600; }
 
