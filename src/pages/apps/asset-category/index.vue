@@ -11,7 +11,7 @@
           density="comfortable"
           clearable
           hide-details
-          style="max-width: 260px"
+          style="max-inline-size: 260px;"
         />
 
         <!-- Status filter -->
@@ -24,7 +24,7 @@
           density="comfortable"
           hide-details
           clearable
-          style="max-width: 180px"
+          style="max-inline-size: 180px;"
         />
 
         <!-- Parent filter -->
@@ -37,7 +37,7 @@
           density="comfortable"
           hide-details
           clearable
-          style="max-width: 180px"
+          style="max-inline-size: 180px;"
         />
 
         <VBtn color="primary" @click="$router.push('/dashboards/assetcategories/create')">
@@ -108,25 +108,24 @@
 </template>
 
 <script setup>
-import axios from 'axios'
-import { ref, computed, onMounted } from 'vue'
+import axios from 'axios';
+import { computed, onMounted, ref } from 'vue';
 import {
   VBtn,
-  VDataTable,
   VChip,
-  VTextField,
+  VDataTable,
   VSelect,
-} from 'vuetify/components'
+  VTextField,
+} from 'vuetify/components';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
 /* ---------------- Table headers ---------------- */
 const headers = [
-  { title: 'SLUG', key: 'slug' },
-  { title: 'PARENT ID', key: 'parent_id', align: 'start', width: 120 },
+  { title: 'Title', key: 'title' },
+  { title: 'PARENT Name', key: 'parent_name', align: 'start', width: 120 },
   { title: 'IS PARENT', key: 'is_parent', width: 120 },
   { title: 'STATUS', key: 'status', width: 120 },
-  { title: 'DESCRIPTION', key: 'description', width: 420 },
   { title: 'ACTIONS', key: 'actions', sortable: false, width: 160 },
 ]
 
@@ -210,10 +209,10 @@ const load = async () => {
 
     rows.value = raw.map(c => ({
       id: c.id,
-      slug: c.slug,
+      title: c.title,
       description: c.description,
       is_parent: !!c.is_parent,
-      parent_id: c.parent_id, // null for root
+      parent_name: c.parent_name, // null for root
       status: !!c.status,
     }))
 
@@ -273,27 +272,28 @@ const deleteCategory = async (id) => {
 </script>
 
 <style>
-.v-data-table { margin-top: 16px; }
+.v-data-table { margin-block-start: 16px; }
 .fw-600 { font-weight: 600; }
 
 .d-flex { display: flex; }
 .justify-between { justify-content: space-between; }
 .align-center { align-items: center; }
-.ms-auto { margin-left: auto; }
+.ms-auto { margin-inline-start: auto; }
 .gap-2 { gap: 8px; }
-.mb-4 { margin-bottom: 16px; }
+.mb-4 { margin-block-end: 16px; }
 
 /* Clamp + long text safety */
 .desc-cell {
-  max-width: 480px;
   overflow: hidden;
-  text-overflow: ellipsis;
+  max-inline-size: 480px;
   overflow-wrap: anywhere;
+  text-overflow: ellipsis;
   word-break: break-word;
 }
+
 .clamp-2 {
   display: -webkit-box;
-  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 </style>

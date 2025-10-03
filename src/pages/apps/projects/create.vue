@@ -6,7 +6,7 @@
   <VForm ref="refForm" @submit.prevent="submitForm">
     <VRow>
       <!-- Name -->
-      <VCol cols="12" md="4">
+      <VCol cols="12" md="12">
         <VTextField
           v-model="project.name"
           label="Name"

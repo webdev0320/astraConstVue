@@ -52,12 +52,12 @@
           </VRow>
         </div>
 
-        <!-- === DETAILED ASSET DESCRIPTION (Box) === -->
+        <!-- === DETAILED ASSET DESCRIPTION (Box) — top-only === -->
         <div class="form-box">
           <div class="box-title">DETAILED ASSET DESCRIPTION: <span class="sub">(As Per Quotation)</span></div>
           <div class="box-body">
             <VTextarea
-              v-model="line.description"
+              v-model="formTop.asset_description"
               label="Description"
               variant="outlined"
               density="compact"
@@ -67,45 +67,7 @@
           </div>
         </div>
 
-        <!-- === PLANNED COST + REQUEST TYPE (Box) === -->
-        <div class="form-box">
-          <div class="box-title">PLANNED COST (in SAR):</div>
-          <VRow dense class="box-body">
-            <VCol cols="12" md="6" class="pt-2">
-              <VRadioGroup v-model="line.request_type" inline>
-                <VRadio label="NEW ASSET"   value="NEW" />
-                <VRadio label="LEASED ASSET" value="LEASED" />
-                <VRadio label="USED ASSET"   value="USED" />
-              </VRadioGroup>
-            </VCol>
-            <VCol cols="12" md="6">
-              <VTextField
-                v-model.number="line.planned_cost"
-                label="Planned Cost"
-                type="number"
-                min="0"
-                step="0.01"
-                prefix="SAR "
-                variant="outlined"
-                density="compact"
-                hide-details="auto"
-              />
-            </VCol>
-
-            <VCol cols="12">
-              <VTextarea
-                v-model="line.reason"
-                label="Reason/Purpose of the investment"
-                hint="(with an investment over 100,000 SAR a cost effective analysis has to be done and agreed with Board of Directors)"
-                persistent-hint
-                variant="outlined"
-                density="compact"
-                hide-details="auto"
-                clearable
-              />
-            </VCol>
-          </VRow>
-        </div>
+        <!-- === (REMOVED) PLANNED COST + REQUEST TYPE BOX to avoid duplicates === -->
 
         <!-- === FINANCE + CHECKED BY FINANCE (Two columns Box) === -->
         <div class="form-box">
@@ -261,7 +223,7 @@
           </VRow>
         </div>
 
-        <!-- === YOUR EXISTING ENTRY AREA (Category/Sub/Asset/Qty/Cost/Reason) === -->
+        <!-- === ENTRY AREA (Category/Sub/Asset/Qty/UnitCost/PlannedCost/Reason) === -->
         <VRow dense class="mt-4">
           <!-- Category -->
           <VCol cols="12" md="4" class="py-5">
@@ -316,8 +278,8 @@
             />
           </VCol>
 
-          <!-- Request Type (mirrors the box above; optional to change per-line) -->
-          <VCol cols="12" md="4" class="py-5">
+          <!-- Request Type (per-line) -->
+          <VCol cols="12" md="6" class="py-5">
             <VSelect
               v-model="line.request_type"
               :items="REQUEST_TYPE_OPTIONS"
@@ -330,7 +292,7 @@
           </VCol>
 
           <!-- Quantity -->
-          <VCol cols="12" md="4" class="py-5">
+          <VCol cols="12" md="6" class="py-5">
             <VTextField
               v-model.number="line.quantity"
               label="Qty"
@@ -343,11 +305,11 @@
             />
           </VCol>
 
-          <!-- Planned Cost -->
-          <VCol cols="12" md="4" class="py-5">
+          <!-- Planned Cost (total for the line) -->
+          <VCol cols="12" md="6" class="py-5">
             <VTextField
               v-model.number="line.planned_cost"
-              label="Planned Cost"
+              label="Planned Cost (Total)"
               type="number"
               min="0"
               step="0.01"
@@ -355,6 +317,33 @@
               variant="outlined"
               density="compact"
               hide-details="auto"
+            />
+          </VCol>
+
+          <!-- Unit Cost (NEW) -->
+          <VCol cols="12" md="6" class="py-5">
+            <VTextField
+              v-model.number="line.unit_cost"
+              label="Unit Cost"
+              type="number"
+              min="0"
+              step="0.01"
+              prefix="SAR "
+              variant="outlined"
+              density="compact"
+              hide-details="auto"
+            />
+          </VCol>
+
+          <!-- Per-line Description -->
+          <VCol cols="12" md="12" class="py-5">
+            <VTextarea
+              v-model="line.description"
+              label="Description (per-line)"
+              variant="outlined"
+              density="compact"
+              hide-details="auto"
+              clearable
             />
           </VCol>
 
@@ -395,7 +384,7 @@
             closable
             @click:close="removeRecord(r)"
           >
-            {{ r.asset_code }} — {{ r.request_type }} — Qty: {{ r.quantity }} — {{ formatAmount(r.planned_cost) }}
+            {{ r.asset_code }} — {{ r.request_type }} — Qty: {{ r.quantity }} — Unit: {{ formatAmount(r.unit_cost) }} — {{ formatAmount(r.planned_cost) }}
             <template v-if="r.description"> — {{ r.description }}</template>
           </VChip>
         </div>
@@ -408,11 +397,14 @@
           :items-per-page="5"
           class="mt-4"
         >
+          <template #item.unit_cost="{ item }">
+            {{ formatAmount(item.unit_cost) }}
+          </template>
           <template #item.planned_cost="{ item }">
             {{ formatAmount(item.planned_cost) }}
           </template>
           <template #item.line_total="{ item }">
-            {{ formatAmount(item.quantity * item.planned_cost) }}
+            {{ formatAmount(item.quantity * (item.unit_cost || item.planned_cost)) }}
           </template>
           <template #item.actions="{ item }">
             <VBtn color="error" size="small" @click="removeRecord(item)">
@@ -451,9 +443,10 @@ const routeProjectId = computed(() => route.params.id ?? route.params.projectId 
 const REQUEST_TYPE_OPTIONS = ["NEW", "LEASED", "USED"];
 const today = new Date().toISOString().split("T")[0];
 
-/* ===== NEW meta (for top/finance/signatures) ===== */
+/* ===== meta (for top/finance/signatures) ===== */
 const formTop = ref({
-  req_number: "",      // Investment Request Number (optional / display)
+  req_number: "",
+  asset_description: "",   // top description only
 });
 const finance = ref({
   asset_life_period: "",
@@ -488,8 +481,10 @@ const selectedSubCategoryId = ref(null);
 const selectedAsset = ref(null);
 const assets = ref([]);
 
+/* per-line inputs */
 const line = ref({
-  planned_cost: null,
+  unit_cost: null,       // NEW
+  planned_cost: null,    // total for the line; auto = unit_cost * quantity if unit_cost given
   quantity: 1,
   request_type: "NEW",
   description: "",
@@ -507,7 +502,8 @@ const headers = [
   { title: "Description", key: "description" },
   { title: "Reason", key: "reason" },
   { title: "Qty", key: "quantity" },
-  { title: "Planned Cost", key: "planned_cost" },
+  { title: "Unit Cost", key: "unit_cost" },          // NEW
+  { title: "Planned Cost (Total)", key: "planned_cost" },
   { title: "Line Total", key: "line_total" },
   { title: "Actions", key: "actions", sortable: false },
 ];
@@ -517,11 +513,10 @@ const fetchProjects = async () => {
   try {
     const res = await axios.get(`${apiBaseUrl}/projects`, { headers: getAuthHeaders() });
     projects.value = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
-    // Preselect from route if present
     if (routeProjectId.value && !selectedProjectId.value) {
       const pidNum = Number(routeProjectId.value);
       if (projects.value.some(p => Number(p.id) === pidNum)) selectedProjectId.value = pidNum;
-      else selectedProjectId.value = pidNum; // allow even if not in list yet
+      else selectedProjectId.value = pidNum;
     }
   } catch (e) {
     console.error("Error fetching projects:", e);
@@ -629,21 +624,31 @@ const getCookie = (name) => {
 };
 
 // Add/Remove/Clear
-const canAddLine = computed(() =>
-  !!(
+const canAddLine = computed(() => {
+  const qtyOk = Number(line.value.quantity || 1) > 0;
+  const hasCost = Number(line.value.planned_cost) > 0 || Number(line.value.unit_cost) > 0;
+  return !!(
     selectedCategoryId.value &&
     selectedSubCategoryId.value &&
-    Number(line.value.quantity || 1) > 0 &&
-    Number(line.value.planned_cost) > 0 &&
+    qtyOk &&
+    hasCost &&
     (line.value.request_type?.length > 0)
-  )
-);
+  );
+});
 
 const addRecord = () => {
   if (!canAddLine.value) return;
 
   const a    = selectedAsset.value || null;
   const qty  = Number(line.value.quantity || 1);
+  const unit = Number(line.value.unit_cost || 0);
+  let   totalPlanned = Number(line.value.planned_cost || 0);
+
+  // If unit_cost given, compute total
+  if (unit > 0) {
+    totalPlanned = unit * qty;
+  }
+
   const desc = (line.value.description || "").trim();
   const rsn  = (line.value.reason || "").trim();
   const type = line.value.request_type || "NEW";
@@ -659,8 +664,16 @@ const addRecord = () => {
 
   const existing = records.value.find(r => r.__key === recordKey);
   if (existing) {
-    existing.planned_cost = Number(existing.planned_cost) + Number(line.value.planned_cost || 0);
-    existing.quantity     = Number(existing.quantity || 0) + qty;
+    // Merge by summing quantities and recomputing totals
+    const newQty = Number(existing.quantity || 0) + qty;
+    const baseUnit = unit || existing.unit_cost || 0;
+    existing.quantity = newQty;
+    existing.unit_cost = baseUnit || null;
+    if (baseUnit > 0) {
+      existing.planned_cost = baseUnit * newQty;
+    } else {
+      existing.planned_cost = Number(existing.planned_cost) + totalPlanned;
+    }
   } else {
     records.value.push({
       __key: recordKey,
@@ -668,7 +681,8 @@ const addRecord = () => {
       asset_sub_category_id: Number(selectedSubCategoryId.value),
       asset_id: a?.id ?? null,
       description: desc || null,
-      planned_cost: Number(line.value.planned_cost),
+      unit_cost: unit || null,                 // NEW
+      planned_cost: Number(totalPlanned),      // total for the line
       request_type: type,
       quantity: qty,
       reason: rsn || null,
@@ -684,6 +698,7 @@ const addRecord = () => {
   selectedSubCategoryId.value = null;
   selectedAsset.value         = null;
   assets.value                = [];
+  line.value.unit_cost        = null;
   line.value.planned_cost     = null;
   line.value.quantity         = 1;
   line.value.request_type     = "NEW";
@@ -713,9 +728,9 @@ const saveAll = async () => {
     const payload = {
       project_id: Number(selectedProjectId.value),
       date: date.value,
-      // New meta block to capture the "printed form" fields
       meta: {
         req_number: formTop.value.req_number || null,
+        asset_description: formTop.value.asset_description || null, // include top description
         finance: {
           asset_life_period: finance.value.asset_life_period || null,
           checked_by_name: finance.value.checked_by_name || null,
@@ -738,6 +753,7 @@ const saveAll = async () => {
         asset_sub_category_id: Number(r.asset_sub_category_id),
         asset_id: r.asset_id ?? null,
         description: r.description ?? null,
+        unit_cost: r.unit_cost !== null ? Number(r.unit_cost) : null,   // NEW
         planned_cost: Number(r.planned_cost),
         request_type: r.request_type,
         quantity: Number(r.quantity || 1),
@@ -769,7 +785,12 @@ const saveAll = async () => {
 
 // Totals
 const plannedTotal = computed(() =>
-  records.value.reduce((sum, r) => sum + Number(r.planned_cost || 0) * Number(r.quantity || 1), 0)
+  records.value.reduce((sum, r) => {
+    const unit = Number(r.unit_cost || 0);
+    const qty  = Number(r.quantity || 1);
+    const total = unit > 0 ? unit * qty : Number(r.planned_cost || 0);
+    return sum + total;
+  }, 0)
 );
 function formatAmount(val) {
   if (val === null || val === undefined || val === "") return "-";
@@ -812,22 +833,15 @@ onMounted(async () => {
   padding-inline: 10px;
 }
 
-.box-title.thin {
-  font-weight: 600;
-}
+.box-title.thin { font-weight: 600; }
 
 .box-title .sub {
   font-size: 0.9rem;
   font-weight: 400;
 }
 
-.box-body {
-  padding: 10px;
-}
-
-.right-border {
-  border-inline-end: 1px solid #000;
-}
+.box-body { padding: 10px; }
+.right-border { border-inline-end: 1px solid #000; }
 
 /* signature rows (label | value | date) */
 .sig-row {
@@ -837,10 +851,7 @@ onMounted(async () => {
   grid-template-columns: 130px 1fr 180px;
   margin-block: 6px;
 }
-
-.sig-label {
-  font-weight: 600;
-}
+.sig-label { font-weight: 600; }
 
 /* tighter paddings on large screens so it looks like the form */
 @media (min-width: 960px) {

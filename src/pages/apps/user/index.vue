@@ -111,7 +111,7 @@
               :show-size="true"
               density="comfortable"
               hide-details="auto"
-              accept=".csv, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              accept=".csv, .xls, .xlsx, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/csv"
               :rules="fileRules"
               :disabled="uploadLoading"
               :error-messages="uploadFieldError"
@@ -180,18 +180,31 @@ const uploadTopError = ref("");
 const uploadErrors = ref([]);     // array of server row-level errors
 const uploadFieldError = ref(""); // field-specific error under file input
 
-// Accept CSV/XLSX. Adjust if your API expects something else.
+// ---- file validation helpers (allow empty MIME but correct extension) ----
 const MAX_FILE_BYTES = 8 * 1024 * 1024; // 8 MB
+const ALLOWED_EXTS = ["csv", "xls", "xlsx"];
 const ACCEPT_MIMES = [
   "text/csv",
   "application/vnd.ms-excel",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 ];
+
+const getExt = (name = "") => {
+  const p = name.toLowerCase().split(".");
+  return p.length > 1 ? p.pop() : "";
+};
+const isAllowedFile = (f) => {
+  if (!f) return false;
+  const byMime = f.type && ACCEPT_MIMES.includes(f.type);
+  const byExt = ALLOWED_EXTS.includes(getExt(f.name));
+  return byMime || byExt;
+};
+
 const fileRules = [
-  v => !!v || "Please select a file",
+  v => !!(Array.isArray(v) ? v[0] : v) || "Please select a file",
   v => {
     const f = Array.isArray(v) ? v[0] : v;
-    return !f || ACCEPT_MIMES.includes(f.type) || "Allowed: CSV/XLSX";
+    return !f || isAllowedFile(f) || "Allowed: .csv, .xls, .xlsx";
   },
   v => {
     const f = Array.isArray(v) ? v[0] : v;
@@ -323,6 +336,9 @@ const closeImportDialog = () => {
   importDialog.value = false;
 };
 
+// IMPORTANT: API path fixed to /api/users/import + better validation + dual field names
+const IMPORT_ENDPOINT = `${apiBaseUrl}/users/import`; // <- FIXED
+
 const submitImport = async () => {
   uploadFieldError.value = "";
   uploadTopError.value = "";
@@ -333,8 +349,8 @@ const submitImport = async () => {
     uploadFieldError.value = "Please select a file";
     return;
   }
-  if (!ACCEPT_MIMES.includes(f.type)) {
-    uploadFieldError.value = "Allowed: CSV/XLSX";
+  if (!isAllowedFile(f)) {
+    uploadFieldError.value = "Allowed: .csv, .xls, .xlsx";
     return;
   }
   if (f.size > MAX_FILE_BYTES) {
@@ -343,13 +359,15 @@ const submitImport = async () => {
   }
 
   const fd = new FormData();
-  fd.append("file", f, f.name); // change "file" if your API expects a different field
+  // Add under both common keys to satisfy different backends
+  fd.append("file", f, f.name);
+  fd.append("import_file", f, f.name);
 
   uploadLoading.value = true;
   try {
-    const res = await axios.post(`${apiBaseUrl}/users/import`, fd, {
+    const res = await axios.post(IMPORT_ENDPOINT, fd, {
       headers: {
-        ...getAuthHeaders(), // don't set Content-Type; browser will include multipart boundary
+        ...getAuthHeaders(), // don't set Content-Type; browser sets multipart boundary
       },
     });
 
@@ -359,25 +377,29 @@ const submitImport = async () => {
       uploadErrors.value = rowErrors.map(e => (typeof e === "string" ? e : JSON.stringify(e)));
     }
 
-    // Close modal & refresh list
+    // Close modal, reset file input, & refresh list
     importDialog.value = false;
+    uploadFile.value = null;
     await fetchUsers();
   } catch (err) {
     console.error("Upload error:", err);
+    const resp = err?.response?.data;
+
+    // Laravel-style 422 validation
     if (err?.response?.status === 422) {
-      const resp = err.response.data;
       if (resp?.errors?.file?.length) {
         uploadFieldError.value = resp.errors.file[0];
+      } else if (resp?.errors?.import_file?.length) {
+        uploadFieldError.value = resp.errors.import_file[0];
       }
-      uploadTopError.value = resp?.message || "Validation failed.";
       if (Array.isArray(resp?.errors?.rows)) {
         uploadErrors.value = resp.errors.rows;
       } else if (Array.isArray(resp?.errors)) {
         uploadErrors.value = resp.errors;
       }
+      uploadTopError.value = resp?.message || "Validation failed.";
     } else {
-      uploadTopError.value =
-        err?.response?.data?.message || "Failed to import file.";
+      uploadTopError.value = resp?.message || "Failed to import file.";
     }
   } finally {
     uploadLoading.value = false;
