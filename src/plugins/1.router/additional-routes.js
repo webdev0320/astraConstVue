@@ -149,6 +149,13 @@ export const routes = [
     name: 'dashboards-assettransfers',
     component: () => import('@/pages/apps/asset-transfer/index.vue'),
   },
+
+    {
+    path: '/dashboards/assettransfers/:id',
+    name: 'dashboards-assettransfers-show',
+    component: () => import('@/pages/apps/asset-transfer/show.vue'),
+  },
+
   {
     path: '/dashboards/assettransfers/create',
     name: 'dashboards-assettransfers-create',
@@ -166,6 +173,11 @@ export const routes = [
     path: '/dashboards/vehiclehandovers',
     name: 'dashboards-vehiclehandovers',
     component: () => import('@/pages/apps/vehicle-handover/index.vue'),
+  },
+  {
+    path: '/dashboards/vehiclehandovers/:id',
+    name: 'dashboards-vehiclehandovers-show',
+    component: () => import('@/pages/apps/vehicle-handover/show.vue'),
   },
   {
     path: '/dashboards/vehiclehandovers/create',

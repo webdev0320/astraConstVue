@@ -69,6 +69,14 @@
           </template>
 
           <VList density="compact">
+
+            <VListItem
+                @click="$router.push(`/dashboards/vehiclehandovers/${item.raw?.id ?? item.id}`)"
+              >
+                <template #prepend><VIcon icon="mdi-eye" /></template>
+                <VListItemTitle>View Details</VListItemTitle>
+            </VListItem>
+
             <!-- Delete -->
             <VListItem @click="deleteHandover(item.raw.id)">
               <template #prepend><VIcon icon="mdi-delete" /></template>

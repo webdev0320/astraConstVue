@@ -54,6 +54,14 @@
           </template>
 
           <VList density="compact">
+
+              <VListItem
+                @click="$router.push(`/dashboards/assettransfers/${item.raw?.id ?? item.id}`)"
+              >
+                <template #prepend><VIcon icon="mdi-eye" /></template>
+                <VListItemTitle>View Details</VListItemTitle>
+            </VListItem>
+
             <VListItem @click="$router.push(`/dashboards/assettransfers/edit/${item.raw?.id ?? item.id}`)">
               <template #prepend><VIcon icon="mdi-pencil" /></template>
               <VListItemTitle>Edit</VListItemTitle>
