@@ -27,7 +27,7 @@
 
     <!-- Content (screen only) -->
     <template v-else-if="request">
-      <!-- Summary (unchanged) -->
+      <!-- Summary -->
       <VRow class="d-flex flex-row flex-nowrap mb-4 no-print" dense>
         <VCol cols="8" md="8">
           <VCard class="summary-card" variant="elevated">
@@ -84,8 +84,6 @@
               <ul class="bullets">
                 <li><strong>Status:</strong> {{ request.status ?? '—' }}</li>
                 <li><strong>Accordance With Budget:</strong> {{ humanYesNo(request.is_accordance_with_budget) }}</li>
-                <!-- <li><strong>Project:</strong> {{ request.project_name ?? '—' }}</li> -->
-                <!-- <li><strong>User:</strong> {{ request.user_name ?? '—' }}</li> -->
               </ul>
             </VCardText>
           </VCard>
@@ -131,6 +129,7 @@
          PRINT-ONLY DOCUMENT
          ========================= -->
     <div id="print-area" class="print-root" v-show="showPrintSection">
+      <div class="print-body">
       <!-- EXACT header: left EN, center logo, right AR -->
       <div class="print-header-3">
         <div class="hdr-left">
@@ -157,19 +156,13 @@
         </tr>
         <tr>
           <td class="lbl">INVESTMENT REQUEST NUMBER:</td>
-          <td class="val">{{ request?.request_no || request?.code || request?.reference || ('#' + (request?.id ?? '—')) }}</td>
+          <td class="val">{{ request?.request_no || request?.code || request?.reference || ('#' + (request?.air_number ?? '—')) }}</td>
         </tr>
         <tr>
           <td class="lbl">DATE:</td>
           <td class="val">{{ formatDate(request?.date) }}</td>
         </tr>
       </table>
-
-      <!-- Detailed Description -->
-      <!-- <div class="section-heading">Detailed Asset Description: (As Per Quotation)</div>
-      <div class="box block">
-        <div class="multiline">{{ request?.detailed_description || request?.description || '—' }}</div>
-      </div> -->
 
       <!-- Requested Items (from API) -->
       <div class="section-heading">Requested Items</div>
@@ -211,15 +204,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Reasons -->
-      <!-- <div class="section-heading">
-        Reason(s)/Purpose of the investment:
-        <small>(With investment over 100,000 SAR a cost effectiveness analysis has to be enclosed and agreed with Board of Directors)</small>
-      </div>
-      <div class="box block tall">
-        <div class="multiline">{{ request?.reasons || request?.purpose || '—' }}</div>
-      </div> -->
 
       <!-- Finance -->
       <div class="section-heading">This Part to be Filled by Finance</div>
@@ -294,6 +278,7 @@
           </div>
         </div>
       </div>
+    </div>
     </div>
     <!-- /PRINT -->
   </div>
@@ -394,7 +379,6 @@ const fetchDetail = async () => {
 
     const data = res.data?.data ?? res.data ?? {};
     request.value = {
-      // id: data.id,
       air_number: data.air_number,
       project_id: data.project_id,
       user_id: data.user_id,
@@ -454,7 +438,7 @@ const printPage = () => {
 onMounted(fetchDetail);
 </script>
 
-<!-- Screen styles (unchanged) -->
+<!-- Screen styles -->
 <style scoped>
 .page-title { margin: 0; font-weight: 700; }
 .eyebrow { font-size: 12px; letter-spacing: 0.08em; opacity: 0.7; text-transform: uppercase; }
@@ -486,6 +470,17 @@ onMounted(fetchDetail);
 /* Hidden on screen; shown only in @media print below */
 .print-root { display: none; }
 
+/* Better print color rendering */
+@media print {
+  html,
+  body {
+    padding: 0 !important;
+    margin: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
 @media print {
   /* hide everything by default */
   body * { visibility: hidden !important; }
@@ -494,31 +489,46 @@ onMounted(fetchDetail);
   #print-area,
   #print-area * { visibility: visible !important; }
 
+  /* ✅ Page area: A4 with tight margins */
+  @page { margin: 8mm; size: a4 portrait; } /* 5–10mm ok */
+
+  /* ✅ Printable canvas (usable area) */
   #print-area {
     position: absolute !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    background: #fff !important;
-    inline-size: 100% !important;
-    inset: 0 !important;
-  }
-
-  @page { margin: 10mm; size: a4; }
-
-  /* ✅ SHOW the print layout during print */
-  .print-root {
-    position: absolute;
     display: block !important;
-    background: #fff;
-    inline-size: 100%;
-    inset: 0;
+    overflow: hidden !important;                  /* avoid spill */
+    padding: 0 !important;
+    background: #fff !important;
+    block-size: calc(297mm - 16mm) !important;   /* 297 - 2*8 */
+
+    /* usable width/height inside margins */
+    inline-size: calc(210mm - 16mm) !important;   /* 210 - 2*8 */
+    inset: 0 !important;
+    margin-block: 0 !important;
+    margin-inline: auto !important;
   }
+
+  /* ⬇️ SCALE to fill full height (no bottom gap)
+     Adjust --print-scale between 1.06 and 1.14 as needed per printer */
+  :root { --print-scale: 1.3; }                  /* tweak if needed */
+
+  .print-body {
+    inline-size: calc(210mm - 16mm);              /* natural width */
+
+    /* Base layout was designed for ~194mm width;
+       scale uniformly so total height fills the page */
+    transform: scale(var(--print-scale));
+    transform-origin: top left !important;
+  }
+
+  /* Keep your existing print styles below (unchanged)… */
 
   .print-header-3 {
     display: grid;
     align-items: center;
-    column-gap: 8mm;
-    grid-template-columns: 1fr 110px 1fr; /* left / logo / right */
+    break-inside: avoid;
+    column-gap: 6mm;
+    grid-template-columns: 1fr 110px 1fr;
     margin-block-end: 2mm;
   }
 
@@ -528,27 +538,10 @@ onMounted(fetchDetail);
   .hdr-logo { position: relative; z-index: 2; text-align: center; }
   .hdr-logo img { block-size: 48px; inline-size: auto; object-fit: contain; }
 
-  .hdr-right {
-    position: relative;
-    z-index: 2;
-    color: #000;
-    direction: rtl;
-    font-weight: 700;
-    line-height: 1.2;
-
-    /* text-align: end; */
-    unicode-bidi: isolate;
-    white-space: nowrap;
-  }
+  .hdr-right { position: relative; z-index: 2; color: #000; direction: rtl; font-weight: 700; line-height: 1.2; unicode-bidi: isolate; white-space: nowrap; }
   .hdr-right .ar { display: block; padding: 0; margin: 0; }
 
-  .print-title {
-    color: #808080;
-    font-size: 18px;
-    font-weight: 700;
-    margin-block: 2mm 4mm;
-    text-align: center;
-  }
+  .print-title { color: #808080; font-size: 18px; font-weight: 700; margin-block: 2mm 4mm; text-align: center; }
 
   .section-heading { font-size: 12px; font-weight: 700; margin-block: 2mm 1mm; margin-inline: 0; }
 
@@ -567,7 +560,6 @@ onMounted(fetchDetail);
   .box-table .w65 { inline-size: 65%; }
   .box-table .w40 { inline-size: 40%; }
 
-  /* items table helpers */
   .items-table .td-num { text-align: end; }
   .items-table .td-center { text-align: center; }
 
@@ -595,4 +587,5 @@ onMounted(fetchDetail);
   .subgrid { display: grid; align-items: start; column-gap: 4mm; grid-template-columns: 28mm 1fr; }
   .subgrid.top-gap { margin-block-start: 4mm; }
 }
+
 </style>
