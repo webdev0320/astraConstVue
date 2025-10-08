@@ -13,6 +13,17 @@
         <VDivider class="my-3" />
       </VCol>
 
+      <!-- Code (REQUIRED) -->
+      <VCol cols="12" md="6">
+        <VTextField
+          v-model="asset.code"
+          label="Code"
+          :rules="[requiredValidator]"
+          :error-messages="errorMessages.code"
+          clearable
+        />
+      </VCol>
+
       <!-- Asset Investment Request (REQUIRED) -->
       <VCol cols="12" md="6">
         <VSelect
@@ -24,17 +35,6 @@
           :loading="loadingInvestmentRequests"
           :disabled="loadingInvestmentRequests"
           :error-messages="errorMessages.asset_investment_requests_id"
-          clearable
-        />
-      </VCol>
-
-      <!-- Code (REQUIRED) -->
-      <VCol cols="12" md="6">
-        <VTextField
-          v-model="asset.code"
-          label="Code"
-          :rules="[requiredValidator]"
-          :error-messages="errorMessages.code"
           clearable
         />
       </VCol>
@@ -83,14 +83,14 @@
       </VCol>
 
       <!-- Type (optional) -->
-      <VCol cols="12" md="6">
+      <!-- <VCol cols="12" md="6">
         <VSelect
           v-model="asset.type"
           :items="TYPE_OPTIONS"
           label="Type"
           clearable
         />
-      </VCol>
+      </VCol> -->
 
       <!-- Asset Type (optional) -->
       <VCol cols="12" md="6">
@@ -156,11 +156,20 @@
       </VCol>
 
       <!-- Make (optional) -->
-      <VCol cols="12" md="6">
+      <!-- <VCol cols="12" md="6">
         <VTextField
           v-model="asset.make"
           label="Make"
           :error-messages="errorMessages.make"
+          clearable
+        />
+      </VCol> -->
+      
+      <!-- Brand (optional) -->
+      <VCol cols="12" md="6">
+        <VTextField
+          v-model="asset.brand"
+          label="Brand"
           clearable
         />
       </VCol>
@@ -174,21 +183,22 @@
         />
       </VCol>
 
-      <!-- Brand (optional) -->
-      <VCol cols="12" md="6">
-        <VTextField
-          v-model="asset.brand"
-          label="Brand"
-          clearable
-        />
-      </VCol>
-
       <!-- Model Number (optional) -->
-      <VCol cols="12" md="6">
+      <!-- <VCol cols="12" md="6">
         <VTextField
           v-model="asset.model_number"
           label="Model Number"
           clearable
+        />
+      </VCol> -->
+
+      <!-- Manufacturing Year -->
+      <VCol cols="12" md="6">
+        <VTextField
+          v-model="asset.manufacturing_year"
+          label="Manufacturing Year"
+          type="date"
+          :error-messages="errorMessages.manufacturing_year"
         />
       </VCol>
 
@@ -378,10 +388,11 @@ const asset = ref({
   description: '',
   serial_number: '',
   plate_number: '',
-  make: '',
-  model: '',
+  // make: '',
   brand: '',
-  model_number: '',
+  model: '',
+  manufacturing_year: today,
+  // model_number: '',
 
   // dates
   insurance_start_date: today,
@@ -655,10 +666,12 @@ const submitForm = async () => {
     // identity & make
     safeAppend('serial_number', asset.value.serial_number || '')
     safeAppend('plate_number', asset.value.plate_number || '')
-    safeAppend('model_number', asset.value.model_number || '')
-    safeAppend('make', asset.value.make || '')
-    safeAppend('model', asset.value.model || '')
+    // safeAppend('model_number', asset.value.model_number || '')
+    // safeAppend('make', asset.value.make || '')
     safeAppend('brand', asset.value.brand || '')
+    safeAppend('model', asset.value.model || '')
+    safeAppend('manufacturing_year', asset.value.manufacturing_year || '')
+
 
     // dates
     safeAppend('insurance_start_date', asset.value.insurance_start_date || '')

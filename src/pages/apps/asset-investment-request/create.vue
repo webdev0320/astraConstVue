@@ -1,5 +1,6 @@
 <template>
   <div>
+    <!-- Header -->
     <div class="d-flex justify-between align-center mb-4">
       <VBtn variant="text" @click="$router.back()">← Back</VBtn>
       <h3>Create Asset Investment Request</h3>
@@ -7,224 +8,56 @@
 
     <VCard class="pa-4">
       <VForm @submit.prevent="saveAll" ref="refForm">
-        <!-- === TOP: PROJECT / IR No / DATE (Box) === -->
-        <div class="form-box">
-          <div class="box-title">PROJECT/NAME:</div>
-          <VRow dense class="box-body">
+        <VRow dense>
+          <!-- Project -->
+          <VCol cols="12" md="6" py-5>
+            <VSelect
+              v-model="selectedProjectId"
+              :items="projectItems"
+              item-title="title"
+              item-value="id"
+              label="PROJECT NAME"
+              placeholder="Select Project"
+              :error-messages="topErrors.project_id"
+              variant="outlined"
+              hide-details="auto"
+              clearable
+            />
+          </VCol>
+
+          <!-- Air Number -->
             <VCol cols="12" md="6">
-              <VSelect
-                v-model="selectedProjectId"
-                :items="projects"
-                item-title="name"
-                item-value="id"
-                label="PROJECT NAME"
-                placeholder="Select Project"
-                :error-messages="topErrors.project_id"
-                variant="outlined"
-                density="compact"
-                hide-details="auto"
+              <VTextField
+                v-model="air_number"
+                label="AIR Number"
+                :error-messages="topErrors.air_number"
                 clearable
               />
             </VCol>
 
-            <VCol cols="12" md="3">
-              <VTextField
-                v-model="formTop.req_number"
-                label="INVESTMENT REQUEST NUMBER"
-                placeholder="(Auto/Manual)"
-                variant="outlined"
-                density="compact"
-                hide-details="auto"
-              />
-            </VCol>
+          <!-- Date -->
+          <VCol cols="12" md="6" class="py-5">
+            <VTextField
+              v-model="date"
+              type="date"
+              label="Date"
+              variant="outlined"
+              hide-details="auto"
+              :error-messages="topErrors.date"
+            />
+          </VCol>
 
-            <VCol cols="12" md="3">
-              <VTextField
-                v-model="date"
-                type="date"
-                label="DATE"
-                variant="outlined"
-                density="compact"
-                hide-details="auto"
-                :error-messages="topErrors.date"
-              />
-            </VCol>
-          </VRow>
-        </div>
-
-        <!-- === DETAILED ASSET DESCRIPTION (Box) — top-only === -->
-        <div class="form-box">
-          <div class="box-title">DETAILED ASSET DESCRIPTION: <span class="sub">(As Per Quotation)</span></div>
-          <div class="box-body">
+          <!-- Description -->
+          <VCol cols="12" md="12" class="py-5">
             <VTextarea
-              v-model="formTop.asset_description"
+              v-model="line.description"
               label="Description"
               variant="outlined"
-              density="compact"
               hide-details="auto"
               clearable
             />
-          </div>
-        </div>
+          </VCol>
 
-        <!-- === (REMOVED) PLANNED COST + REQUEST TYPE BOX to avoid duplicates === -->
-
-        <!-- === FINANCE + CHECKED BY FINANCE (Two columns Box) === -->
-        <div class="form-box">
-          <VRow dense class="box-body">
-            <VCol cols="12" md="6" class="right-border">
-              <div class="box-title thin">THIS PART TO BE FILLED BY FINANCE</div>
-              <VTextField
-                v-model="finance.asset_life_period"
-                label="Asset Life/Period"
-                placeholder="e.g. 6–8 Years"
-                variant="outlined"
-                density="compact"
-                hide-details="auto"
-              />
-            </VCol>
-
-            <VCol cols="12" md="6">
-              <div class="box-title thin">CHECKED BY FINANCIAL DEPARTMENT</div>
-              <VRow dense>
-                <VCol cols="12" md="8">
-                  <VTextField
-                    v-model="finance.checked_by_name"
-                    label="Name"
-                    placeholder="Finance Representative"
-                    variant="outlined"
-                    density="compact"
-                    hide-details="auto"
-                  />
-                </VCol>
-                <VCol cols="12" md="4">
-                  <VTextField
-                    v-model="finance.checked_date"
-                    type="date"
-                    label="Date"
-                    variant="outlined"
-                    density="compact"
-                    hide-details="auto"
-                  />
-                </VCol>
-              </VRow>
-            </VCol>
-          </VRow>
-        </div>
-
-        <!-- === SIGNATURES + BUDGET COMPLIANCE (Two columns Box) === -->
-        <div class="form-box">
-          <VRow dense class="box-body">
-            <!-- LEFT: Signatures / Approvals -->
-            <VCol cols="12" md="6" class="right-border">
-              <div class="box-title thin">SIGNATURES: Approval</div>
-
-              <div class="sig-row">
-                <div class="sig-label">NAME:</div>
-                <div class="sig-value">
-                  <VTextField
-                    v-model="signatures.ceo_name"
-                    placeholder="Eng. Baher Jaber (CEO)"
-                    variant="outlined"
-                    density="compact"
-                    hide-details="auto"
-                  />
-                </div>
-                <div class="sig-date">
-                  <VTextField
-                    v-model="signatures.ceo_date"
-                    type="date"
-                    label="Date"
-                    variant="outlined"
-                    density="compact"
-                    hide-details="auto"
-                  />
-                </div>
-              </div>
-
-              <div class="sig-row">
-                <div class="sig-label">NAME:</div>
-                <div class="sig-value">
-                  <VTextField
-                    v-model="signatures.bod_name"
-                    placeholder="BOD Signature (As per Authority Matrix)"
-                    variant="outlined"
-                    density="compact"
-                    hide-details="auto"
-                  />
-                </div>
-                <div class="sig-date">
-                  <VTextField
-                    v-model="signatures.bod_date"
-                    type="date"
-                    label="Date"
-                    variant="outlined"
-                    density="compact"
-                    hide-details="auto"
-                  />
-                </div>
-              </div>
-
-              <div class="sig-row">
-                <div class="sig-label">Requesting Department Head</div>
-                <div class="sig-value">
-                  <VTextField
-                    v-model="signatures.req_dept_head"
-                    placeholder="Name"
-                    variant="outlined"
-                    density="compact"
-                    hide-details="auto"
-                  />
-                </div>
-                <div class="sig-date">
-                  <VTextField
-                    v-model="signatures.req_dept_date"
-                    type="date"
-                    label="Date"
-                    variant="outlined"
-                    density="compact"
-                    hide-details="auto"
-                  />
-                </div>
-              </div>
-            </VCol>
-
-            <!-- RIGHT: Budget compliance -->
-            <VCol cols="12" md="6">
-              <div class="box-title thin">In accordance with budget:</div>
-              <VRadioGroup v-model="finance.in_budget" inline>
-                <VRadio label="Yes" :value="true" />
-                <VRadio label="No"  :value="false" />
-              </VRadioGroup>
-
-              <VRow dense class="mt-2">
-                <VCol cols="12" md="8">
-                  <VTextField
-                    v-model="finance.dceo_name"
-                    label="Name"
-                    placeholder="Mr. Mohammed Irfan (D-CEO)"
-                    variant="outlined"
-                    density="compact"
-                    hide-details="auto"
-                  />
-                </VCol>
-                <VCol cols="12" md="4">
-                  <VTextField
-                    v-model="finance.dceo_date"
-                    type="date"
-                    label="Date"
-                    variant="outlined"
-                    density="compact"
-                    hide-details="auto"
-                  />
-                </VCol>
-              </VRow>
-            </VCol>
-          </VRow>
-        </div>
-
-        <!-- === ENTRY AREA (Category/Sub/Asset/Qty/UnitCost/PlannedCost/Reason) === -->
-        <VRow dense class="mt-4">
           <!-- Category -->
           <VCol cols="12" md="4" class="py-5">
             <VSelect
@@ -238,7 +71,6 @@
               @update:modelValue="onCategoryChange"
               hide-details="auto"
               variant="outlined"
-              density="compact"
               clearable
             />
           </VCol>
@@ -255,7 +87,6 @@
               @update:modelValue="onSubCategoryChange"
               hide-details="auto"
               variant="outlined"
-              density="compact"
               clearable
             />
           </VCol>
@@ -273,26 +104,25 @@
               return-object
               hide-details="auto"
               variant="outlined"
-              density="compact"
               clearable
             />
           </VCol>
 
-          <!-- Request Type (per-line) -->
-          <VCol cols="12" md="6" class="py-5">
-            <VSelect
-              v-model="line.request_type"
-              :items="REQUEST_TYPE_OPTIONS"
-              label="Request Type"
+          <!-- Unit Cost -->
+          <VCol cols="12" md="3" class="py-5">
+            <VTextField
+              v-model.number="line.unit_cost"
+              label="Unit Cost"
+              type="number"
+              min="0"
+              step="0.01"
               variant="outlined"
-              density="compact"
               hide-details="auto"
-              clearable
             />
           </VCol>
 
           <!-- Quantity -->
-          <VCol cols="12" md="6" class="py-5">
+          <VCol cols="12" md="3" class="py-5">
             <VTextField
               v-model.number="line.quantity"
               label="Qty"
@@ -300,71 +130,54 @@
               min="1"
               step="1"
               variant="outlined"
-              density="compact"
               hide-details="auto"
             />
           </VCol>
 
-          <!-- Planned Cost (total for the line) -->
-          <VCol cols="12" md="6" class="py-5">
+          <!-- Planned Cost (auto) -->
+          <VCol cols="12" md="3" class="py-5">
             <VTextField
-              v-model.number="line.planned_cost"
-              label="Planned Cost (Total)"
+              :model-value="line.planned_cost"
+              label="Planned Cost (auto)"
               type="number"
-              min="0"
-              step="0.01"
-              prefix="SAR "
+              prefix="Rs"
               variant="outlined"
-              density="compact"
               hide-details="auto"
+              readonly
             />
           </VCol>
 
-          <!-- Unit Cost (NEW) -->
-          <VCol cols="12" md="6" class="py-5">
-            <VTextField
-              v-model.number="line.unit_cost"
-              label="Unit Cost"
-              type="number"
-              min="0"
-              step="0.01"
-              prefix="SAR "
+          <!-- Request Type -->
+          <VCol cols="12" md="3" class="py-5">
+            <VSelect
+              v-model="line.request_type"
+              :items="REQUEST_TYPE_OPTIONS"
+              label="Request Type"
               variant="outlined"
-              density="compact"
-              hide-details="auto"
-            />
-          </VCol>
-
-          <!-- Per-line Description -->
-          <VCol cols="12" md="12" class="py-5">
-            <VTextarea
-              v-model="line.description"
-              label="Description (per-line)"
-              variant="outlined"
-              density="compact"
               hide-details="auto"
               clearable
             />
           </VCol>
 
-          <!-- Reason (optional per-line) -->
+          <!-- Reason -->
           <VCol cols="12" md="12" class="py-5">
             <VTextarea
               v-model="line.reason"
-              label="Reason (per-line)"
+              label="Reason"
               variant="outlined"
-              density="compact"
               hide-details="auto"
               clearable
             />
           </VCol>
 
-          <!-- Add Button + Summary -->
+          <!-- Add Button -->
           <VCol cols="12" md="3" class="d-flex align-end">
             <VBtn color="primary" @click="addRecord" :disabled="!canAddLine">
               Add
             </VBtn>
           </VCol>
+
+          <!-- Summary -->
           <VCol cols="12" md="5" class="d-flex align-end justify-end">
             <div class="text-end">
               <div class="text-medium-emphasis">Records: <b>{{ records.length }}</b></div>
@@ -384,7 +197,7 @@
             closable
             @click:close="removeRecord(r)"
           >
-            {{ r.asset_code }} — {{ r.request_type }} — Qty: {{ r.quantity }} — Unit: {{ formatAmount(r.unit_cost) }} — {{ formatAmount(r.planned_cost) }}
+            {{ r.asset_code }} — {{ r.request_type }} — Qty: {{ r.quantity }} — {{ formatAmount(r.planned_cost) }}
             <template v-if="r.description"> — {{ r.description }}</template>
           </VChip>
         </div>
@@ -400,12 +213,11 @@
           <template #item.unit_cost="{ item }">
             {{ formatAmount(item.unit_cost) }}
           </template>
+
           <template #item.planned_cost="{ item }">
             {{ formatAmount(item.planned_cost) }}
           </template>
-          <template #item.line_total="{ item }">
-            {{ formatAmount(item.quantity * (item.unit_cost || item.planned_cost)) }}
-          </template>
+
           <template #item.actions="{ item }">
             <VBtn color="error" size="small" @click="removeRecord(item)">
               Delete
@@ -432,7 +244,7 @@
 
 <script setup>
 import axios from "axios";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
@@ -443,29 +255,7 @@ const routeProjectId = computed(() => route.params.id ?? route.params.projectId 
 const REQUEST_TYPE_OPTIONS = ["NEW", "LEASED", "USED"];
 const today = new Date().toISOString().split("T")[0];
 
-/* ===== meta (for top/finance/signatures) ===== */
-const formTop = ref({
-  req_number: "",
-  asset_description: "",   // top description only
-});
-const finance = ref({
-  asset_life_period: "",
-  checked_by_name: "",
-  checked_date: today,
-  in_budget: true,
-  dceo_name: "",
-  dceo_date: today,
-});
-const signatures = ref({
-  ceo_name: "",
-  ceo_date: today,
-  bod_name: "",
-  bod_date: today,
-  req_dept_head: "",
-  req_dept_date: today,
-});
-
-// ---------------- State ----------------
+/* ---------------- State ---------------- */
 const projects = ref([]);
 const selectedProjectId = ref(null);
 const date = ref(today);
@@ -473,7 +263,7 @@ const refForm = ref(null);
 const saving = ref(false);
 const topErrors = ref({});
 
-const allCategories = ref([]); // raw list from /asset-categories
+const allCategories = ref([]);
 const loading = ref({ categories: false, assets: false });
 
 const selectedCategoryId = ref(null);
@@ -481,10 +271,10 @@ const selectedSubCategoryId = ref(null);
 const selectedAsset = ref(null);
 const assets = ref([]);
 
-/* per-line inputs */
 const line = ref({
-  unit_cost: null,       // NEW
-  planned_cost: null,    // total for the line; auto = unit_cost * quantity if unit_cost given
+  air_number: null,      // unit price
+  unit_cost: null,      // unit price
+  planned_cost: null,   // unit_cost * quantity (auto)
   quantity: 1,
   request_type: "NEW",
   description: "",
@@ -493,7 +283,7 @@ const line = ref({
 
 const records = ref([]);
 
-// ------------- Headers -------------
+/* ------------- Headers ------------- */
 const headers = [
   { title: "Asset Code", key: "asset_code" },
   { title: "Category", key: "category_name" },
@@ -502,28 +292,34 @@ const headers = [
   { title: "Description", key: "description" },
   { title: "Reason", key: "reason" },
   { title: "Qty", key: "quantity" },
-  { title: "Unit Cost", key: "unit_cost" },          // NEW
-  { title: "Planned Cost (Total)", key: "planned_cost" },
-  { title: "Line Total", key: "line_total" },
+  { title: "Unit Cost", key: "unit_cost" },
+  { title: "Planned Cost", key: "planned_cost" },
   { title: "Actions", key: "actions", sortable: false },
 ];
 
-// ------------- Fetch Projects -------------
+/* ------------- Projects ------------- */
 const fetchProjects = async () => {
   try {
     const res = await axios.get(`${apiBaseUrl}/projects`, { headers: getAuthHeaders() });
     projects.value = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
     if (routeProjectId.value && !selectedProjectId.value) {
       const pidNum = Number(routeProjectId.value);
-      if (projects.value.some(p => Number(p.id) === pidNum)) selectedProjectId.value = pidNum;
-      else selectedProjectId.value = pidNum;
+      selectedProjectId.value = pidNum;
     }
   } catch (e) {
     console.error("Error fetching projects:", e);
   }
 };
 
-// ------------- Fetch Categories -------------
+// "<code> — <name>" for dropdown
+const projectItems = computed(() =>
+  (projects.value || []).map(p => ({
+    id: Number(p.id),
+    title: `${p.project_code ?? p.code ?? '—'} — ${p.name ?? p.project_name ?? 'Untitled'}`
+  }))
+);
+
+/* ------------- Categories ------------- */
 const fetchAssetCategories = async () => {
   loading.value.categories = true;
   try {
@@ -555,7 +351,6 @@ const fetchAssetCategories = async () => {
   }
 };
 
-// Normalize options
 const parentCategoryItems = computed(() =>
   allCategories.value
     .filter(c => c.is_parent)
@@ -569,7 +364,6 @@ const subcategoryItemsForCategory = computed(() => {
     .map(c => ({ id: Number(c.id), title: String(c.title ?? c.slug ?? `Subcategory #${c.id}`) }));
 });
 
-// Lookups
 const categoryNameById = (id) => {
   const c = allCategories.value.find(x => Number(x.id) === Number(id));
   return c?.title ?? c?.slug ?? `Category #${id}`;
@@ -579,7 +373,6 @@ const subcategoryNameById = (id) => {
   return c?.title ?? c?.slug ?? `Subcategory #${id}`;
 };
 
-// Events
 const onCategoryChange = () => {
   selectedSubCategoryId.value = null;
   selectedAsset.value = null;
@@ -592,7 +385,6 @@ const onSubCategoryChange = async (val) => {
   await fetchAssetsBySubCategory(val);
 };
 
-// Fetch assets by subcategory
 const fetchAssetsBySubCategory = async (subId) => {
   loading.value.assets = true;
   try {
@@ -610,11 +402,15 @@ const fetchAssetsBySubCategory = async (subId) => {
   }
 };
 
-// Auth helpers
+/* ------------- Auth helpers ------------- */
 const getAuthHeaders = () => {
   const access = getCookie("accessToken");
   if (!access) throw new Error("Access token is missing. Please log in.");
-  return { Authorization: `Bearer ${decodeURIComponent(access)}`, Accept: "application/json", "Content-Type": "application/json" };
+  return {
+    Authorization: `Bearer ${decodeURIComponent(access)}`,
+    Accept: "application/json",
+    "Content-Type": "application/json"
+  };
 };
 const getCookie = (name) => {
   const value = `; ${document.cookie}`;
@@ -623,18 +419,17 @@ const getCookie = (name) => {
   return null;
 };
 
-// Add/Remove/Clear
-const canAddLine = computed(() => {
-  const qtyOk = Number(line.value.quantity || 1) > 0;
-  const hasCost = Number(line.value.planned_cost) > 0 || Number(line.value.unit_cost) > 0;
-  return !!(
+/* ------------- Derived + actions ------------- */
+const canAddLine = computed(() =>
+  !!(
     selectedCategoryId.value &&
     selectedSubCategoryId.value &&
-    qtyOk &&
-    hasCost &&
+    Number(line.value.quantity || 1) > 0 &&
+    Number(line.value.unit_cost) > 0 &&
+    Number(line.value.planned_cost) >= 0 &&
     (line.value.request_type?.length > 0)
-  );
-});
+  )
+);
 
 const addRecord = () => {
   if (!canAddLine.value) return;
@@ -642,13 +437,7 @@ const addRecord = () => {
   const a    = selectedAsset.value || null;
   const qty  = Number(line.value.quantity || 1);
   const unit = Number(line.value.unit_cost || 0);
-  let   totalPlanned = Number(line.value.planned_cost || 0);
-
-  // If unit_cost given, compute total
-  if (unit > 0) {
-    totalPlanned = unit * qty;
-  }
-
+  const total = Number(line.value.planned_cost ?? (unit * qty) ?? 0);
   const desc = (line.value.description || "").trim();
   const rsn  = (line.value.reason || "").trim();
   const type = line.value.request_type || "NEW";
@@ -660,20 +449,13 @@ const addRecord = () => {
     type,
     desc.toLowerCase(),
     rsn.toLowerCase(),
+    unit.toFixed(2)
   ].join("|");
 
   const existing = records.value.find(r => r.__key === recordKey);
   if (existing) {
-    // Merge by summing quantities and recomputing totals
-    const newQty = Number(existing.quantity || 0) + qty;
-    const baseUnit = unit || existing.unit_cost || 0;
-    existing.quantity = newQty;
-    existing.unit_cost = baseUnit || null;
-    if (baseUnit > 0) {
-      existing.planned_cost = baseUnit * newQty;
-    } else {
-      existing.planned_cost = Number(existing.planned_cost) + totalPlanned;
-    }
+    existing.quantity     = Number(existing.quantity || 0) + qty;
+    existing.planned_cost = Number((existing.planned_cost + total).toFixed(2));
   } else {
     records.value.push({
       __key: recordKey,
@@ -681,10 +463,10 @@ const addRecord = () => {
       asset_sub_category_id: Number(selectedSubCategoryId.value),
       asset_id: a?.id ?? null,
       description: desc || null,
-      unit_cost: unit || null,                 // NEW
-      planned_cost: Number(totalPlanned),      // total for the line
       request_type: type,
       quantity: qty,
+      unit_cost: unit,
+      planned_cost: total,
       reason: rsn || null,
 
       asset_code: a?.code ?? "—",
@@ -693,7 +475,7 @@ const addRecord = () => {
     });
   }
 
-  // reset line inputs
+  // Reset line inputs
   selectedCategoryId.value    = null;
   selectedSubCategoryId.value = null;
   selectedAsset.value         = null;
@@ -711,13 +493,13 @@ const removeRecord = (item) => {
 };
 const clearAll = () => { records.value = []; };
 
-// Save
+/* ------------- Save ------------- */
 const canSave = computed(() => {
-  const hasProject = Number(selectedProjectId.value) > 0
-  const hasDate = !!date.value
-  const hasAtLeastOneRecord = records.value.length > 0
-  return hasProject && hasDate && hasAtLeastOneRecord
-})
+  const hasProject = Number(selectedProjectId.value) > 0;
+  const hasDate = !!date.value;
+  const hasAtLeastOneRecord = records.value.length > 0;
+  return hasProject && hasDate && hasAtLeastOneRecord;
+});
 
 const saveAll = async () => {
   if (!canSave.value) return;
@@ -728,33 +510,14 @@ const saveAll = async () => {
     const payload = {
       project_id: Number(selectedProjectId.value),
       date: date.value,
-      meta: {
-        req_number: formTop.value.req_number || null,
-        asset_description: formTop.value.asset_description || null, // include top description
-        finance: {
-          asset_life_period: finance.value.asset_life_period || null,
-          checked_by_name: finance.value.checked_by_name || null,
-          checked_date: finance.value.checked_date || null,
-          in_budget: finance.value.in_budget,
-          dceo_name: finance.value.dceo_name || null,
-          dceo_date: finance.value.dceo_date || null,
-        },
-        signatures: {
-          ceo_name: signatures.value.ceo_name || null,
-          ceo_date: signatures.value.ceo_date || null,
-          bod_name: signatures.value.bod_name || null,
-          bod_date: signatures.value.bod_date || null,
-          req_dept_head: signatures.value.req_dept_head || null,
-          req_dept_date: signatures.value.req_dept_date || null,
-        },
-      },
       data: records.value.map(r => ({
         asset_category_id: Number(r.asset_category_id),
         asset_sub_category_id: Number(r.asset_sub_category_id),
         asset_id: r.asset_id ?? null,
         description: r.description ?? null,
-        unit_cost: r.unit_cost !== null ? Number(r.unit_cost) : null,   // NEW
-        planned_cost: Number(r.planned_cost),
+        air_number: r.air_number ?? null,
+        unit_cost: Number(r.unit_cost),       // include unit cost
+        planned_cost: Number(r.planned_cost), // total per line
         request_type: r.request_type,
         quantity: Number(r.quantity || 1),
         reason: r.reason ?? null,
@@ -783,14 +546,9 @@ const saveAll = async () => {
   }
 };
 
-// Totals
+/* ------------- Totals ------------- */
 const plannedTotal = computed(() =>
-  records.value.reduce((sum, r) => {
-    const unit = Number(r.unit_cost || 0);
-    const qty  = Number(r.quantity || 1);
-    const total = unit > 0 ? unit * qty : Number(r.planned_cost || 0);
-    return sum + total;
-  }, 0)
+  records.value.reduce((sum, r) => sum + Number(r.planned_cost || 0), 0)
 );
 function formatAmount(val) {
   if (val === null || val === undefined || val === "") return "-";
@@ -799,7 +557,18 @@ function formatAmount(val) {
   return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-// Init
+/* ------------- Auto-calc planned_cost ------------- */
+watch(
+  () => [line.value.unit_cost, line.value.quantity],
+  ([uc, qty]) => {
+    const unit = Number(uc) || 0;
+    const q = Number(qty) || 0;
+    line.value.planned_cost = Number((unit * q).toFixed(2));
+  },
+  { immediate: true }
+);
+
+/* ------------- Init ------------- */
 onMounted(async () => {
   await Promise.all([fetchProjects(), fetchAssetCategories()]);
   if (routeProjectId.value && !selectedProjectId.value) {
@@ -809,7 +578,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* layout helpers */
 .d-flex { display: flex; }
 .justify-between { justify-content: space-between; }
 .align-center { align-items: center; }
@@ -817,44 +585,5 @@ onMounted(async () => {
 .mb-4 { margin-block-end: 16px; }
 .text-medium-emphasis { opacity: 0.7; }
 
-/* === print-like boxes === */
-.form-box {
-  border: 1px solid #000;
-  border-radius: 2px;
-  margin-block: 10px;
-}
-
-.box-title {
-  background: #e3e3e3;
-  border-block-end: 1px solid #000;
-  font-weight: 700;
-  line-height: 1.2;
-  padding-block: 6px;
-  padding-inline: 10px;
-}
-
-.box-title.thin { font-weight: 600; }
-
-.box-title .sub {
-  font-size: 0.9rem;
-  font-weight: 400;
-}
-
-.box-body { padding: 10px; }
-.right-border { border-inline-end: 1px solid #000; }
-
-/* signature rows (label | value | date) */
-.sig-row {
-  display: grid;
-  align-items: center;
-  gap: 8px;
-  grid-template-columns: 130px 1fr 180px;
-  margin-block: 6px;
-}
-.sig-label { font-weight: 600; }
-
-/* tighter paddings on large screens so it looks like the form */
-@media (min-width: 960px) {
-  .pa-4 { padding: 24px !important; }
-}
+@media (min-width: 960px) { .pa-4 { padding: 24px !important; } }
 </style>

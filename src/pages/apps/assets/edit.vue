@@ -13,6 +13,17 @@
         <VDivider class="my-3" />
       </VCol>
 
+      <!-- Code (REQUIRED) -->
+      <VCol cols="12" md="6">
+        <VTextField
+          v-model="asset.code"
+          label="Code"
+          :rules="[requiredValidator]"
+          :error-messages="errorMessages.code"
+          clearable
+        />
+      </VCol>
+
       <!-- Asset Investment Request (REQUIRED) -->
       <VCol cols="12" md="6">
         <VSelect
@@ -24,17 +35,6 @@
           :loading="loadingInvestmentRequests"
           :disabled="loadingInvestmentRequests"
           :error-messages="errorMessages.asset_investment_requests_id"
-          clearable
-        />
-      </VCol>
-
-      <!-- Code (REQUIRED) -->
-      <VCol cols="12" md="6">
-        <VTextField
-          v-model="asset.code"
-          label="Code"
-          :rules="[requiredValidator]"
-          :error-messages="errorMessages.code"
           clearable
         />
       </VCol>
@@ -82,9 +82,9 @@
       </VCol>
 
       <!-- Type (optional) -->
-      <VCol cols="12" md="6">
+      <!-- <VCol cols="12" md="6">
         <VSelect v-model="asset.type" :items="TYPE_OPTIONS" label="Type" clearable />
-      </VCol>
+      </VCol> -->
 
       <!-- Asset Type (optional) -->
       <VCol cols="12" md="6">
@@ -126,10 +126,11 @@
 
       <VCol cols="12" md="6"><VTextField v-model="asset.serial_number" label="Serial Number" clearable /></VCol>
       <VCol cols="12" md="6"><VTextField v-model="asset.plate_number"  label="Plate Number"  clearable /></VCol>
-      <VCol cols="12" md="6"><VTextField v-model="asset.make"          label="Make"          clearable /></VCol>
-      <VCol cols="12" md="6"><VTextField v-model="asset.model"         label="Model"         clearable /></VCol>
+      <!-- <VCol cols="12" md="6"><VTextField v-model="asset.make"          label="Make"          clearable /></VCol> -->
       <VCol cols="12" md="6"><VTextField v-model="asset.brand"         label="Brand"         clearable /></VCol>
-      <VCol cols="12" md="6"><VTextField v-model="asset.model_number"  label="Model Number"  clearable /></VCol>
+      <VCol cols="12" md="6"><VTextField v-model="asset.model"         label="Model"         clearable /></VCol>
+      <VCol cols="12" md="6"><VTextField v-model="asset.manufacturing_year" type="date" label="Manufacturing Year" /></VCol>
+      <!-- <VCol cols="12" md="6"><VTextField v-model="asset.model_number"  label="Model Number"  clearable /></VCol> -->
 
       <!-- ===================== -->
       <!-- Dates                 -->
@@ -242,10 +243,11 @@ const asset = ref({
 
   serial_number: '',
   plate_number: '',
-  make: '',
-  model: '',
+  // make: '',
   brand: '',
-  model_number: '',
+  model: '',
+  manufacturing_year: '',
+  // model_number: '',
 
   insurance_start_date: '',
   insurance_end_date: '',
@@ -471,10 +473,11 @@ const loadRecord = async () => {
 
       serial_number: p.serial_number ?? '',
       plate_number:  p.plate_number  ?? '',
-      make:          p.make          ?? '',
-      model:         p.model         ?? '',
+      // make:          p.make          ?? '',
       brand:         p.brand         ?? '',
-      model_number:  p.model_number  ?? '',
+      model:         p.model         ?? '',
+      manufacturing_year:  p.manufacturing_year  ?? '',
+      // model_number:  p.model_number  ?? '',
 
       insurance_start_date: p.insurance_start_date ?? '',
       insurance_end_date:   p.insurance_end_date   ?? '',
@@ -574,10 +577,12 @@ const submitForm = async () => {
     // identity
     safeAppend('serial_number', asset.value.serial_number || '')
     safeAppend('plate_number',  asset.value.plate_number  || '')
-    safeAppend('model_number',  asset.value.model_number  || '')
-    safeAppend('make', asset.value.make || '')
-    safeAppend('model', asset.value.model || '')
+    // safeAppend('model_number',  asset.value.model_number  || '')
+    // safeAppend('make', asset.value.make || '')
     safeAppend('brand', asset.value.brand || '')
+    safeAppend('model', asset.value.model || '')
+    safeAppend('manufacturing_year',  asset.value.manufacturing_year  || '')
+
 
     // dates
     safeAppend('insurance_start_date', asset.value.insurance_start_date || '')

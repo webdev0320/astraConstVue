@@ -80,11 +80,6 @@
               <VListItemTitle>Edit</VListItemTitle>
             </VListItem>
 
-            <VListItem @click="deleteAsset(item.raw?.id ?? item.id)">
-              <template #prepend><VIcon icon="mdi-delete" /></template>
-              <VListItemTitle>Delete</VListItemTitle>
-            </VListItem>
-
             <!-- ✅ NEW BUTTONS -->
             <VListItem @click="approveAsset(item.raw?.id ?? item.id)">
               <template #prepend><VIcon icon="mdi-thumb-up" /></template>
@@ -95,6 +90,12 @@
               <template #prepend><VIcon icon="mdi-thumb-down" /></template>
               <VListItemTitle>Reject</VListItemTitle>
             </VListItem>
+
+            <VListItem @click="deleteAsset(item.raw?.id ?? item.id)">
+              <template #prepend><VIcon icon="mdi-delete" /></template>
+              <VListItemTitle>Delete</VListItemTitle>
+            </VListItem>
+
           </VList>
         </VMenu>
       </template>
@@ -238,11 +239,11 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
 /* ---- Headers exactly matching API keys ---- */
 const headers = [
-  { title: "ID", key: "id" },
+  // { title: "ID", key: "id" },
+  { title: "CODE", key: "code" },
   { title: "Title", key: "title" },
   { title: "Category Name", key: "category_name" },
   { title: "SUB CATEGORY", key: "sub_category" },
-  { title: "CODE", key: "code" },
   { title: "PURCHASE COST", key: "purchase_cost" },
   { title: "ACTIONS", key: "actions", sortable: false },
 ];

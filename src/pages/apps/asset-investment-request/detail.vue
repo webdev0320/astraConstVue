@@ -1,13 +1,15 @@
 <template>
   <div>
     <!-- Top Toolbar (screen only) -->
-    <div class="d-flex justify-between align-center mb-4 no-print">
+    <div class="d-flex justify-space-between align-center mb-4 no-print">
+      <!-- Left side -->
       <div class="d-flex align-center gap-2">
         <VBtn variant="text" prepend-icon="mdi-arrow-left" @click="$router.back()">Back</VBtn>
-        <h3 class="page-title">Asset Investment Request — #{{ id }}</h3>
+        <h3 class="page-title">Asset Investment Request</h3>
       </div>
 
-      <div class="d-flex gap-2">
+      <!-- Right side -->
+      <div class="d-flex align-center gap-2">
         <VBtn variant="tonal" prepend-icon="mdi-printer" @click="printPage">Print</VBtn>
       </div>
     </div>
@@ -26,8 +28,8 @@
     <!-- Content (screen only) -->
     <template v-else-if="request">
       <!-- Summary (unchanged) -->
-      <VRow class="mb-4 no-print" dense>
-        <VCol cols="12" md="12">
+      <VRow class="d-flex flex-row flex-nowrap mb-4 no-print" dense>
+        <VCol cols="8" md="8">
           <VCard class="summary-card" variant="elevated">
             <VCardText>
               <div class="d-flex justify-between align-start mb-3">
@@ -36,7 +38,6 @@
                   <div class="title-lg">{{ request.project_name || '—' }}</div>
                   <div class="muted">
                     Requested by <strong>{{ request.user_name || '—' }}</strong>
-                    • {{ formatDate(request.date) }}
                   </div>
                 </div>
               </div>
@@ -45,8 +46,8 @@
 
               <div class="d-grid-3">
                 <div class="kv">
-                  <div class="k">Request ID</div>
-                  <div class="v">#{{ request.id }}</div>
+                  <div class="k">Air Number</div>
+                  <div class="v">#{{ request.air_number }}</div>
                 </div>
                 <div class="kv">
                   <div class="k">Planned Cost</div>
@@ -76,15 +77,15 @@
           </VCard>
         </VCol>
 
-        <VCol cols="12" md="4">
+        <VCol cols="4" md="4">
           <VCard class="side-card" variant="tonal">
             <VCardTitle class="pb-0">Quick Info</VCardTitle>
             <VCardText class="pt-2">
               <ul class="bullets">
                 <li><strong>Status:</strong> {{ request.status ?? '—' }}</li>
-                <li><strong>Accordance:</strong> {{ humanYesNo(request.is_accordance_with_budget) }}</li>
-                <li><strong>Project:</strong> {{ request.project_name ?? '—' }}</li>
-                <li><strong>User:</strong> {{ request.user_name ?? '—' }}</li>
+                <li><strong>Accordance With Budget:</strong> {{ humanYesNo(request.is_accordance_with_budget) }}</li>
+                <!-- <li><strong>Project:</strong> {{ request.project_name ?? '—' }}</li> -->
+                <!-- <li><strong>User:</strong> {{ request.user_name ?? '—' }}</li> -->
               </ul>
             </VCardText>
           </VCard>
@@ -93,7 +94,7 @@
 
       <!-- Items Table (screen only) -->
       <VCard variant="elevated" class="no-print">
-        <VCardTitle>Requested Items (screen view)</VCardTitle>
+        <VCardTitle>Requested Items</VCardTitle>
         <VCardText>
           <VDataTable
             :headers="itemHeaders"
@@ -104,8 +105,8 @@
             <template #item.planned_cost="{ item }">
               {{ formatCurrency(item.raw.planned_cost) }}
             </template>
-            <template #item.line_total="{ item }">
-              {{ formatCurrency(item.raw.line_total) }}
+            <template #item.unit_cost="{ item }">
+              {{ formatCurrency(item.raw.unit_cost) }}
             </template>
             <template #bottom>
               <div class="d-flex justify-end pa-4">
@@ -326,12 +327,13 @@ const items = ref([]);
 const itemHeaders = [
   { title: "Category", key: "category_name" },
   { title: "Subcategory", key: "sub_category" },
+  { title: "Asset Cod If Any", key: "asset_name" },
   { title: "Type", key: "request_type" },
   { title: "Description", key: "description" },
   { title: "Reason", key: "reason" },
   { title: "Qty", key: "quantity" },
+  { title: "Unit Cost", key: "unit_cost" },
   { title: "Planned Cost", key: "planned_cost" },
-  { title: "Line Total", key: "line_total" },
 ];
 
 /* utils */
@@ -373,10 +375,10 @@ const itemsNormalized = computed(() => {
   return items.value.map((r) => {
     const qty = nn(r.quantity ?? 1);
     const cost = nn(r.planned_cost ?? 0);
-    return { ...r, planned_cost: cost, line_total: qty * cost, raw: { ...r, planned_cost: cost, line_total: qty * cost } };
+    return { ...r, planned_cost: cost, unit_cost: qty * cost, raw: { ...r, planned_cost: cost, unit_cost: qty * cost } };
   });
 });
-const itemsTotal = computed(() => itemsNormalized.value.reduce((s, l) => s + nn(l.raw.line_total), 0));
+const itemsTotal = computed(() => itemsNormalized.value.reduce((s, l) => s + nn(l.raw.unit_cost), 0));
 
 /* fetch */
 const fetchDetail = async () => {
@@ -392,7 +394,8 @@ const fetchDetail = async () => {
 
     const data = res.data?.data ?? res.data ?? {};
     request.value = {
-      id: data.id,
+      // id: data.id,
+      air_number: data.air_number,
       project_id: data.project_id,
       user_id: data.user_id,
       project_name: data.project_name,

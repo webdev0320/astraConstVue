@@ -68,16 +68,16 @@
         />
       </VCol>
 
-      <!-- Handover By -->
+      <!-- Handover To (global users) -->
       <VCol cols="12" md="6">
         <VSelect
           v-model="form.user_id"
           :items="usersOptions"
           item-title="title"
           item-value="value"
-          label="Handover By"
+          label="Handover To"
           :loading="loadingUsers"
-          :disabled="!selectedProjectId || loadingUsers"
+          :disabled="loadingUsers"
           :error-messages="errorMessages.user_id"
           clearable
         />
@@ -101,7 +101,7 @@
                 <tr>
                   <th style="inline-size: 80px;">S.No</th>
                   <th>Description</th>
-                  <th style="inline-size: 160px;">Asset ID</th>
+                  <th style="inline-size: 160px;">Asset Code</th>
                   <th style="inline-size: 180px;">Quantity (Requested)</th>
                   <th style="inline-size: 180px;">Quantity (Handover)</th>
                   <th>Remarks</th>
@@ -123,7 +123,7 @@
                   <!-- Asset ID (readonly, optional) -->
                   <td>
                     <VTextField
-                      v-model="row.asset_id"
+                      v-model="row.asset_code"
                       hide-details="auto"
                       variant="outlined"
                       density="compact"
@@ -179,21 +179,20 @@
       </VCol>
 
       <!-- Authorized Signatory Section -->
-      <VCol cols="12">
+      <!-- <VCol cols="12">
         <div class="auth-signatory">
           <span>Authorized Signatory <br /> (Person Requesting)</span>
           <span>Authorized Signatory <br /> (Approver)</span>
         </div>
-      </VCol>
+      </VCol> -->
 
       <!-- ACKNOWLEDGEMENT AND DECLARATION BY EMPLOYEE: -->
-      <VCol cols="12">
+      <!-- <VCol cols="12">
         <h5>ACKNOWLEDGEMENT AND DECLARATION BY EMPLOYEE:</h5>
         <p>
           I,
           <strong>
             {{
-              // Show selected project user name if chosen
               usersOptions.find(u => u.value === form.user_id)?.title?.split(' — ')[0]
               || form.employee_name
               || '________'
@@ -201,8 +200,7 @@
           </strong>
           acknowledge that I have received the above mentioned assets. I understand that this asset belongs to ASTRA CONSTRUCTION and is under my possession for carrying out my work. I hereby assure that I will take care of the assets of the company to the best possible extent and will handover/transfer or return back to the company before my vacation or end of contract clearance (termination/resignation).
         </p>
-      </VCol>
-
+      </VCol> -->
 
       <VCol cols="12">
         <VBtn type="submit" color="primary" :loading="loading" :disabled="loading">
@@ -232,6 +230,7 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL // should end with /api
 const apiCreateUrl = `${apiBaseUrl}/asset-handovers`
 const apiRequestsUrl = `${apiBaseUrl}/asset-investment-requests`
 const apiDepartmentsUrl = `${apiBaseUrl}/departments`
+const apiUsersUrl = `${apiBaseUrl}/users` // global users
 
 const router = useRouter()
 
@@ -244,16 +243,15 @@ const errorMessages = ref({})
 const loadingRequests = ref(false)
 const assetRequests = ref([])
 
-const selectedProjectId = ref(null)
 const loadingUsers = ref(false)
-const projectUsers = ref([])
+const allUsers = ref([])
 
 const loadingDepartments = ref(false)
 const departments = ref([])
 
 /* items for selected request */
 const loadingItems = ref(false)
-const requestItems = ref([])   // [{ item_id, description, request_qty, handover_qty, asset_id|null, remarks, asset_type }]
+const requestItems = ref([])   // [{ item_id, description, request_qty, handover_qty, asset_code|null, remarks, asset_type }]
 const rowErrors = ref([])      // per-row client errors
 
 /* today as default date */
@@ -287,6 +285,11 @@ const getToken = () => {
   const fromLS = localStorage.getItem('accessToken')
   return fromLS ? decodeURIComponent(fromLS) : null
 }
+const getAuthHeaders = () => {
+  const token = getToken()
+  if (!token) throw new Error('Access token is missing. Please log in.')
+  return { Accept: 'application/json', Authorization: `Bearer ${token}` }
+}
 
 /* ========= CURRENT USER (fill Name/Code) ========= */
 const currentUser = ref(null)
@@ -308,9 +311,7 @@ const fetchCurrentUser = async () => {
 
   for (const url of candidates) {
     try {
-      const res = await axios.get(url, {
-        headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
-      })
+      const res = await axios.get(url, { headers: getAuthHeaders() })
       const u = res.data?.data ?? res.data?.user ?? res.data
       if (u && (u.name || u.user_code || u.id)) {
         currentUser.value = u
@@ -339,13 +340,13 @@ const fetchCurrentUser = async () => {
 const requestOptions = computed(() =>
   assetRequests.value.map(r => ({
     value: r.id,
-    title: `#${r.id} — ${r.date} — Project ${r.project_id ?? 'N/A'}`,
+    title: `#${r.air_number} — Project ${r.project_id ?? 'N/A'}`,
   })),
 )
 const usersOptions = computed(() =>
-  projectUsers.value.map(u => ({
+  allUsers.value.map(u => ({
     value: u.id,
-    title: `${u.name} — ${u.user_code}`,
+    title: `${u.name ?? '(no name)'} — ${u.user_code ?? u.id}`,
   })),
 )
 const departmentsOptions = computed(() =>
@@ -356,13 +357,12 @@ const departmentsOptions = computed(() =>
 const fetchAssetRequests = async () => {
   loadingRequests.value = true
   try {
-    const token = getToken()
-    if (!token) throw new Error('Access token is missing. Please log in.')
-    const res = await axios.get(apiRequestsUrl, {
-      headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
-    })
-    assetRequests.value = Array.isArray(res.data) ? res.data
-      : Array.isArray(res.data?.data) ? res.data.data : []
+    const res = await axios.get(apiRequestsUrl, { headers: getAuthHeaders() })
+    assetRequests.value = Array.isArray(res.data)
+      ? res.data
+      : Array.isArray(res.data?.data)
+        ? res.data.data
+        : []
   } catch (err) {
     console.error('Error loading asset investment requests:', err)
     message.value = err.response?.data?.message || 'Failed to load asset investment requests.'
@@ -371,21 +371,24 @@ const fetchAssetRequests = async () => {
   }
 }
 
-const fetchProjectUsers = async projectId => {
-  if (!projectId) { projectUsers.value = []; return }
+/* NEW: Global users list (/api/users) */
+const fetchUsers = async () => {
   loadingUsers.value = true
   try {
-    const token = getToken()
-    if (!token) throw new Error('Access token is missing. Please log in.')
-    const url = `${apiBaseUrl}/projects/${projectId}/users/sync`
-    const res = await axios.get(url, {
-      headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+    // pull a generous page for select; adjust per_page if needed
+    const res = await axios.get(apiUsersUrl, {
+      headers: getAuthHeaders(),
+      params: { page: 1, per_page: 100 },
     })
-    projectUsers.value = Array.isArray(res.data?.users) ? res.data.users : []
+
+    // users can be: { data: { users: [...] }} OR { users: [...] } OR { data: { data: [...] } }
+    const usersNode = res?.data?.data?.users ?? res?.data?.users ?? res?.data?.data
+    const rows = Array.isArray(usersNode) ? usersNode : (usersNode?.data ?? [])
+    allUsers.value = rows
   } catch (err) {
-    console.error('Error loading project users:', err)
-    message.value = err.response?.data?.message || 'Failed to load project users.'
-    projectUsers.value = []
+    console.error('Error fetching users:', err)
+    message.value = err.response?.data?.message || 'Failed to fetch users.'
+    allUsers.value = []
   } finally {
     loadingUsers.value = false
   }
@@ -394,13 +397,12 @@ const fetchProjectUsers = async projectId => {
 const fetchDepartments = async () => {
   loadingDepartments.value = true
   try {
-    const token = getToken()
-    if (!token) throw new Error('Access token is missing. Please log in.')
-    const res = await axios.get(apiDepartmentsUrl, {
-      headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
-    })
-    departments.value = Array.isArray(res.data) ? res.data
-      : Array.isArray(res.data?.data) ? res.data.data : []
+    const res = await axios.get(apiDepartmentsUrl, { headers: getAuthHeaders() })
+    departments.value = Array.isArray(res.data)
+      ? res.data
+      : Array.isArray(res.data?.data)
+        ? res.data.data
+        : []
   } catch (err) {
     console.error('Error loading departments:', err)
     message.value = err.response?.data?.message || 'Failed to load departments.'
@@ -417,14 +419,7 @@ const fetchInvestmentRequestDetail = async (id) => {
 
   loadingItems.value = true
   try {
-    const token = getToken()
-    if (!token) throw new Error('Access token is missing. Please log in.')
-
-    const url = `${apiRequestsUrl}/${id}`
-    const res = await axios.get(url, {
-      headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
-    })
-
+    const res = await axios.get(`${apiRequestsUrl}/${id}`, { headers: getAuthHeaders() })
     const detail = res.data?.data || res.data
     const items = Array.isArray(detail?.items) ? detail.items : []
 
@@ -433,7 +428,7 @@ const fetchInvestmentRequestDetail = async (id) => {
       description: it.description,
       request_qty: Number(it.quantity) || 1,      // readonly
       handover_qty: Number(it.quantity) || 1,     // editable default
-      asset_id: it.asset_id != null ? String(it.asset_id) : null,
+      asset_code: it.asset_code != null ? String(it.asset_code) : null,
       remarks: '',
       asset_type: it.request_type || 'NEW',
     }))
@@ -452,19 +447,11 @@ const fetchInvestmentRequestDetail = async (id) => {
 watch(
   () => form.value.asset_investment_requests_id,
   newVal => {
+    // when request changes, clear selection and items, then load its items
     form.value.user_id = null
     requestItems.value = []
     rowErrors.value = []
-    selectedProjectId.value = null
-
-    if (!newVal) return
-
-    const req = assetRequests.value.find(r => r.id === newVal)
-    const projectId = req?.project_id ?? null
-    selectedProjectId.value = projectId
-
-    if (projectId) fetchProjectUsers(projectId)
-    fetchInvestmentRequestDetail(newVal)
+    if (newVal) fetchInvestmentRequestDetail(newVal)
   },
 )
 
@@ -473,8 +460,8 @@ const validateRows = () => {
   let ok = true
   rowErrors.value = requestItems.value.map(r => {
     const e = {}
-    if (r.asset_id !== null && r.asset_id !== '' && !posInt(r.asset_id)) {
-      e.asset_id = 'Invalid Asset ID'
+    if (r.asset_code !== null && r.asset_code !== '' && !posInt(r.asset_code)) {
+      e.asset_code = 'Invalid Asset ID'
       ok = false
     }
     if (!posInt(r.handover_qty)) {
@@ -504,11 +491,8 @@ const submitForm = async () => {
       loading.value = false; return
     }
 
-    const token = getToken()
-    if (!token) throw new Error('Access token is missing. Please log in.')
-
     const payload = {
-      // NEW: include employee metadata
+      // include employee metadata
       employee_id: form.value.employee_id,
       employee_name: form.value.employee_name,
       employee_code: form.value.employee_code,
@@ -519,7 +503,7 @@ const submitForm = async () => {
       user_id: form.value.user_id || undefined,
       data: requestItems.value.map(r => ({
         item_id: r.item_id,
-        asset_id: (r.asset_id === null || r.asset_id === '') ? null : Number(r.asset_id),
+        asset_code: (r.asset_code === null || r.asset_code === '') ? null : Number(r.asset_code),
         quantity: Number(r.handover_qty),
         remarks: r.remarks || '',
         asset_type: r.asset_type,
@@ -528,9 +512,8 @@ const submitForm = async () => {
 
     const res = await axios.post(apiCreateUrl, payload, {
       headers: {
+        ...getAuthHeaders(),
         'Content-Type': 'application/json',
-        Accept: 'application/json',
-        Authorization: `Bearer ${token}`,
       },
     })
 
@@ -555,6 +538,7 @@ onMounted(async () => {
     fetchCurrentUser(),     // fill employee name + code from logged-in user
     fetchAssetRequests(),
     fetchDepartments(),
+    fetchUsers(),           // load global users for "Handover To"
   ])
 })
 </script>
@@ -571,9 +555,8 @@ onMounted(async () => {
 
 .auth-signatory {
   display: flex;
-  justify-content: space-between; /* Left & right alignment */
-  font-weight: bold; /* Optional: make both bold */
+  justify-content: space-between;
+  font-weight: bold;
   margin-block-start: 16px;
 }
-
 </style>

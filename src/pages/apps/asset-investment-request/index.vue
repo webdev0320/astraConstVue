@@ -77,11 +77,6 @@
               <VListItemTitle>Edit</VListItemTitle>
             </VListItem>
 
-            <VListItem @click="openDeleteDialog(item.raw.id)">
-              <template #prepend><VIcon icon="mdi-delete" /></template>
-              <VListItemTitle>Delete</VListItemTitle>
-            </VListItem>
-
             <VListItem @click="openStatusModal(item.raw.id)">
               <template #prepend><VIcon icon="mdi-flag" /></template>
               <VListItemTitle>Status</VListItemTitle>
@@ -102,6 +97,12 @@
               <template #prepend><VIcon icon="mdi-thumb-down" /></template>
               <VListItemTitle>Reject</VListItemTitle>
             </VListItem>
+
+            <VListItem @click="openDeleteDialog(item.raw.id)">
+              <template #prepend><VIcon icon="mdi-delete" /></template>
+              <VListItemTitle>Delete</VListItemTitle>
+            </VListItem>
+
           </VList>
         </VMenu>
       </template>
@@ -204,9 +205,9 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
 /* ------------ Master headers (one row per request) ------------ */
 const headers = [
-  { title: "ID", key: "id", sortable: true },
+  { title: "# Air Number", key: "air_number", sortable: true },
   { title: "Project", key: "project_name" },
-  { title: "User", key: "user_display", sortable: false },
+  { title: "Created By", key: "user_display", sortable: false },
   { title: "Date", key: "date" },
   { title: "Planned Total", key: "planned_total" },
   { title: "Actions", key: "actions", sortable: false },
@@ -337,7 +338,8 @@ const fetchAssetInvestmentRequests = async () => {
       const plannedCost = nn(p.planned_cost);
 
       return {
-        id: p.id,
+        air_number: p.air_number,
+        // id: p.id,
         project_name: p.project_name ?? "—",
         user_name: p.user_name ?? "—",
         user_email: p.user?.email ?? "",
