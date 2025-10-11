@@ -59,7 +59,7 @@
           </VCol>
 
           <!-- Category -->
-          <VCol cols="12" md="4" class="py-5">
+          <VCol cols="12" md="3" class="py-5">
             <VSelect
               v-model="selectedCategoryId"
               :items="parentCategoryItems"
@@ -76,7 +76,7 @@
           </VCol>
 
           <!-- Subcategory -->
-          <VCol cols="12" md="4" class="py-5">
+          <VCol cols="12" md="3" class="py-5">
             <VSelect
               v-model="selectedSubCategoryId"
               :items="subcategoryItemsForCategory"
@@ -92,7 +92,7 @@
           </VCol>
 
           <!-- Asset (optional) -->
-          <VCol cols="12" md="4" class="py-5">
+          <VCol cols="12" md="3" class="py-5">
             <VSelect
               v-model="selectedAsset"
               :items="assets"
@@ -108,12 +108,27 @@
             />
           </VCol>
 
+
+
+          <VCol cols="12" md="3" class="py-5">
+            <VTextField
+              v-model.number="line.asset_life_period"
+              label="Asset Life Period"
+              type="number"
+              variant="outlined"
+              hide-details="auto"
+            />
+          </VCol>
+
+
+
           <!-- Unit Cost -->
           <VCol cols="12" md="3" class="py-5">
             <VTextField
               v-model.number="line.unit_cost"
               label="Unit Cost"
               type="number"
+              prefix="SAR"              
               min="0"
               step="0.01"
               variant="outlined"
@@ -140,7 +155,7 @@
               :model-value="line.planned_cost"
               label="Planned Cost (auto)"
               type="number"
-              prefix="Rs"
+              prefix="SAR"
               variant="outlined"
               hide-details="auto"
               readonly
@@ -171,14 +186,14 @@
           </VCol>
 
           <!-- Add Button -->
-          <VCol cols="12" md="3" class="d-flex align-end">
+          <VCol cols="12" md="9" class="d-flex align-end">
             <VBtn color="primary" @click="addRecord" :disabled="!canAddLine">
               Add
             </VBtn>
           </VCol>
 
           <!-- Summary -->
-          <VCol cols="12" md="5" class="d-flex align-end justify-end">
+          <VCol cols="12" md="3" class="d-flex align-end justify-end">
             <div class="text-end">
               <div class="text-medium-emphasis">Records: <b>{{ records.length }}</b></div>
               <div class="text-medium-emphasis">
@@ -269,10 +284,11 @@ const loading = ref({ categories: false, assets: false });
 const selectedCategoryId = ref(null);
 const selectedSubCategoryId = ref(null);
 const selectedAsset = ref(null);
+const air_number = ref(null);
 const assets = ref([]);
 
 const line = ref({
-  air_number: null,      // unit price
+  asset_life_period: null,      // unit price
   unit_cost: null,      // unit price
   planned_cost: null,   // unit_cost * quantity (auto)
   quantity: 1,
@@ -288,6 +304,7 @@ const headers = [
   { title: "Asset Code", key: "asset_code" },
   { title: "Category", key: "category_name" },
   { title: "Subcategory", key: "subcategory_name" },
+  { title: "Asset Life Period", key: "asset_life_period" },
   { title: "Type", key: "request_type" },
   { title: "Description", key: "description" },
   { title: "Reason", key: "reason" },
@@ -441,12 +458,14 @@ const addRecord = () => {
   const desc = (line.value.description || "").trim();
   const rsn  = (line.value.reason || "").trim();
   const type = line.value.request_type || "NEW";
+  const asset_life_period = line.value.asset_life_period;
 
   const recordKey = [
     selectedCategoryId.value,
     selectedSubCategoryId.value,
     a?.id ?? "none",
     type,
+    asset_life_period,
     desc.toLowerCase(),
     rsn.toLowerCase(),
     unit.toFixed(2)
@@ -462,6 +481,7 @@ const addRecord = () => {
       asset_category_id: Number(selectedCategoryId.value),
       asset_sub_category_id: Number(selectedSubCategoryId.value),
       asset_id: a?.id ?? null,
+      asset_life_period : asset_life_period,
       description: desc || null,
       request_type: type,
       quantity: qty,
@@ -486,6 +506,7 @@ const addRecord = () => {
   line.value.request_type     = "NEW";
   line.value.description      = "";
   line.value.reason           = "";
+  line.value.asset_life_period      = "";
 };
 
 const removeRecord = (item) => {
@@ -509,13 +530,14 @@ const saveAll = async () => {
   try {
     const payload = {
       project_id: Number(selectedProjectId.value),
+      air_number: air_number.value,
       date: date.value,
       data: records.value.map(r => ({
         asset_category_id: Number(r.asset_category_id),
         asset_sub_category_id: Number(r.asset_sub_category_id),
         asset_id: r.asset_id ?? null,
         description: r.description ?? null,
-        air_number: r.air_number ?? null,
+        asset_life_period: r.asset_life_period ?? null,
         unit_cost: Number(r.unit_cost),       // include unit cost
         planned_cost: Number(r.planned_cost), // total per line
         request_type: r.request_type,
@@ -552,7 +574,7 @@ const plannedTotal = computed(() =>
 );
 function formatAmount(val) {
   if (val === null || val === undefined || val === "") return "-";
-  const num = Number(val);
+  const num = 'SAR '+Number(val);
   if (Number.isNaN(num)) return String(val);
   return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }

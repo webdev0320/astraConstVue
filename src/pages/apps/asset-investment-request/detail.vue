@@ -29,7 +29,7 @@
     <template v-else-if="request">
       <!-- Summary -->
       <VRow class="d-flex flex-row flex-nowrap mb-4 no-print" dense>
-        <VCol cols="8" md="8">
+        <VCol cols="12" md="12">
           <VCard class="summary-card" variant="elevated">
             <VCardText>
               <div class="d-flex justify-between align-start mb-3">
@@ -46,7 +46,7 @@
 
               <div class="d-grid-3">
                 <div class="kv">
-                  <div class="k">Air Number</div>
+                  <div class="k">AIR Number</div>
                   <div class="v">#{{ request.air_number }}</div>
                 </div>
                 <div class="kv">
@@ -57,29 +57,14 @@
                   <div class="k">Created At</div>
                   <div class="v">{{ formatDateTime(request.created_at) }}</div>
                 </div>
-              </div>
-
-              <div class="d-grid-3 mt-3">
                 <div class="kv">
-                  <div class="k">Asset Life Period</div>
-                  <div class="v">{{ request.asset_life_period ?? '—' }}</div>
-                </div>
-                <div class="kv">
-                  <div class="k">Items Count</div>
+                  <div class="k">Requested Items Count</div>
                   <div class="v">{{ items.length }}</div>
                 </div>
-                <div class="kv">
-                  <div class="k">Computed Total</div>
-                  <div class="v">{{ formatCurrency(itemsTotal) }}</div>
-                </div>
               </div>
-            </VCardText>
-          </VCard>
-        </VCol>
 
-        <VCol cols="4" md="4">
-          <VCard class="side-card" variant="tonal">
-            <VCardTitle class="pb-0">Quick Info</VCardTitle>
+
+            </VCardText>
             <VCardText class="pt-2">
               <ul class="bullets">
                 <li><strong>Status:</strong> {{ request.status ?? '—' }}</li>
@@ -88,6 +73,7 @@
             </VCardText>
           </VCard>
         </VCol>
+
       </VRow>
 
       <!-- Items Table (screen only) -->
@@ -100,11 +86,11 @@
             :items-per-page="10"
             class="elev-1"
           >
-            <template #item.planned_cost="{ item }">
-              {{ formatCurrency(item.raw.planned_cost) }}
-            </template>
             <template #item.unit_cost="{ item }">
               {{ formatCurrency(item.raw.unit_cost) }}
+            </template>
+            <template #item.planned_cost="{ item }">
+              {{ formatCurrency(item.raw.planned_cost) }}
             </template>
             <template #bottom>
               <div class="d-flex justify-end pa-4">
@@ -117,6 +103,34 @@
           </VDataTable>
         </VCardText>
       </VCard>
+
+      <VCard variant="elevated" class="no-print mt-4">
+        <VCardTitle>Approvals</VCardTitle>
+        <VCardText>
+          <VAlert
+            v-if="approvalsError"
+            type="error"
+            class="mb-4"
+            variant="tonal"
+          >
+            {{ approvalsError }}
+          </VAlert>
+
+          <VDataTable
+            v-if="approvals.length"
+            :headers="approvalHeaders"
+            :items="approvals"
+            :items-per-page="5"
+            class="elev-1"
+          />
+
+          <div v-else class="text-center py-4 text-medium-emphasis">
+            No approvals found.
+          </div>
+        </VCardText>
+      </VCard>
+
+
     </template>
 
     <!-- Empty (screen only) -->
@@ -165,119 +179,126 @@
       </table>
 
       <!-- Requested Items (from API) -->
-      <div class="section-heading">Requested Items</div>
-      <table class="box-table items-table">
-        <thead>
-          <tr>
-            <th>Description</th>
-            <th>Planned Cost</th>
-            <th>Type</th>
-            <th>Qty</th>
-            <th>Reason</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="it in items" :key="it.id">
-            <td class="td-desc">{{ it.description || '—' }}</td>
-            <td class="td-num">{{ formatCurrency(it.planned_cost) }}</td>
-            <td class="td-center">{{ it.request_type || '—' }}</td>
-            <td class="td-center">{{ it.quantity ?? '—' }}</td>
-            <td class="td-reason">{{ it.reason || '—' }}</td>
-          </tr>
-          <tr v-if="!items || items.length === 0">
-            <td colspan="5">—</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="section-heading textBlack">Requested Items</div>
+      <div class="table-wrapper">
+  <table class="box-table items-table print-table">
+    <thead>
+      <tr>
+        <th class="textBlack">Category</th>
+        <th class="textBlack">SubCategory</th>
+        <th class="textBlack">Asset</th>
+        <th class="textBlack">Description</th>
+        <th class="textBlack">Reason</th>
+        <th class="textBlack">Unit Cost</th>
+        <th class="textBlack">Qty</th>
+        <th class="textBlack">Planned Cost</th>
+        <th class="textBlack">Type</th>
+        <th class="textBlack">Asset Life Period</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="it in items" :key="it.id">
+        <td class="textBlack td-desc">{{ it.category_name }}</td>
+        <td class="textBlack td-desc">{{ it.sub_category }}</td>
+        <td class="textBlack td-desc">{{ it.asset_name }} {{ it.asset_code }}</td>
+        <td class="textBlack td-desc">{{ it.description }}</td>
+        <td class="textBlack td-reason">{{ it.reason }}</td>
+        <td class="textBlack td-num">{{ formatCurrency(it.unit_cost) }}</td>
+        <td class="textBlack td-center">{{ it.quantity }}</td>
+        <td class="textBlack td-num">{{ formatCurrency(it.planned_cost) }}</td>
+        <td class="textBlack td-center">{{ it.request_type }}</td>
+        <td class="textBlack td-center">{{ it.asset_life_period }}</td>
+      </tr>
+      <tr v-if="!items || items.length === 0">
+        <td colspan="10" class="textBlack td-center">—</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
 
       <!-- Planned cost + Asset type -->
-      <div class="section-heading">PLANNED COST (in SAR):</div>
+      <div class="section-heading textBlack">PLANNED COST (in SAR):</div>
       <div class="box row-2col">
         <div class="cell">
-          <span class="value-strong">{{ formatCurrency(request?.planned_cost) }}</span>
+          <span class="value-strong textBlack">{{ formatCurrency(request?.planned_cost) }}</span>
         </div>
-        <div class="cell">
-          <div class="checks">
-            <span class="check" :class="{on: isType('NEW')}"></span> NEW ASSET
-            <span class="check" :class="{on: isType('LEASED')}"></span> LEASED ASSET
-            <span class="check" :class="{on: isType('USED')}"></span> USED ASSET
+<!--         <div class="cell">
+          <div class="checks textBlack">
+            <span class="check textBlack" :class="{on: isType('NEW')}"></span> NEW ASSET
+            <span class="check textBlack" :class="{on: isType('LEASED')}"></span> LEASED ASSET
+            <span class="check textBlack" :class="{on: isType('USED')}"></span> USED ASSET
           </div>
-        </div>
+        </div> -->
       </div>
-
-      <!-- Finance -->
-      <div class="section-heading">This Part to be Filled by Finance</div>
-      <table class="box-table">
-        <tr>
-          <td class="lbl w40">Asset Life/Period:</td>
-          <td class="val">{{ request?.asset_life_period ?? '—' }}</td>
-        </tr>
-      </table>
 
       <!-- Dept head + Checked by finance -->
       <div class="box row-2col">
         <div class="cell">
-          <div class="mini-header">Requesting Department Head :</div>
-          <div class="name-line">{{ request?.department_head || '—' }}</div>
+          <div class="mini-header textBlack">Requesting Department Head :</div>
+          <div class="name-line textBlack">{{ request?.department_head || '—' }}</div>
           <div class="mini-row">
-            <div class="mini-col"><span class="mini-label">Date:</span> {{ formatDate(request?.department_head_date) }}</div>
+            <div class="mini-col"><span class="mini-label textBlack">Date:</span> {{ formatDate(request?.department_head_date) }}</div>
           </div>
         </div>
         <div class="cell">
-          <div class="mini-header">Checked by Financial Department:</div>
-          <div class="name-line">{{ request?.finance_checker || '—' }}</div>
+          <div class="mini-header textBlack">Checked by Financial Department:</div>
+          <div class="name-line textBlack">{{ request?.finance_checker || '—' }}</div>
           <div class="mini-row">
-            <div class="mini-col"><span class="mini-label">Date:</span> {{ formatDate(request?.finance_checked_date) }}</div>
+            <div class="mini-col"><span class="mini-label textBlack">Date:</span> {{ formatDate(request?.finance_checked_date) }}</div>
           </div>
         </div>
+          
+      </div>
+      <div class="box row-2col">
+          <div class="cell">
+            <div class="mini-header textBlack">In accordance with budget:</div>
+            <div class="checks mb8 textBlack">
+              <span class="check" :class="{ on: isAccordance('YES') }"></span> Yes
+            </div>
+            <div class="checks textBlack">
+              <span class="check" :class="{ on: isAccordance('NO') }"></span> No
+            </div>
+          </div>
       </div>
 
       <!-- Signatures & Accordance -->
-      <div class="box row-2col">
-        <div class="cell">
-          <div class="mini-header">Signatures:</div>
-          <div class="subgrid">
-            <div class="lblcol">Approval</div>
-            <div class="valcol">
-              <div class="name-line">{{ request?.ceo_name || 'Eng. Baher Jaber' }}</div>
-              <div class="role">CEO</div>
-              <div class="mini-row">
-                <div class="mini-col"><span class="mini-label">Date:</span> {{ formatDate(request?.ceo_date) }}</div>
-              </div>
-            </div>
-          </div>
-          <div class="subgrid top-gap">
-            <div class="lblcol">NAME</div>
-            <div class="valcol">
-              <div class="name-line">{{ request?.bod_signatory || 'BOD Signature (As Per Authority Matrix)' }}</div>
-              <div class="mini-row">
-                <div class="mini-col"><span class="mini-label">Date</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div class="box approval-section">
+  <!-- Approvals (8 columns) -->
+        <div class="cell col-12">
+        <div class="mini-header textBlack">Approvals:</div>
 
-        <div class="cell">
-          <div class="mini-header">In accordance with budget:</div>
-          <div class="checks mb8">
-            <span class="check" :class="{on: isAccordance('YES')}"></span> Yes
-          </div>
-          <div class="checks">
-            <span class="check" :class="{on: isAccordance('NO')}"></span> No
-          </div>
+        <!-- If approvals exist -->
+        <table v-if="approvals && approvals.length" class="approval-table" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+          <thead>
+            <tr style="border-bottom: 1px solid #ccc;">
+              <th class="textBlack" style="text-align: left; padding: 8px;">Name / Code</th>
+              <th class="textBlack" style="text-align: left; padding: 8px;">Status</th>
+              <th class="textBlack" style="text-align: left; padding: 8px;">Signature</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="(approval, index) in approvals"
+              :key="approval.id || index"
+              style="border-bottom: 1px solid #eee;"
+            >
+              <td class="textBlack" style="padding: 8px;">{{ approval.name }} - {{ approval.user_code }}</td>
+              <td class="textBlack" style="padding: 8px;">{{ approval.status || '—' }}</td>
+              <td class="textBlack" style="padding: 8px;">_____________________</td>
+            </tr>
+          </tbody>
+        </table>
 
-          <div class="subgrid top-gap">
-            <div class="lblcol">Name:</div>
-            <div class="valcol">
-              <div class="name-line">{{ request?.director_name || 'Mr. Mohammed Irfan' }}</div>
-              <div class="role">D-CEO</div>
-            </div>
-          </div>
-          <div class="mini-row">
-            <div class="mini-col"><span class="mini-label">Date</span></div>
-          </div>
-        </div>
+        <!-- If no approvals -->
+        <div v-else class="top-gap textBlack">No approvals found.</div>
       </div>
+
+
+  <!-- In accordance with budget (4 columns) -->
+  
+</div>
+
     </div>
     </div>
     <!-- /PRINT -->
@@ -307,12 +328,14 @@ const loading = ref(true);
 const error = ref("");
 const request = ref(null);
 const items = ref([]);
+const approvals = ref([])
+const approvalsError = ref("")
 
 /* headers (screen) */
 const itemHeaders = [
   { title: "Category", key: "category_name" },
   { title: "Subcategory", key: "sub_category" },
-  { title: "Asset Cod If Any", key: "asset_name" },
+  { title: "Asset Code If Any", key: "asset_name" },
   { title: "Type", key: "request_type" },
   { title: "Description", key: "description" },
   { title: "Reason", key: "reason" },
@@ -320,6 +343,12 @@ const itemHeaders = [
   { title: "Unit Cost", key: "unit_cost" },
   { title: "Planned Cost", key: "planned_cost" },
 ];
+
+const approvalHeaders = [
+  { title: "Employee Code", key: "user_code" },
+  { title: "Employee Name", key: "name" },
+  { title: "Status", key: "status" },
+]
 
 /* utils */
 const getCookie = (name) => {
@@ -344,10 +373,11 @@ const humanYesNo = (val) => {
 };
 
 /* helpers (print checkboxes) */
-const isType = (t) => {
-  const v = String(request.value?.asset_type || request.value?.request_type || "").toUpperCase();
+/*const isType = (t) => {
+  const v = String(request.value?.items?.[0]?.request_type || "").toUpperCase();
+  console.log("Asset Type:", v);
   return v === t.toUpperCase();
-};
+};*/
 const isAccordance = (ans) => {
   const v = String(request.value?.is_accordance_with_budget ?? "").toLowerCase();
   if (ans === 'YES') return ["true","yes","1","approved"].includes(v);
@@ -358,12 +388,13 @@ const isAccordance = (ans) => {
 /* computed (screen only) */
 const itemsNormalized = computed(() => {
   return items.value.map((r) => {
+    console.log(r);
     const qty = nn(r.quantity ?? 1);
-    const cost = nn(r.planned_cost ?? 0);
-    return { ...r, planned_cost: cost, unit_cost: qty * cost, raw: { ...r, planned_cost: cost, unit_cost: qty * cost } };
+    const cost = nn(r.unit_cost ?? 0);
+    return { ...r, planned_cost: qty * cost, unit_cost: cost, raw: { ...r, planned_cost: qty * cost, unit_cost: cost } };
   });
 });
-const itemsTotal = computed(() => itemsNormalized.value.reduce((s, l) => s + nn(l.raw.unit_cost), 0));
+const itemsTotal = computed(() => itemsNormalized.value.reduce((s, l) => s + nn(l.raw.planned_cost), 0));
 
 /* fetch */
 const fetchDetail = async () => {
@@ -410,12 +441,15 @@ const fetchDetail = async () => {
       id: i.id,
       category_name: i.category_name ?? i.category?.title ?? "—",
       sub_category: i.sub_category ?? i.subcategory?.title ?? "—",
+      asset_name: i.asset_code + "—" + i.asset_name,
       description: i.description,
       planned_cost: i.planned_cost,
+      unit_cost: i.unit_cost,
       request_type: i.request_type,
       quantity: i.quantity,
       reason: i.reason,
       created_at: i.created_at,
+      asset_life_period : i.asset_life_period,
     }));
   } catch (e) {
     console.error("Fetch detail failed", e);
@@ -424,6 +458,35 @@ const fetchDetail = async () => {
     loading.value = false;
   }
 };
+
+
+const fetchApprovals = async () => {
+  approvalsError.value = ""
+  try {
+    const accessToken = getCookie("accessToken")
+    if (!accessToken) throw new Error("Access token missing.")
+    const decodedToken = decodeURIComponent(accessToken)
+
+    const res = await axios.get(
+      `${apiBaseUrl}/getApprovals/AssetInvestmentRequest/${id.value}`,
+      {
+        headers: { Authorization: `Bearer ${decodedToken}` },
+      }
+    )
+
+    const data = res.data?.data ?? []
+    approvals.value = data.map(a => ({
+      id: a.id,
+      status: a.status,
+      name: a.user?.name ?? "—",
+      user_code: a.user?.user_code ?? "—",
+    }))
+  } catch (e) {
+    console.error("Fetch approvals failed", e)
+    approvalsError.value = e?.response?.data?.message || e?.message || "Failed to load approvals."
+  }
+}
+
 
 /* print */
 const printPage = () => {
@@ -435,7 +498,10 @@ const printPage = () => {
   }, 300);
 };
 
-onMounted(fetchDetail);
+onMounted(async () => {
+  await fetchDetail()
+  await fetchApprovals()
+})
 </script>
 
 <!-- Screen styles -->
@@ -445,7 +511,7 @@ onMounted(fetchDetail);
 .title-lg { font-size: 20px; font-weight: 700; }
 .muted { opacity: 0.8; }
 .divider { background: var(--v-theme-surface-variant); block-size: 1px; opacity: 0.4; }
-.d-grid-3 { display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.d-grid-3 { display: grid; gap: 50px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .kv .k { font-size: 12px; opacity: 0.7; }
 .kv .v { font-weight: 600; }
 
@@ -467,61 +533,49 @@ onMounted(fetchDetail);
 
 <!-- Global styles: IMPORTANT — keep .print-root hidden on screen -->
 <style>
-/* Hidden on screen; shown only in @media print below */
 .print-root { display: none; }
 
-/* Better print color rendering */
 @media print {
-  html,
-  body {
-    padding: 0 !important;
-    margin: 0 !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
+  .mt-4 { margin-top: 4mm !important; }
+  .top-gap { margin-top: 3mm !important; }
 }
 
 @media print {
-  /* hide everything by default */
+  html, body {
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  #print-area {
+    background: #fff !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
   body * { visibility: hidden !important; }
+  #print-area, #print-area * { visibility: visible !important; }
 
-  /* show only the print form */
-  #print-area,
-  #print-area * { visibility: visible !important; }
+  @page { margin: 0.1mm; size: a4 portrait; }
 
-  /* ✅ Page area: A4 with tight margins */
-  @page { margin: 8mm; size: a4 portrait; } /* 5–10mm ok */
-
-  /* ✅ Printable canvas (usable area) */
   #print-area {
     position: absolute !important;
     display: block !important;
-    overflow: hidden !important;                  /* avoid spill */
-    padding: 0 !important;
+    overflow: hidden !important;
+    padding: 5px !important;
     background: #fff !important;
-    block-size: calc(297mm - 16mm) !important;   /* 297 - 2*8 */
-
-    /* usable width/height inside margins */
-    inline-size: calc(210mm - 16mm) !important;   /* 210 - 2*8 */
+    block-size: calc(297mm - 16mm) !important;
+    inline-size: calc(210mm - 16mm) !important;
     inset: 0 !important;
-    margin-block: 0 !important;
-    margin-inline: auto !important;
+    margin: 0 auto !important;
+    border: none !important;
   }
 
-  /* ⬇️ SCALE to fill full height (no bottom gap)
-     Adjust --print-scale between 1.06 and 1.14 as needed per printer */
-  :root { --print-scale: 1.3; }                  /* tweak if needed */
+  :root { --print-scale: 1.3; }
 
   .print-body {
-    inline-size: calc(210mm - 16mm);              /* natural width */
 
-    /* Base layout was designed for ~194mm width;
-       scale uniformly so total height fills the page */
-    transform: scale(var(--print-scale));
-    transform-origin: top left !important;
   }
-
-  /* Keep your existing print styles below (unchanged)… */
 
   .print-header-3 {
     display: grid;
@@ -534,58 +588,112 @@ onMounted(fetchDetail);
 
   .hdr-left { color: #000; font-weight: 700; line-height: 1.15; text-align: start; }
   .hdr-left .en-2 { font-weight: 600; }
-
-  .hdr-logo { position: relative; z-index: 2; text-align: center; }
+  .hdr-logo { text-align: center; }
   .hdr-logo img { block-size: 48px; inline-size: auto; object-fit: contain; }
+  .hdr-right { color: #000; direction: rtl; font-weight: 700; line-height: 1.2; unicode-bidi: isolate; white-space: nowrap; }
+  .hdr-right .ar { display: block; margin: 0; }
 
-  .hdr-right { position: relative; z-index: 2; color: #000; direction: rtl; font-weight: 700; line-height: 1.2; unicode-bidi: isolate; white-space: nowrap; }
-  .hdr-right .ar { display: block; padding: 0; margin: 0; }
+  .print-title { color: #808080; font-size: 18px; font-weight: 700; margin: 2mm 0 4mm; text-align: center; }
+  .section-heading { font-size: 12px; font-weight: 700; margin: 2mm 0 1mm; }
 
-  .print-title { color: #808080; font-size: 18px; font-weight: 700; margin-block: 2mm 4mm; text-align: center; }
-
-  .section-heading { font-size: 12px; font-weight: 700; margin-block: 2mm 1mm; margin-inline: 0; }
-
-  .box { border: 1px solid #000; }
-  .block { min-block-size: 18mm; padding-block: 4px; padding-inline: 6px; }
+  .box { border: 0.5px solid #000; }
+  .block { min-block-size: 18mm; padding: 4px 6px; }
   .block.tall { min-block-size: 28mm; }
 
-  .box-table { border-collapse: collapse; inline-size: 100%; margin-block-end: 2mm; }
-
-  .box-table td,
-  .box-table th { border: 1px solid #000; padding-block: 4px; padding-inline: 6px; vertical-align: middle; }
+  .box-table { border-collapse: collapse; width: 100%; margin-block-end: 2mm; }
+  .box-table td, .box-table th { border: 0.5px solid #000; padding: 4px 6px; vertical-align: middle; }
   .box-table th { background: #f0f0f0; font-weight: 700; text-align: start; }
-  .box-table .lbl { background: #f7f7f7; font-weight: 700; inline-size: 35%; }
-  .box-table .val { inline-size: 65%; }
-  .box-table .w35 { inline-size: 35%; }
-  .box-table .w65 { inline-size: 65%; }
-  .box-table .w40 { inline-size: 40%; }
+  .box-table .lbl { background: #f7f7f7; font-weight: 700; width: 35%; }
+  .box-table .val { width: 65%; }
+  .box-table .w35 { width: 35%; }
+  .box-table .w65 { width: 65%; }
+  .box-table .w40 { width: 40%; }
+
+  .lbl, .val, .textBlack { color: #000 !important; }
 
   .items-table .td-num { text-align: end; }
   .items-table .td-center { text-align: center; }
-
-  .items-table .td-desc,
-  .items-table .td-reason { white-space: pre-wrap; }
+  .items-table .td-desc, .items-table .td-reason { white-space: pre-wrap; }
 
   .row-2col { display: grid; grid-template-columns: 1fr 1fr; }
-  .row-2col .cell { border-inline-end: 1px solid #000; padding-block: 4px; padding-inline: 6px; }
+  .row-2col .cell { border-inline-end: 0.5px solid #000; padding: 4px 6px; }
   .row-2col .cell:last-child { border-inline-end: none; }
 
   .multiline { white-space: pre-wrap; word-wrap: break-word; }
   .value-strong { font-weight: 700; }
-
-  .mini-header { font-weight: 700; margin-block-end: 2mm; }
-  .name-line { border-block-end: 1px solid #000; min-block-size: 7mm; }
-  .role { font-size: 11px; margin-block-start: 1mm; }
-  .mini-row { display: flex; gap: 10mm; margin-block-start: 1mm; }
+  .mini-header { font-weight: 700; margin-bottom: 2mm; }
+  .name-line { border-bottom: 0.5px solid #000; min-block-size: 7mm; }
+  .role { font-size: 11px; margin-top: 1mm; }
+  .mini-row { display: flex; gap: 10mm; margin-top: 1mm; }
   .mini-col .mini-label { font-weight: 700; }
 
   .checks { display: flex; align-items: center; gap: 6mm; }
-  .checks.mb8 { margin-block-end: 2mm; }
-  .check { display: inline-block; border: 1px solid #000; block-size: 12px; inline-size: 12px; margin-inline-end: 3mm; vertical-align: middle; }
+  .checks.mb8 { margin-bottom: 2mm; }
+  .check { display: inline-block; border: 0.5px solid #000; block-size: 12px; inline-size: 12px; margin-right: 3mm; vertical-align: middle; }
   .check.on { background: #000; }
 
   .subgrid { display: grid; align-items: start; column-gap: 4mm; grid-template-columns: 28mm 1fr; }
-  .subgrid.top-gap { margin-block-start: 4mm; }
+  .subgrid.top-gap { margin-top: 4mm; }
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
 }
 
+.print-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; /* Prevents overflow */
+  word-wrap: break-word;
+  font-size: 12px; /* Adjust for print readability */
+}
+
+.print-table th,
+.print-table td {
+  border: 1px solid #ccc;
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: top;
+  word-break: break-word;
+}
+
+/* Reduce wide text columns */
+.print-table th:nth-child(4),
+.print-table td:nth-child(4),
+.print-table th:nth-child(5),
+.print-table td:nth-child(5) {
+  max-width: 120px;
+  white-space: normal;
+}
+
+/* Numeric columns */
+.print-table th:nth-child(6),
+.print-table th:nth-child(7),
+.print-table th:nth-child(8),
+.print-table th:nth-child(9),
+.print-table th:nth-child(10),
+.print-table td:nth-child(6),
+.print-table td:nth-child(7),
+.print-table td:nth-child(8),
+.print-table td:nth-child(9),
+.print-table td:nth-child(10) {
+  text-align: center;
+  width: 70px;
+}
+
+/* Print-specific rules */
+@media print {
+  .table-wrapper {
+    overflow: visible;
+  }
+
+  .print-table {
+    page-break-inside: auto;
+  }
+
+  .print-table tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+}
+}
 </style>

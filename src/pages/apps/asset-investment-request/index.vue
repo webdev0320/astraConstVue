@@ -32,8 +32,8 @@
       </template>
 
       <!-- PLANNED TOTAL -->
-      <template #item.planned_total="{ item }">
-        {{ item.raw.planned_total ?? '—' }}
+      <template #item.planned_cost="{ item }">
+        {{ item.raw.planned_cost ?? '—' }}
       </template>
 
       <!-- PROJECT -->
@@ -209,7 +209,7 @@ const headers = [
   { title: "Project", key: "project_name" },
   { title: "Created By", key: "user_display", sortable: false },
   { title: "Date", key: "date" },
-  { title: "Planned Total", key: "planned_total" },
+  { title: "Planned Cost", key: "planned_cost" },
   { title: "Actions", key: "actions", sortable: false },
 ];
 
@@ -288,7 +288,7 @@ const formatDate = (d) => {
 const normalizeLines = (rawLines, reqId) => {
   return rawLines.map((r, idx) => {
     const qty  = nn(r.quantity ?? 1);
-    const cost = nn(r.planned_cost ?? r.cost ?? 0);
+    const cost = nn(r.planned_cost ?? r.planned_cost ?? 0);
     const lineTotal = cost * qty;
 
     return {
@@ -335,7 +335,7 @@ const fetchAssetInvestmentRequests = async () => {
       const linesCount =
         Number(p.lines_count ?? p.items_count ?? p.data_count ?? (embedded ? embedded.length : 0)) || 0;
 
-      const plannedCost = nn(p.planned_cost);
+      const plannedCost = p.planned_cost;
 
       return {
         air_number: p.air_number,
@@ -346,14 +346,14 @@ const fetchAssetInvestmentRequests = async () => {
         user_display: `${p.user?.name ?? p.user_name ?? "—"}${p.user?.email ? " (" + p.user.email + ")" : ""}`,
         date: p.date ?? "—",
         lines_count: linesCount,
-        planned_total: plannedCost || null,
+        planned_cost: plannedCost || null,
         raw: {
           id: p.id,
           date: p.date ?? "—",
           project_name: p.project_name ?? "—",
           user_name: p.user_name ?? "—",
           user_email: p.user?.email ?? "",
-          planned_total: plannedCost || null,
+          planned_cost: plannedCost || null,
         },
       };
     });
@@ -395,10 +395,10 @@ const loadLinesFor = async (reqId) => {
 
     // Compute & patch total if missing
     const row = assetInvestmentRequests.value.find(r => r.id === reqId);
-    if (row && (!row.raw.planned_total && !row.planned_total)) {
+    if (row && (!row.raw.planned_cost && !row.planned_cost)) {
       const total = lines.reduce((s, l) => s + nn(l.raw.line_total), 0);
-      row.planned_total = total;
-      row.raw.planned_total = total;
+      row.planned_cost = total;
+      row.raw.planned_cost = total;
       row.lines_count = lines.length;
     }
   } catch (e) {

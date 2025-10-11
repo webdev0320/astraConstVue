@@ -82,6 +82,12 @@
           </template>
 
           <VList density="compact">
+
+            <VListItem @click="$router.push(`/dashboards/assethandovers/detail/${item.raw?.id ?? item.id}`)">
+              <template #prepend><VIcon icon="mdi-file-document" /></template>
+              <VListItemTitle>Detail</VListItemTitle>
+            </VListItem>            
+
             <VListItem @click="$router.push(`/dashboards/assethandovers/edit/${item.raw?.id ?? item.id}`)">
               <template #prepend><VIcon icon="mdi-pencil" /></template>
               <VListItemTitle>Edit</VListItemTitle>
@@ -132,10 +138,10 @@ const errorMessage = ref("");
 const headers = [
   { title: "ID", key: "id", width: 80 },
   { title: "Handover Date", key: "handover_date" },
-  { title: "Asset Request ID", key: "asset_investment_requests_id" },
+  { title: "Asset Request ID", key: "asset_investment_request_id" },
   // { title: "Quantity", key: "quantity" },
   { title: "Handover By", key: "handover_by_name" },
-  { title: "User", key: "user_name" },
+  { title: "Handover To", key: "user_name" },
   { title: "Remarks", key: "remarks" },
   { title: "Actions", key: "actions", sortable: false, width: 160 },
 ];
@@ -208,7 +214,7 @@ const fetchHandovers = async () => {
     handovers.value = list.map((p) => ({
       id: p.id,
       handover_date: p.handover_date ?? null,
-      asset_investment_requests_id: p.asset_investment_requests_id ?? "—",
+      asset_investment_request_id: p.asset_investment_request_id ?? "—",
       quantity: p.quantity ?? "—",
       handover_by_name: p.handover_by?.name ?? "—",
       user_name: p.user?.name ?? "—",
@@ -277,7 +283,6 @@ onMounted(fetchHandovers);
 
 .handover-th {
   padding: 10px;
-  background-color: #c9c7c7;
   color: #000;
   font-weight: bold;
   text-align: start;

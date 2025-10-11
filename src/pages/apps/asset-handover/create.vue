@@ -460,10 +460,6 @@ const validateRows = () => {
   let ok = true
   rowErrors.value = requestItems.value.map(r => {
     const e = {}
-    if (r.asset_code !== null && r.asset_code !== '' && !posInt(r.asset_code)) {
-      e.asset_code = 'Invalid Asset ID'
-      ok = false
-    }
     if (!posInt(r.handover_qty)) {
       e.handover_qty = 'Enter a positive integer'
       ok = false
