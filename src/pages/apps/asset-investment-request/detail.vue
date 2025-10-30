@@ -4,7 +4,6 @@
     <div class="d-flex justify-space-between align-center mb-4 no-print">
       <!-- Left side -->
       <div class="d-flex align-center gap-2">
-        <VBtn variant="text" prepend-icon="mdi-arrow-left" @click="$router.back()">Back</VBtn>
         <h3 class="page-title">Asset Investment Request</h3>
       </div>
 
@@ -57,10 +56,7 @@
                   <div class="k">Created At</div>
                   <div class="v">{{ formatDateTime(request.created_at) }}</div>
                 </div>
-                <div class="kv">
-                  <div class="k">Requested Items Count</div>
-                  <div class="v">{{ items.length }}</div>
-                </div>
+                
               </div>
 
 
@@ -78,31 +74,75 @@
 
       <!-- Items Table (screen only) -->
       <VCard variant="elevated" class="no-print">
-        <VCardTitle>Requested Items</VCardTitle>
+        <VCardTitle class="text-h6 font-weight-bold">Requested Items</VCardTitle>
+
         <VCardText>
-          <VDataTable
-            :headers="itemHeaders"
-            :items="itemsNormalized"
-            :items-per-page="10"
-            class="elev-1"
-          >
-            <template #item.unit_cost="{ item }">
-              {{ formatCurrency(item.raw.unit_cost) }}
-            </template>
-            <template #item.planned_cost="{ item }">
-              {{ formatCurrency(item.raw.planned_cost) }}
-            </template>
-            <template #bottom>
-              <div class="d-flex justify-end pa-4">
-                <div class="total-row">
-                  <span>Subtotal:</span>
-                  <strong>{{ formatCurrency(itemsTotal) }}</strong>
+          <VRow dense>
+            <VCol v-for="item in itemsNormalized" :key="item.id" cols="12" md="12" lg="12">
+              <VCard class="pa-3 rounded-lg" elevation="2">
+
+                <!-- Top fields -->
+                <VRow dense class="text-caption">
+                  <VCol cols="4">
+                    <div class="text-medium-emphasis">Category</div>
+                    <div class="font-weight-medium">{{ item.category_name }}</div>
+                  </VCol>
+
+                  <VCol cols="4">
+                    <div class="text-medium-emphasis">Subcategory</div>
+                    <div class="font-weight-medium">{{ item.sub_category }}</div>
+                  </VCol>
+
+                  <VCol cols="4">
+                    <div class="text-medium-emphasis">Asset Code</div>
+                    <div class="font-weight-medium">{{ item.asset_name || '—' }}</div>
+                  </VCol>
+
+                  <VCol cols="3">
+                    <div class="text-medium-emphasis">Type</div>
+                    <div class="font-weight-medium">{{ item.request_type }}</div>
+                  </VCol>
+
+                  <VCol cols="3">
+                    <div class="text-medium-emphasis">Qty</div>
+                    <div class="font-weight-medium">{{ item.quantity }}</div>
+                  </VCol>
+
+                  <VCol cols="3">
+                    <div class="text-medium-emphasis">Unit Cost</div>
+                    <div class="font-weight-medium">{{ formatCurrency(item.unit_cost) }}</div>
+                  </VCol>
+
+                  <VCol cols="3">
+                    <div class="text-medium-emphasis">Planned Cost</div>
+                    <div class="font-weight-bold">{{ formatCurrency(item.planned_cost) }}</div>
+                  </VCol>
+                </VRow>
+
+                <VDivider class="my-2" />
+
+                <!-- Description & Reason (full width) -->
+                <div class="mb-2">
+                  <div class="text-medium-emphasis text-caption">Description</div>
+                  <div class="text-body-2">{{ item.description }}</div>
                 </div>
-              </div>
-            </template>
-          </VDataTable>
+
+                <div>
+                  <div class="text-medium-emphasis text-caption">Reason</div>
+                  <div class="text-body-2">{{ item.reason }}</div>
+                </div>
+
+              </VCard>
+            </VCol>
+          </VRow>
+
+          <!-- Subtotal Bottom -->
+          <div class="d-flex justify-end mt-4 font-weight-bold text-body-1">
+            Subtotal: {{ formatCurrency(itemsTotal) }}
+          </div>
         </VCardText>
       </VCard>
+
 
       <VCard variant="elevated" class="no-print mt-4">
         <VCardTitle>Approvals</VCardTitle>

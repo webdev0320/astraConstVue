@@ -15,54 +15,83 @@
     <p v-else-if="errorMessage">{{ errorMessage }}</p>
 
     <!-- Table -->
-    <VDataTable
-      v-else-if="projects.length > 0"
-      :headers="headers"
-      :items="projects"
-      :items-per-page="10"
-    >
-      <template #item.description="{ item }">
-        <div class="desc-cell clamp-2" :title="item.raw?.description ?? item.description">
-          {{ truncateSmart(item.raw?.description ?? item.description, 20, 120) }}
-        </div>
-      </template>
+            <VDataTable
+              v-else-if="projects.length > 0"
+              :headers="headers"
+              :items="projects"
+              :items-per-page="10"
+            >
+              <template #item.description="{ item }">
+                <div class="desc-cell clamp-2" :title="item.raw?.description ?? item.description">
+                  {{ truncateSmart(item.raw?.description ?? item.description, 20, 120) }}
+                </div>
+              </template>
 
-      <template #item.actions="{ item }">
-        <div class="d-flex gap-2">
-          <VBtn
-            color="warning"
-            size="small"
-            @click="$router.push(`/dashboards/projects/edit/${item.raw?.id ?? item.id}`)"
-          >
-            Edit
-          </VBtn>
+                      <template #item.actions="{ item }">
+                  <VMenu>
+                    <template #activator="{ props }">
+                       <VBtn
+                            v-bind="props"
+                            size="small"
+                            color="primary"
+                            variant="elevated"
+                            class="d-flex align-center gap-1"
+                          >
+                            Actions
+                            <VIcon :icon="isActive ? 'mdi-chevron-up' : 'mdi-chevron-down'" />
+                          </VBtn>
+                    </template>
 
-          <VBtn
-            color="error"
-            size="small"
-            @click="deleteProject(item.raw?.id ?? item.id)"
-          >
-            Delete
-          </VBtn>
+                    <VList class="py-0">
+                      <VListItem
+                        @click="$router.push(`/dashboards/projects/edit/${item.raw?.id ?? item.id}`)"
+                      >
+                        <VIcon start>mdi-pencil</VIcon>
+                        Edit
+                      </VListItem>
 
-          <VBtn
-            color="primary"
-            size="small"
-            @click="$router.push(`/dashboards/projects/${item.raw?.id ?? item.id}/assignusers`)"
-          >
-            Users
-          </VBtn>
+                      <VListItem
+                        @click="deleteProject(item.raw?.id ?? item.id)"
+                      >
+                        <VIcon start>mdi-delete</VIcon>
+                        Delete
+                      </VListItem>
 
-          <VBtn
-            color="info"
-            size="small"
-            @click="$router.push(`/dashboards/projects/${item.raw?.id ?? item.id}/budgets`)"
-          >
-            Budget
-          </VBtn>
-        </div>
-      </template>
-    </VDataTable>
+                      <VListItem
+                        @click="$router.push(`/dashboards/projects/${item.raw?.id ?? item.id}/assignusers`)"
+                      >
+                        <VIcon start>mdi-account-multiple</VIcon>
+                        Users
+                      </VListItem>
+
+                      <VListItem
+                        @click="$router.push(`/dashboards/projects/${item.raw?.id ?? item.id}/budgets`)"
+                      >
+                        <VIcon start>mdi-cash</VIcon>
+                        Budget
+                      </VListItem>
+
+
+                       <VListItem @click="changeProjectStatus(item.raw?.id ?? item.id)">
+                          <template #prepend>
+                            <VIcon>mdi-sync</VIcon>
+                          </template>
+
+                          <template v-if="item.status == 1">
+                            Change Status to In-Active
+                          </template>
+
+                          <template v-else>
+                            Change Status to Active
+                          </template>
+                        </VListItem>
+
+
+                    </VList>
+                  </VMenu>
+                </template>
+
+            </VDataTable>
 
     <!-- Empty state -->
     <VCard v-else class="mt-6 pa-6 text-center" variant="tonal">
@@ -122,6 +151,26 @@ const getAuthHeaders = () => {
   return { Authorization: `Bearer ${decodeURIComponent(access)}`, Accept: "application/json" };
 };
 
+const changeProjectStatus = async (id) => {
+  try {
+    loading.value = true;
+
+    await axios.post(
+      `${apiBaseUrl}/changeProjectStatus`,
+      { id: id },
+      { headers: getAuthHeaders() } // ✅ add headers here
+    );
+
+    alert("Project status updated!");
+    fetchProjects(); // refresh list
+
+  } catch (error) {
+    console.error(error);
+    alert(error.response?.data?.message || "Failed to change status");
+  } finally {
+    loading.value = false;
+  }
+};
 // list
 const fetchProjects = async () => {
   loading.value = true;
@@ -141,6 +190,7 @@ const fetchProjects = async () => {
       end_date: p.end_date ?? "—",
       description: p.description ?? "—",
       budget: p.budget ?? "—",
+      status: p.status ?? "—",
       // created_at: p.created_at ?? "—",
     }));
   } catch (e) {

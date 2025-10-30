@@ -1,13 +1,16 @@
 <template>
   <div>
     <div class="d-flex justify-between align-center mb-4">
-      <div class="d-flex gap-2 align-center">
-        <VBtn variant="text" @click="$router.back()">← Back</VBtn>
-        <h3>Assign Users List</h3>
+      <div>
+        <h3 class="mb-1">Assign User To Project</h3>
+        <p v-if="project" class="text-sm text-gray">
+          <strong>Project:</strong> {{ project.name }} &nbsp; | &nbsp;
+          <strong>Code:</strong> {{ project.project_code }}
+        </p>
       </div>
 
       <VBtn color="primary" @click="openModal">
-        Add Assign User
+        Assign Users
       </VBtn>
     </div>
 
@@ -54,30 +57,26 @@ import AssignUsersModal from "./AssignUsersModal.vue";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 const route = useRoute();
-
 const projectId = computed(() => route.params.id);
 
 const headers = [
-  { title: "Code", key: "user_code", sortable: true },
-  { title: "Name", key: "name", sortable: true },
+  { title: "Employee Code", key: "user_code", sortable: true },
+  { title: "Employee Name", key: "name", sortable: true },
   { title: "Role", key: "role", sortable: true },
 ];
 
 const users = ref([]);
-const loading = ref(true);           // ⬅️ start as true
+const project = ref(null);
+const loading = ref(true);
 const modalOpen = ref(false);
 const errorMessage = ref("");
 
 // Fetch assigned users
 const fetchUsers = async () => {
-  if (!projectId.value) {
-    errorMessage.value = "Project ID is missing in the route.";
-    loading.value = false;
-    return;
-  }
-  loading.value = true;
-  errorMessage.value = "";
   try {
+    loading.value = true;
+    errorMessage.value = "";
+
     const res = await axios.get(
       `${apiBaseUrl}/projects/${encodeURIComponent(projectId.value)}/users/sync`,
       { headers: getAuthHeaders() }
@@ -86,8 +85,8 @@ const fetchUsers = async () => {
     const list = Array.isArray(res.data?.users)
       ? res.data.users
       : Array.isArray(res.data)
-        ? res.data
-        : [];
+      ? res.data
+      : [];
 
     users.value = list.map(u => ({
       id: u.id,
@@ -102,10 +101,28 @@ const fetchUsers = async () => {
   }
 };
 
-onMounted(fetchUsers);
+// Fetch project details (for title & code)
+const fetchProjectDetails = async () => {
+  try {
+    const res = await axios.get(`${apiBaseUrl}/projects/${encodeURIComponent(projectId.value)}`, {
+      headers: getAuthHeaders(),
+    });
+    project.value = res.data.data || res.data;
+  } catch (e) {
+    console.error("Failed to load project details:", e);
+  }
+};
+
+// Combined initial load
+onMounted(async () => {
+  await fetchProjectDetails();
+  await fetchUsers();
+});
 
 // Modal + refresh
-const openModal = () => { modalOpen.value = true; };
+const openModal = () => {
+  modalOpen.value = true;
+};
 const handleSaved = async () => {
   modalOpen.value = false;
   await fetchUsers();
@@ -126,10 +143,28 @@ function getCookie(name) {
 </script>
 
 <style scoped>
-.d-flex { display: flex; }
-.justify-between { justify-content: space-between; }
-.align-center { align-items: center; }
-.gap-2 { gap: 8px; }
-.mb-4 { margin-block-end: 16px; }
-.text-error { color: #c62828; }
+.d-flex {
+  display: flex;
+}
+.justify-between {
+  justify-content: space-between;
+}
+.align-center {
+  align-items: center;
+}
+.gap-2 {
+  gap: 8px;
+}
+.mb-4 {
+  margin-block-end: 16px;
+}
+.text-error {
+  color: #c62828;
+}
+.text-sm {
+  font-size: 0.9rem;
+}
+.text-gray {
+  color: #aaa;
+}
 </style>

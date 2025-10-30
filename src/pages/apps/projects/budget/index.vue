@@ -1,9 +1,12 @@
 <template>
   <div>
     <div class="d-flex justify-between align-center mb-4">
-      <div class="d-flex gap-2 align-center">
-        <VBtn variant="text" @click="$router.back()">← Back</VBtn>
-        <h3>Budgets List</h3>
+      <div>
+        <h3 class="mb-1">Budgets List</h3>
+        <p v-if="project" class="text-sm text-gray">
+          <strong>Project:</strong> {{ project.name }} &nbsp; | &nbsp;
+          <strong>Code:</strong> {{ project.project_code }}
+        </p>
       </div>
 
       <VBtn
@@ -33,7 +36,7 @@
 
       <template #item.actions="{ item }">
         <div class="d-flex gap-2">
-          <!--
+          <!-- Uncomment to enable editing
           <VBtn color="warning" size="small" @click="editBudget(item.id)">
             Edit
           </VBtn>
@@ -65,11 +68,7 @@
 import axios from "axios";
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import {
-  VBtn,
-  VCard, VCardText, VCardTitle,
-  VDataTable,
-} from "vuetify/components";
+import { VBtn, VCard, VCardText, VCardTitle, VDataTable } from "vuetify/components";
 
 const route = useRoute();
 const router = useRouter();
@@ -77,32 +76,32 @@ const router = useRouter();
 const projectId = computed(() => route.params.id);
 
 const headers = [
-  { title: "ID", key: "id", sortable: true },
+  { title: "BUDGET ID", key: "id", sortable: true },
   { title: "CATEGORY", key: "category", sortable: true },
   { title: "SUBCATEGORY", key: "subcategory", sortable: true },
-  { title: "ASSET CODE", key: "asset", sortable: true },
-  { title: "DESCRIPTION", key: "asset_description", sortable: false }, // NEW
-  { title: "QTY", key: "quantity", sortable: true },                   // NEW
+  { title: "ASSET CODE & NAME", key: "asset", sortable: true },
+  { title: "DESCRIPTION", key: "asset_description", sortable: false },
+  { title: "QTY", key: "quantity", sortable: true },
   { title: "AMOUNT", key: "amount", sortable: true },
   { title: "CREATED AT", key: "created_at", sortable: true },
   { title: "ACTIONS", key: "actions", sortable: false },
 ];
 
 const budgets = ref([]);
+const project = ref(null);
 const loading = ref(true);
 const errorMessage = ref("");
 
-// Map nested API fields for table
 const mappedBudgets = computed(() =>
   (budgets.value || []).map(b => ({
     id: b.id,
-    category: b.category?.title ?? "-",
-    subcategory: b.subcategory?.title ?? "-",
-    asset: b.asset?.code ?? "-",
-    asset_description: b.asset_description ?? "—",                // NEW
-    quantity: b.quantity != null ? Number(b.quantity) : 1,       // NEW (default 1)
+    category: b.asset_category_name ?? "-",
+    subcategory: b.asset_subcategory_name ?? "-",
+    asset: (b?.asset_code ?? "-") + " - " + (b?.asset_name ?? "-"),
+    asset_description: b.asset_description ?? "—",
+    quantity: b.quantity != null ? Number(b.quantity) : 1,
     amount: b.amount,
-    created_at: formatDateTime(b.created_at),
+    created_at: b.created_at,
   }))
 );
 
@@ -112,6 +111,7 @@ const fetchBudgets = async () => {
     loading.value = false;
     return;
   }
+
   loading.value = true;
   errorMessage.value = "";
   try {
@@ -122,20 +122,43 @@ const fetchBudgets = async () => {
         headers: getAuthHeaders(),
       }
     );
-    budgets.value = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
+    budgets.value = Array.isArray(res.data)
+      ? res.data
+      : (res.data?.data ?? []);
   } catch (e) {
-    errorMessage.value = e.response?.data?.message || "Failed to fetch budgets.";
+    errorMessage.value =
+      e.response?.data?.message || "Failed to fetch budgets.";
   } finally {
     loading.value = false;
   }
 };
 
-onMounted(fetchBudgets);
+// ✅ Fetch project details
+const fetchProjectDetails = async () => {
+  try {
+    const res = await axios.get(
+      `${import.meta.env.VITE_API_BASE_URL}/projects/${encodeURIComponent(projectId.value)}`,
+      { headers: getAuthHeaders() }
+    );
+    project.value = res.data.data || res.data;
+  } catch (e) {
+    console.error("Failed to load project details:", e);
+  }
+};
+
+onMounted(async () => {
+  await fetchProjectDetails();
+  await fetchBudgets();
+});
 
 const getAuthHeaders = () => {
   const access = getCookie("accessToken");
-  if (!access) throw new Error("Access token is missing. Please log in.");
-  return { Authorization: `Bearer ${decodeURIComponent(access)}`, Accept: "application/json" };
+  if (!access)
+    throw new Error("Access token is missing. Please log in.");
+  return {
+    Authorization: `Bearer ${decodeURIComponent(access)}`,
+    Accept: "application/json",
+  };
 };
 
 const getCookie = (name) => {
@@ -149,7 +172,10 @@ function formatAmount(val) {
   if (val === null || val === undefined || val === "") return "-";
   const num = Number(val);
   if (Number.isNaN(num)) return String(val);
-  return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return num.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 function formatDateTime(iso) {
@@ -190,4 +216,6 @@ const deleteBudget = async (id) => {
 .gap-2 { gap: 8px; }
 .mb-4 { margin-block-end: 16px; }
 .text-error { color: #c62828; }
+.text-sm { font-size: 0.9rem; }
+.text-gray { color: #aaa; }
 </style>

@@ -269,7 +269,7 @@ export const routes = [
     component: () => import('@/pages/apps/projects/assignusers/create.vue'),
     meta: { layout: 'default', navActiveLink: 'dashboards-projects' },
   },
-    {
+  {
     path: '/dashboards/projects/:id/assignusers/:assignusersId/edit',
     name: 'dashboards-project-assignusers-edit',
     component: () => import('@/pages/apps/projects/assignusers/edit.vue'),
@@ -382,4 +382,70 @@ export const routes = [
     component: () => import('@/pages/apps/support/view.vue'),
     meta: { layout: 'default', navActiveLink: 'dashboards-supports' },
   },
+
+  {
+    path: '/dashboards/asset-damage-report',
+    name: 'dashboards-asset-damage-report',
+    component: () => import('@/pages/apps/asset-damage-report/index.vue'),
+  },
+  {
+    path: '/dashboards/asset-damage-report/create',
+    name: 'dashboards-asset-damage-report-create',
+    component: () => import('@/pages/apps/asset-damage-report/create.vue'),
+  },
+  {
+    path: '/dashboards/asset-damage-report/detail/:id',
+    name: 'dashboards-asset-damage-report-detail',
+    component: () => import('@/pages/apps/asset-damage-report/detail.vue'),
+  },
+  {
+    path: '/dashboards/asset-missing-report',
+    name: 'dashboards-asset-missing-report',
+    component: () => import('@/pages/apps/asset-missing-report/index.vue'),
+  },
+  {
+    path: '/dashboards/asset-missing-report/detail/:id',
+    name: 'dashboards-asset-missing-report-detail',
+    component: () => import('@/pages/apps/asset-missing-report/detail.vue'),
+  },  
+  {
+    path: '/dashboards/asset-missing-report/create',
+    name: 'dashboards-asset-missing-report-create',
+    component: () => import('@/pages/apps/asset-missing-report/create.vue'),
+  },
+  {
+    path: '/dashboards/asset-scrap-report',
+    name: 'dashboards-asset-scrap-report',
+    component: () => import('@/pages/apps/asset-scrap-report/index.vue'),
+  },
+
+  {
+    path: '/dashboards/asset-scrap-report/create',
+    name: 'dashboards-asset-scrap-report-create',
+    component: () => import('@/pages/apps/asset-scrap-report/create.vue'),
+  },  
+
+    {
+    path: '/dashboards/asset-scrap-report/detail/:id',
+    name: 'dashboards-asset-scrap-report-detail',
+    component: () => import('@/pages/apps/asset-scrap-report/detail.vue'),
+  },
+  {
+    path: '/dashboards/policy-waiver-form',
+    name: 'dashboards-policy-waiver-form',
+    component: () => import('@/pages/apps/policy-waiver-form/index.vue'),
+  },
+
+  {
+    path: '/dashboards/policy-waiver-form/create',
+    name: 'dashboards-policy-waiver-form-create',
+    component: () => import('@/pages/apps/policy-waiver-form/create.vue'),
+  },  
+
+    {
+    path: '/dashboards/policy-waiver-form/detail/:id',
+    name: 'dashboards-policy-waiver-form-detail',
+    component: () => import('@/pages/apps/policy-waiver-form/detail.vue'),
+  }  
+
 ]

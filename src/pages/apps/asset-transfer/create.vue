@@ -162,8 +162,8 @@
           <VSelect
             v-model="form.plant_manager_status"
             :items="[
-              { title: 'Approve', value: 'approved' },
-              { title: 'Disapprove', value: 'disapproved' }
+              { title: 'Approve', value: 'true' },
+              { title: 'Disapprove', value: 'false' }
             ]"
             label="Plant Manager Status"
             item-title="title"
@@ -185,8 +185,8 @@
           <VSelect
             v-model="form.project_incharge_status"
             :items="[
-              { title: 'Approve', value: 'approved' },
-              { title: 'Disapprove', value: 'disapproved' }
+              { title: 'Approve', value: 'true' },
+              { title: 'Disapprove', value: 'false' }
             ]"
             label="Project In-Charge Status"
             item-title="title"
@@ -332,7 +332,8 @@ import {
   VSelect, VSwitch, VTextField, VTextarea
 } from 'vuetify/components'
 
-const apiBaseUrl = 'https://dm.kreashionsoftwarehouse.com/astraConst/public/api'
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL // should end with /api
+
 const router = useRouter()
 
 // Projects
@@ -366,10 +367,10 @@ const form = ref({
   driver_id: null,
   contact_details: '',
   vehicle_plate_no: '',
-  plant_manager_status: 'Approve',
+  plant_manager_status: '',
   plant_manager_remarks: '',
   plant_manager_status_date: today,
-  project_incharge_status: 'Approve',
+  project_incharge_status: '',
   project_incharge_remarks: '',
   project_incharge_status_date: today,
   received_from: null,

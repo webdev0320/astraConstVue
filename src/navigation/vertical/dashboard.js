@@ -104,6 +104,22 @@ export default [
         to: 'dashboards-rental-required',
       },
       {
+        title: 'Asset Damage Report',
+        to: 'dashboards-asset-damage-report',
+      },
+      {
+        title: 'Asset Missing Report',
+        to: 'dashboards-asset-missing-report',
+      },
+      {
+        title: 'Asset Scrap Report',
+        to: 'dashboards-asset-scrap-report',
+      },
+      {
+        title: 'Policy Waiver Form',
+        to: 'dashboards-policy-waiver-form',
+      },
+      {
         title: 'Assets Categories',
         to: 'dashboards-assetcategories',
       },

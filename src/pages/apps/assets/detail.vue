@@ -31,7 +31,6 @@
             <div class="kv"><span class="v"><strong>Asset Type</strong></span><span class="v">{{ show(asset.asset_type) }}</span></div>
             <div class="kv"><span class="v"><strong>Brand</strong></span><span class="v">{{ show(asset.brand) }}</span></div>
             <div class="kv"><span class="v"><strong>Model</strong></span><span class="v">{{ show(asset.model) }}</span></div>
-            <div class="kv"><span class="v"><strong>Model #</strong></span><span class="v">{{ show(asset.model_number) }}</span></div>
             <div class="kv"><span class="v"><strong>Serial #</strong></span><span class="v">{{ show(asset.serial_number) }}</span></div>
             <div class="kv"><span class="v"><strong>Plate #</strong></span><span class="v">{{ show(asset.plate_number) }}</span></div>
             <div class="kv"><span class="v"><strong>Manufacturing Year</strong></span><span class="v">{{ show(asset.manufacturing_year) }}</span></div>
@@ -81,6 +80,45 @@
           </table>
         </div>
 
+
+          <!-- ===================== -->
+        <!-- Custodians List       -->
+        <!-- ===================== -->
+        <VCol cols="12" class="mt-6">
+          <h4 class="section-title">Custodians</h4>
+          <VDivider class="my-3" />
+        </VCol>
+
+        <VCol cols="12">
+          <VCard v-if="loadingCustodians" class="p-4 text-center">
+            <VProgressCircular indeterminate color="primary" />
+            <p>Loading custodians...</p>
+          </VCard>
+
+          <VTable v-else-if="custodians.length">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Employee</th>
+                <th>Asset Code</th>
+                <th>Asset Name</th>
+                <th>Handover Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(c, index) in custodians" :key="c.id">
+                <td>{{ index + 1 }}</td>
+                <td>{{ c.user?.name || 'N/A' }}</td>
+                <td>{{ c.asset?.code || 'N/A' }}</td>
+                <td>{{ c.asset?.name || 'N/A' }}</td>
+                <td>{{ formatDate(c.handover_date) }}</td>
+              </tr>
+            </tbody>
+          </VTable>
+
+          <div v-else class="text-muted">No custodians found for this asset.</div>
+        </VCol>
+
         <!-- Media & QR -->
         <div class="mt-6">
           <h4>QR Code</h4>
@@ -104,10 +142,6 @@
       </VCardText>
     </VCard>
 
-    <VCard>
-
-
-    </VCard>
   </div>
 </template>
 
@@ -160,6 +194,9 @@ const fetchDetail = async () => {
         ? [data.images]
         : [],
     };
+
+  fetchCustodians(id)    
+
   } catch (err) {
     console.error(err);
     errorMessage.value = err.response?.data?.message || "Failed to load asset details.";
@@ -190,7 +227,12 @@ const printPage = () => {
             margin: 10px 0;
           }
 
-          /* Keep grid layout visible */
+          h2 {
+            text-align: center;
+            margin-bottom: 20px;
+          }
+
+          /* Grid layout */
           .detail-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -204,13 +246,6 @@ const printPage = () => {
             gap: 6px;
             align-items: start;
             margin-bottom: 4px;
-          }
-
-          .k {
-            font-weight: bold;
-            color: #333;
-            text-align: right;
-            padding-right: 6px;
           }
 
           .v {
@@ -235,13 +270,32 @@ const printPage = () => {
             font-weight: 600;
           }
 
-          /* Hide images and buttons */
-          img, .v-btn, .imageSection {
+          /* Hide buttons only */
+          .v-btn, .hide-on-print {
             display: none !important;
+          }
+
+          /* Show images and QR */
+          img {
+            max-width: 150px;
+            height: auto;
+            display: inline-block;
+          }
+
+          .media-grid {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            margin-top: 10px;
+          }
+
+          .media-item {
+            text-align: center;
           }
         </style>
       </head>
       <body>
+        <h2>Asset Detail</h2>
         ${printContent}
       </body>
     </html>
@@ -253,7 +307,44 @@ const printPage = () => {
 };
 
 
-onMounted(fetchDetail);
+
+const custodians = ref([])
+const loadingCustodians = ref(false)
+
+/* Format date nicely */
+const formatDate = (dateStr) => {
+  if (!dateStr) return '—'
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('en-GB', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
+/* Fetch custodians by asset ID */
+const fetchCustodians = async (assetId) => {
+  console.log(assetId);
+
+  if (!assetId) return
+  try {
+    loadingCustodians.value = true
+    const res = await axios.get(`${apiBaseUrl}/asset-custodians`, {
+      params: { id: assetId },
+      headers: getAuthHeaders(),
+    })
+    custodians.value = Array.isArray(res.data?.data) ? res.data.data : []
+  } catch (err) {
+    console.error('Failed to load custodians', err)
+    custodians.value = []
+  } finally {
+    loadingCustodians.value = false
+  }
+}
+
+onMounted(() => {
+  fetchDetail()
+})
 </script>
 
 <style>

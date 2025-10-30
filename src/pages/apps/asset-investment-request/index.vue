@@ -208,7 +208,7 @@ const headers = [
   { title: "# Air Number", key: "air_number", sortable: true },
   { title: "Project", key: "project_name" },
   { title: "Created By", key: "user_display", sortable: false },
-  { title: "Date", key: "date" },
+  { title: "Asset Req. Date", key: "date" },
   { title: "Planned Cost", key: "planned_cost" },
   { title: "Actions", key: "actions", sortable: false },
 ];

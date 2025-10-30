@@ -1,26 +1,47 @@
 <template>
-  <div>
+  <div class="pa-6">
+    <!-- 🔹 Header -->
     <div class="d-flex justify-between align-center mb-4">
       <h3>Departments List</h3>
-      <VBtn color="primary" class="ms-auto" @click="$router.push('/dashboards/departments/create')">
+      <VBtn
+        color="primary"
+        class="ms-auto"
+        @click="$router.push('/dashboards/departments/create')"
+        :disabled="isLoading"
+      >
         Create Department
       </VBtn>
     </div>
 
+    <!-- 🔹 Error Message -->
+    <VAlert v-if="errorMessage" type="error" class="mb-4">
+      {{ errorMessage }}
+    </VAlert>
+
+    <!-- 🔹 Loading Spinner -->
+    <div v-if="isLoading" class="d-flex justify-center my-8">
+      <VProgressCircular indeterminate color="primary" size="48" />
+    </div>
+
+    <!-- 🔹 Departments Table -->
     <VDataTable
-      v-if="departments.length > 0"
+      v-else
       :headers="headers"
       :items="departments"
       :items-per-page="10"
+      class="mt-4"
     >
-      <!-- DESCRIPTION -->
+      <!-- DESCRIPTION COLUMN -->
       <template #item.description="{ item }">
-        <div class="desc-cell clamp-2" :title="item.raw?.description ?? item.description">
+        <div
+          class="desc-cell clamp-2"
+          :title="item.raw?.description ?? item.description"
+        >
           {{ truncateSmart(item.raw?.description ?? item.description, 20, 120) }}
         </div>
       </template>
 
-      <!-- ACTIONS -->
+      <!-- ACTIONS COLUMN -->
       <template #item.actions="{ item }">
         <div class="d-flex gap-2">
           <VBtn
@@ -39,10 +60,14 @@
           </VBtn>
         </div>
       </template>
-    </VDataTable>
 
-    <p v-else-if="errorMessage">{{ errorMessage }}</p>
-    <p v-else>Loading...</p>
+      <!-- 🔹 NO DATA SLOT -->
+      <template #no-data>
+        <div class="py-8 text-center">
+          No departments found.
+        </div>
+      </template>
+    </VDataTable>
 
     <!-- 🔹 Modal for User Selection -->
     <VDialog v-model="userModal" max-width="500px">
@@ -78,11 +103,15 @@ import {
   VCardTitle,
   VCardText,
   VCardActions,
-  VSelect
+  VSelect,
+  VAlert,
+  VProgressCircular,
 } from "vuetify/components";
 
-const apiBaseUrl = "https://dm.kreashionsoftwarehouse.com/astraConst/public/api";
+// Base API URL
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
+// 🔹 Table Headers
 const headers = [
   { title: "NAME", key: "name" },
   { title: "CODE", key: "code" },
@@ -90,20 +119,30 @@ const headers = [
   { title: "ACTIONS", key: "actions", sortable: false },
 ];
 
+// 🔹 Reactive State
 const departments = ref([]);
 const errorMessage = ref("");
+const isLoading = ref(true);
 
-// 🔹 for User Modal
+// 🔹 User Modal State
 const userModal = ref(false);
 const users = ref([]);
 const selectedUser = ref(null);
 const currentdepartmentId = ref(null);
 
+// 🔹 Helpers
+const getCookie = (name) => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(";").shift();
+  return null;
+};
+
+// 🔹 Smart Text Truncate
 const truncateSmart = (text, wordLimit = 20, charFallback = 120) => {
   if (!text) return "—";
   const str = String(text).trim();
   const words = str.split(/\s+/).filter(Boolean);
-
   if (words.length > 1) {
     return words.length > wordLimit
       ? words.slice(0, wordLimit).join(" ") + "..."
@@ -112,22 +151,20 @@ const truncateSmart = (text, wordLimit = 20, charFallback = 120) => {
   return str.length > charFallback ? str.slice(0, charFallback) + "..." : str;
 };
 
-const getCookie = (name) => {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(";").shift();
-  return null;
-};
-
 // 🔹 Fetch Departments
 const fetchDepartments = async () => {
+  isLoading.value = true;
+  errorMessage.value = "";
   try {
     const accessToken = getCookie("accessToken");
     if (!accessToken) throw new Error("Access token is missing. Please log in.");
     const decodedToken = decodeURIComponent(accessToken);
 
     const res = await axios.get(`${apiBaseUrl}/departments`, {
-      headers: { Authorization: `Bearer ${decodedToken}`, Accept: "application/json" },
+      headers: {
+        Authorization: `Bearer ${decodedToken}`,
+        Accept: "application/json",
+      },
     });
 
     const list = Array.isArray(res.data)
@@ -146,10 +183,10 @@ const fetchDepartments = async () => {
     console.error("Error fetching departments:", error);
     errorMessage.value =
       error.response?.data?.message || "Failed to fetch departments.";
+  } finally {
+    isLoading.value = false;
   }
 };
-
-onMounted(fetchDepartments);
 
 // 🔹 Delete Department
 const deleteDepartment = async (departmentId) => {
@@ -159,7 +196,10 @@ const deleteDepartment = async (departmentId) => {
     const decodedToken = decodeURIComponent(accessToken);
 
     await axios.delete(`${apiBaseUrl}/departments/${departmentId}`, {
-      headers: { Authorization: `Bearer ${decodedToken}`, Accept: "application/json" },
+      headers: {
+        Authorization: `Bearer ${decodedToken}`,
+        Accept: "application/json",
+      },
     });
 
     departments.value = departments.value.filter((p) => p.id !== departmentId);
@@ -170,42 +210,77 @@ const deleteDepartment = async (departmentId) => {
   }
 };
 
+// 🔹 Assign User (Placeholder)
+const assignUser = () => {
+  alert(`User ${selectedUser.value} assigned to department ${currentdepartmentId.value}`);
+  userModal.value = false;
+};
+
+onMounted(fetchDepartments);
 </script>
 
-<style>
+<style scoped>
 .v-data-table {
   margin-top: 16px;
 }
+
 .d-flex {
   display: flex;
 }
+
 .justify-between {
   justify-content: space-between;
 }
+
 .align-center {
   align-items: center;
 }
+
+.justify-center {
+  justify-content: center;
+}
+
 .ms-auto {
   margin-left: auto;
 }
+
 .gap-2 {
   gap: 8px;
 }
+
 .mb-4 {
   margin-bottom: 16px;
 }
 
+.mt-4 {
+  margin-top: 16px;
+}
+
 /* 🔹 Clamp and handle long unspaced strings */
 .desc-cell {
-  max-width: 480px; /* adjust to your layout */
+  max-width: 480px;
   overflow: hidden;
   text-overflow: ellipsis;
-  overflow-wrap: anywhere; /* break long words with no spaces */
+  overflow-wrap: anywhere;
   word-break: break-word;
 }
+
 .clamp-2 {
   display: -webkit-box;
-  -webkit-line-clamp: 2; /* show max 2 lines */
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+}
+
+.py-8 {
+  padding: 32px 0;
+}
+.text-center {
+  text-align: center;
+}
+.text-gray-600 {
+  color: rgba(0, 0, 0, 0.6);
+}
+.my-8 {
+  margin: 32px 0;
 }
 </style>

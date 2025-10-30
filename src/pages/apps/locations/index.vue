@@ -1,21 +1,42 @@
 <template>
-  <div>
+  <div class="pa-6">
+    <!-- 🔹 Header -->
     <div class="d-flex justify-between align-center mb-4">
       <h3>Locations List</h3>
-      <VBtn color="primary" class="ms-auto" @click="$router.push('/dashboards/locations/create')">
+      <VBtn
+        color="primary"
+        class="ms-auto"
+        @click="$router.push('/dashboards/locations/create')"
+        :disabled="isLoading"
+      >
         Create Location
       </VBtn>
     </div>
 
+    <!-- 🔹 Error Message -->
+    <VAlert v-if="errorMessage" type="error" class="mb-4">
+      {{ errorMessage }}
+    </VAlert>
+
+    <!-- 🔹 Loading Spinner -->
+    <div v-if="isLoading" class="d-flex justify-center my-8">
+      <VProgressCircular indeterminate color="primary" size="48" />
+    </div>
+
+    <!-- 🔹 Locations Table -->
     <VDataTable
-      v-if="locations.length > 0"
+      v-else
       :headers="headers"
       :items="locations"
       :items-per-page="10"
+      class="mt-4"
     >
       <!-- DESCRIPTION -->
       <template #item.description="{ item }">
-        <div class="desc-cell clamp-2" :title="item.raw?.description ?? item.description">
+        <div
+          class="desc-cell clamp-2"
+          :title="item.raw?.description ?? item.description"
+        >
           {{ truncateSmart(item.raw?.description ?? item.description, 20, 120) }}
         </div>
       </template>
@@ -39,10 +60,14 @@
           </VBtn>
         </div>
       </template>
-    </VDataTable>
 
-    <p v-else-if="errorMessage">{{ errorMessage }}</p>
-    <p v-else>Loading...</p>
+      <!-- 🔹 NO DATA SLOT -->
+      <template #no-data>
+        <div class="py-8 text-center">
+          No Locations found.
+        </div>
+      </template>
+    </VDataTable>
 
     <!-- 🔹 Modal for User Selection -->
     <VDialog v-model="userModal" max-width="500px">
@@ -69,20 +94,23 @@
 
 <script setup>
 import axios from "axios";
-import { onMounted, ref } from "vue";
+import { ref, onMounted } from "vue";
 import {
   VBtn,
-  VCard,
-  VCardActions,
-  VCardText,
-  VCardTitle,
   VDataTable,
   VDialog,
-  VSelect
+  VCard,
+  VCardTitle,
+  VCardText,
+  VCardActions,
+  VSelect,
+  VAlert,
+  VProgressCircular,
 } from "vuetify/components";
 
-const apiBaseUrl = "https://dm.kreashionsoftwarehouse.com/astraConst/public/api";
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
+// 🔹 Table Headers
 const headers = [
   { title: "NAME", key: "name" },
   { title: "CODE", key: "code" },
@@ -90,15 +118,26 @@ const headers = [
   { title: "ACTIONS", key: "actions", sortable: false },
 ];
 
+// 🔹 Reactive State
 const locations = ref([]);
 const errorMessage = ref("");
+const isLoading = ref(true);
 
-// 🔹 for User Modal
+// 🔹 User Modal
 const userModal = ref(false);
 const users = ref([]);
 const selectedUser = ref(null);
 const currentlocationId = ref(null);
 
+// 🔹 Helpers
+const getCookie = (name) => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(";").shift();
+  return null;
+};
+
+// 🔹 Text Truncate Helper
 const truncateSmart = (text, wordLimit = 20, charFallback = 120) => {
   if (!text) return "—";
   const str = String(text).trim();
@@ -112,15 +151,10 @@ const truncateSmart = (text, wordLimit = 20, charFallback = 120) => {
   return str.length > charFallback ? str.slice(0, charFallback) + "..." : str;
 };
 
-const getCookie = (name) => {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(";").shift();
-  return null;
-};
-
-// 🔹 Fetch locations
+// 🔹 Fetch Locations
 const fetchLocations = async () => {
+  isLoading.value = true;
+  errorMessage.value = "";
   try {
     const accessToken = getCookie("accessToken");
     if (!accessToken) throw new Error("Access token is missing. Please log in.");
@@ -146,12 +180,12 @@ const fetchLocations = async () => {
     console.error("Error fetching locations:", error);
     errorMessage.value =
       error.response?.data?.message || "Failed to fetch locations.";
+  } finally {
+    isLoading.value = false;
   }
 };
 
-onMounted(fetchLocations);
-
-// 🔹 Delete location
+// 🔹 Delete Location
 const deleteLocation = async (locationId) => {
   if (!confirm("Are you sure you want to delete this location?")) return;
   try {
@@ -163,18 +197,25 @@ const deleteLocation = async (locationId) => {
     });
 
     locations.value = locations.value.filter((p) => p.id !== locationId);
-    alert("location deleted successfully!");
+    alert("Location deleted successfully!");
   } catch (error) {
     console.error("Error deleting location:", error);
     alert(error.response?.data?.message || "Failed to delete location.");
   }
 };
 
+// 🔹 Assign User (Placeholder)
+const assignUser = () => {
+  alert(`User ${selectedUser.value} assigned to location ${currentlocationId.value}`);
+  userModal.value = false;
+};
+
+onMounted(fetchLocations);
 </script>
 
-<style>
+<style scoped>
 .v-data-table {
-  margin-block-start: 16px;
+  margin-top: 16px;
 }
 
 .d-flex {
@@ -189,8 +230,12 @@ const deleteLocation = async (locationId) => {
   align-items: center;
 }
 
+.justify-center {
+  justify-content: center;
+}
+
 .ms-auto {
-  margin-inline-start: auto;
+  margin-left: auto;
 }
 
 .gap-2 {
@@ -198,21 +243,41 @@ const deleteLocation = async (locationId) => {
 }
 
 .mb-4 {
-  margin-block-end: 16px;
+  margin-bottom: 16px;
+}
+
+.mt-4 {
+  margin-top: 16px;
 }
 
 /* 🔹 Clamp and handle long unspaced strings */
 .desc-cell {
+  max-width: 480px;
   overflow: hidden;
-  max-inline-size: 480px; /* adjust to your layout */
-  overflow-wrap: anywhere; /* break long words with no spaces */
   text-overflow: ellipsis;
+  overflow-wrap: anywhere;
   word-break: break-word;
 }
 
 .clamp-2 {
   display: -webkit-box;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2; /* show max 2 lines */
+}
+
+.py-8 {
+  padding: 32px 0;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-gray-600 {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.my-8 {
+  margin: 32px 0;
 }
 </style>

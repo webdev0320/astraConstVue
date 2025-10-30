@@ -5,6 +5,7 @@ import { registerPlugins } from '@core/utils/plugins'
 // Styles
 import '@core/scss/template/index.scss'
 import '@styles/styles.scss'
+import '@vueup/vue-quill/dist/vue-quill.snow.css'
 
 
 // src/main.js

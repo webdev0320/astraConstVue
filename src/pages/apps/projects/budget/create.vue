@@ -1,7 +1,6 @@
 <template>
   <div>
     <div class="d-flex justify-between align-center mb-4">
-      <VBtn variant="text" @click="$router.back()">← Back</VBtn>
       <h3>Create Budget</h3>
     </div>
 
@@ -21,10 +20,9 @@
               @update:modelValue="onCategoryChange"
               hide-details="auto"
               variant="outlined"
-              density="compact"
               clearable
             />
-            <small class="text-medium-emphasis">Category choose karen → subcategories load hongi</small>
+
           </VCol>
 
           <!-- Subcategory -->
@@ -39,10 +37,9 @@
               @update:modelValue="onSubCategoryChange"
               hide-details="auto"
               variant="outlined"
-              density="compact"
               clearable
             />
-            <small class="text-medium-emphasis">Selected category ki related subcategories</small>
+
           </VCol>
 
           <!-- Asset (optional) -->
@@ -58,10 +55,9 @@
               return-object
               hide-details="auto"
               variant="outlined"
-              density="compact"
               clearable
             />
-            <small class="text-medium-emphasis">(Optional) Asset na select karne par bhi record add ho jayega.</small>
+
           </VCol>
 
           <!-- Quantity (optional UI; defaults to 1) -->
@@ -73,7 +69,6 @@
               min="1"
               step="1"
               variant="outlined"
-              density="compact"
               hide-details="auto"
             />
           </VCol>
@@ -86,20 +81,18 @@
               type="number"
               min="0"
               step="0.01"
-              prefix="Rs"
+              prefix="SAR"
               variant="outlined"
-              density="compact"
               hide-details="auto"
             />
           </VCol>
 
           <!-- Asset Description (optional) -->
-          <VCol cols="12" md="3">
+          <VCol cols="12" md="12">
             <VTextField
               v-model="budget.asset_description"
               label="Asset Description (Optional)"
               variant="outlined"
-              density="compact"
               hide-details="auto"
               clearable
             />
@@ -116,7 +109,7 @@
           <VCol cols="12" md="8" class="d-flex align-end justify-end">
             <div class="text-end">
               <div class="text-medium-emphasis">Records: <b>{{ budgetRecords.length }}</b></div>
-              <div class="text-medium-emphasis">Total: <b>{{ formatAmount(totalAmount) }}</b></div>
+              <div class="text-medium-emphasis">Total: <b>SAR {{ formatAmount(totalAmount) }}</b></div>
             </div>
           </VCol>
         </VRow>
@@ -408,10 +401,23 @@ const saveAllBudgets = async () => {
   }
 };
 
-// ------------- Validation + totals -------------
+/*// ------------- Validation + totals -------------
 const isFormValid = computed(() =>
   !!(selectedCategoryId.value && selectedSubCategoryId.value && Number(budget.value.amount) > 0 && Number(budget.value.quantity || 1) > 0)
-);
+);*/
+
+const isFormValid = computed(() => {
+  const hasCategory = !!selectedCategoryId.value;
+  const hasSubCategory = !!selectedSubCategoryId.value;
+  const hasAmount = Number(budget.value.amount) > 0;
+  const hasQty = Number(budget.value.quantity || 1) > 0;
+
+  // ✅ At least asset OR description must be filled
+  const hasAssetOrDescription = !!selectedAsset.value || !!budget.value.asset_description?.trim();
+
+  return hasCategory && hasSubCategory && hasAmount && hasQty && hasAssetOrDescription;
+});
+
 const totalAmount = computed(() =>
   budgetRecords.value.reduce((sum, r) => sum + Number(r.amount || 0), 0)
 );

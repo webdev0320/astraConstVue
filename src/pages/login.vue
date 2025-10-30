@@ -25,13 +25,13 @@ const refVForm = ref()
 const credentials = ref({ email: '', password: '' })
 const rememberMe = ref(false)
 const isSubmitting = ref(false)
-
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL // should end with /api
 const login = async () => {
   if (isSubmitting.value) return
   isSubmitting.value = true
 
   try {
-    const res = await $api('https://dm.kreashionsoftwarehouse.com/astraConst/public/api/login', {
+  const res = await $api(`${apiBaseUrl}/login`, {
       method: 'POST',
       body: {
         email: credentials.value.email,

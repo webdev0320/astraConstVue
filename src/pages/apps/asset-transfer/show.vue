@@ -184,7 +184,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { VAlert, VBtn, VSkeletonLoader } from 'vuetify/components'
 
-const apiBaseUrl = 'https://dm.kreashionsoftwarehouse.com/astraConst/public/api'
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL // should end with /api
+
 const defaultProject = '10006 BISHA PROJECT'
 const logoSrc = '/astra-logo.png'
 

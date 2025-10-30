@@ -36,17 +36,27 @@
           <!-- Air Number -->
             
           <!-- Date -->
-         <VCol cols="12" md="4">
-          <VTextField
-            v-model="date"
-            type="date"
-            label="Asset Required Date"
-            variant="outlined"
-            hide-details="auto"
-            :error-messages="dateError"
-          />
-        </VCol>
-          
+          <VCol cols="12" md="4">
+            <VTextField
+              v-model="date"
+              type="date"
+              label="Date"
+              variant="outlined"
+              hide-details="auto"
+              :error-messages="topErrors.date"
+            />
+          </VCol>
+
+          <!-- Description -->
+          <VCol cols="12" md="12" class="py-5">
+            <VTextarea
+              v-model="line.description"
+              label="Description"
+              variant="outlined"
+              hide-details="auto"
+              clearable
+            />
+          </VCol>
 
           <!-- Category -->
           <VCol cols="12" md="3" class="py-5">
@@ -86,7 +96,7 @@
             <VSelect
               v-model="selectedAsset"
               :items="assets"
-              :item-title="asset => `${asset.code} - ${asset.title}`"
+              item-title="code"
               item-value="id"
               label="Select Asset (Optional)"
               :loading="loading.assets"
@@ -98,31 +108,6 @@
             />
           </VCol>
 
-
-           <!-- Request Type -->
-          <VCol cols="12" md="3" class="py-5">
-            <VSelect
-              v-model="line.request_type"
-              :items="REQUEST_TYPE_OPTIONS"
-              label="Request Type"
-              variant="outlined"
-              hide-details="auto"
-              clearable
-            />
-          </VCol>
-
-          <!-- Quantity -->
-          <VCol cols="12" md="3" class="py-5">
-            <VTextField
-              v-model.number="line.quantity"
-              label="Qty"
-              type="number"
-              min="1"
-              step="1"
-              variant="outlined"
-              hide-details="auto"
-            />
-          </VCol>
 
 
           <VCol cols="12" md="3" class="py-5">
@@ -151,7 +136,18 @@
             />
           </VCol>
 
-          
+          <!-- Quantity -->
+          <VCol cols="12" md="3" class="py-5">
+            <VTextField
+              v-model.number="line.quantity"
+              label="Qty"
+              type="number"
+              min="1"
+              step="1"
+              variant="outlined"
+              hide-details="auto"
+            />
+          </VCol>
 
           <!-- Planned Cost (auto) -->
           <VCol cols="12" md="3" class="py-5">
@@ -166,13 +162,12 @@
             />
           </VCol>
 
-         
-
-          <!-- Description -->
-          <VCol cols="12" md="12" class="py-5">
-            <VTextarea
-              v-model="line.description"
-              label="Detailed Asset Description"
+          <!-- Request Type -->
+          <VCol cols="12" md="3" class="py-5">
+            <VSelect
+              v-model="line.request_type"
+              :items="REQUEST_TYPE_OPTIONS"
+              label="Request Type"
               variant="outlined"
               hide-details="auto"
               clearable
@@ -183,26 +178,79 @@
           <VCol cols="12" md="12" class="py-5">
             <VTextarea
               v-model="line.reason"
-              label="Reasons/Purpose of the Investment"
+              label="Reason"
               variant="outlined"
               hide-details="auto"
               clearable
             />
           </VCol>
 
-        
+          <!-- Add Button -->
+          <VCol cols="12" md="9" class="d-flex align-end">
+            <VBtn color="primary" @click="addRecord" :disabled="!canAddLine">
+              Add
+            </VBtn>
+          </VCol>
+
+          <!-- Summary -->
+          <VCol cols="12" md="3" class="d-flex align-end justify-end">
+            <div class="text-end">
+              <div class="text-medium-emphasis">Records: <b>{{ records.length }}</b></div>
+              <div class="text-medium-emphasis">
+                Planned Total: <b>{{ formatAmount(plannedTotal) }}</b>
+              </div>
+            </div>
+          </VCol>
         </VRow>
+
+        <!-- Chips -->
+        <div v-if="records.length" class="mt-4">
+          <VChip
+            v-for="(r, idx) in records"
+            :key="idx"
+            class="ma-1"
+            closable
+            @click:close="removeRecord(r)"
+          >
+            {{ r.asset_code }} — {{ r.request_type }} — Qty: {{ r.quantity }} — {{ formatAmount(r.planned_cost) }}
+            <template v-if="r.description"> — {{ r.description }}</template>
+          </VChip>
+        </div>
+
+        <!-- Table -->
+        <VDataTable
+          v-if="records.length"
+          :headers="headers"
+          :items="records"
+          :items-per-page="5"
+          class="mt-4"
+        >
+          <template #item.unit_cost="{ item }">
+            {{ formatAmount(item.unit_cost) }}
+          </template>
+
+          <template #item.planned_cost="{ item }">
+            {{ formatAmount(item.planned_cost) }}
+          </template>
+
+          <template #item.actions="{ item }">
+            <VBtn color="error" size="small" @click="removeRecord(item)">
+              Delete
+            </VBtn>
+          </template>
+        </VDataTable>
 
         <!-- Save -->
         <div class="d-flex gap-2 mt-4">
           <VBtn
-              color="primary"
-              type="submit"
-              :loading="saving"
-            >
-              Submit Request
-            </VBtn>
-
+            color="primary"
+            @click="saveAll"
+            :loading="saving"
+            :disabled="!canSave"
+          >
+            Save All Requests
+          </VBtn>
+          <VBtn variant="text" @click="clearAll" :disabled="!records.length">Clear</VBtn>
         </div>
       </VForm>
     </VCard>
@@ -249,35 +297,7 @@ const line = ref({
   reason: "",
 });
 
-watch(selectedAsset, (asset) => {
-  if (asset) {
-    line.value.asset_life_period = asset.useful_life
-    line.value.unit_cost = asset.price
-  } else {
-    line.value.asset_life_period = null
-    line.value.unit_cost = null
-  }
-})
-
-
-
-const dateError = ref("");
-
-watch(date, (newVal) => {
-  if (!newVal) {
-    dateError.value = "";
-    return;
-  }
-
-  const today = new Date().setHours(0,0,0,0);
-  const selected = new Date(newVal).setHours(0,0,0,0);
-
-  if (selected < today) {
-    dateError.value = "Start date is older than today.";
-  } else {
-    dateError.value = "";
-  }
-});
+const records = ref([]);
 
 /* ------------- Headers ------------- */
 const headers = [
@@ -434,19 +454,94 @@ const getCookie = (name) => {
   return null;
 };
 
-
-/* ------------- Save ------------- */
-const canSave = computed(() =>
-  Number(selectedProjectId.value) > 0 &&
-  selectedCategoryId.value &&
-  selectedSubCategoryId.value &&
-  Number(line.value.unit_cost) > 0 &&
-  Number(line.value.quantity) > 0 &&
-  date.value
+/* ------------- Derived + actions ------------- */
+const canAddLine = computed(() =>
+  !!(
+    selectedCategoryId.value &&
+    selectedSubCategoryId.value &&
+    Number(line.value.quantity || 1) > 0 &&
+    Number(line.value.unit_cost) > 0 &&
+    Number(line.value.planned_cost) >= 0 &&
+    (line.value.request_type?.length > 0)
+  )
 );
 
+const addRecord = () => {
+  if (!canAddLine.value) return;
+
+  const a    = selectedAsset.value || null;
+  const qty  = Number(line.value.quantity || 1);
+  const unit = Number(line.value.unit_cost || 0);
+  const total = Number(line.value.planned_cost ?? (unit * qty) ?? 0);
+  const desc = (line.value.description || "").trim();
+  const rsn  = (line.value.reason || "").trim();
+  const type = line.value.request_type || "NEW";
+  const asset_life_period = line.value.asset_life_period;
+
+  const recordKey = [
+    selectedCategoryId.value,
+    selectedSubCategoryId.value,
+    a?.id ?? "none",
+    type,
+    asset_life_period,
+    desc.toLowerCase(),
+    rsn.toLowerCase(),
+    unit.toFixed(2)
+  ].join("|");
+
+  const existing = records.value.find(r => r.__key === recordKey);
+  if (existing) {
+    existing.quantity     = Number(existing.quantity || 0) + qty;
+    existing.planned_cost = Number((existing.planned_cost + total).toFixed(2));
+  } else {
+    records.value.push({
+      __key: recordKey,
+      asset_category_id: Number(selectedCategoryId.value),
+      asset_sub_category_id: Number(selectedSubCategoryId.value),
+      asset_id: a?.id ?? null,
+      asset_life_period : asset_life_period,
+      description: desc || null,
+      request_type: type,
+      quantity: qty,
+      unit_cost: unit,
+      planned_cost: total,
+      reason: rsn || null,
+
+      asset_code: a?.code ?? "—",
+      category_name: categoryNameById(selectedCategoryId.value),
+      subcategory_name: subcategoryNameById(selectedSubCategoryId.value),
+    });
+  }
+
+  // Reset line inputs
+  selectedCategoryId.value    = null;
+  selectedSubCategoryId.value = null;
+  selectedAsset.value         = null;
+  assets.value                = [];
+  line.value.unit_cost        = null;
+  line.value.planned_cost     = null;
+  line.value.quantity         = 1;
+  line.value.request_type     = "NEW";
+  line.value.description      = "";
+  line.value.reason           = "";
+  line.value.asset_life_period      = "";
+};
+
+const removeRecord = (item) => {
+  records.value = records.value.filter(r => r !== item);
+};
+const clearAll = () => { records.value = []; };
+
+/* ------------- Save ------------- */
+const canSave = computed(() => {
+  const hasProject = Number(selectedProjectId.value) > 0;
+  const hasDate = !!date.value;
+  const hasAtLeastOneRecord = records.value.length > 0;
+  return hasProject && hasDate && hasAtLeastOneRecord;
+});
 
 const saveAll = async () => {
+  if (!canSave.value) return;
   saving.value = true;
   topErrors.value = {};
 
@@ -455,20 +550,18 @@ const saveAll = async () => {
       project_id: Number(selectedProjectId.value),
       air_number: air_number.value,
       date: date.value,
-      data: [
-        {
-          asset_category_id: Number(selectedCategoryId.value),
-          asset_sub_category_id: Number(selectedSubCategoryId.value),
-          asset_id: selectedAsset.value?.id ?? null,
-          description: line.value.description || null,
-          asset_life_period: line.value.asset_life_period ?? null,
-          unit_cost: Number(line.value.unit_cost || 0),
-          planned_cost: Number(line.value.planned_cost || 0),
-          request_type: line.value.request_type,
-          quantity: Number(line.value.quantity || 1),
-          reason: line.value.reason || null,
-        },
-      ],
+      data: records.value.map(r => ({
+        asset_category_id: Number(r.asset_category_id),
+        asset_sub_category_id: Number(r.asset_sub_category_id),
+        asset_id: r.asset_id ?? null,
+        description: r.description ?? null,
+        asset_life_period: r.asset_life_period ?? null,
+        unit_cost: Number(r.unit_cost),       // include unit cost
+        planned_cost: Number(r.planned_cost), // total per line
+        request_type: r.request_type,
+        quantity: Number(r.quantity || 1),
+        reason: r.reason ?? null,
+      })),
     };
 
     await axios.post(`${apiBaseUrl}/asset-investment-requests`, payload, {
@@ -477,18 +570,26 @@ const saveAll = async () => {
 
     router.push(`/dashboards/asset-investment-requests`);
   } catch (e) {
-    const msg = e?.response?.data?.message || "Failed to save request.";
-    const errs = e?.response?.data?.errors || {};
-    topErrors.value = errs;
-    alert(msg);
-    console.error(e);
+    const msg  = e?.response?.data?.message;
+    const errs = e?.response?.data?.errors;
+    if (errs?.project_id) topErrors.value.project_id = errs.project_id;
+    if (errs?.date) topErrors.value.date = errs.date;
+    let friendly = msg || "Failed to save requests.";
+    if (errs && typeof errs === "object") {
+      const flat = Object.entries(errs).map(([k, v]) => `${k}: ${[].concat(v).join(", ")}`).join("\n");
+      friendly += "\n" + flat;
+    }
+    alert(friendly);
+    console.error("Save error:", e?.response ?? e);
   } finally {
     saving.value = false;
   }
 };
 
-
-
+/* ------------- Totals ------------- */
+const plannedTotal = computed(() =>
+  records.value.reduce((sum, r) => sum + Number(r.planned_cost || 0), 0)
+);
 function formatAmount(val) {
   if (val === null || val === undefined || val === "") return "-";
   const num = 'SAR '+Number(val);
@@ -523,8 +624,6 @@ onMounted(async () => {
 .gap-2 { gap: 8px; }
 .mb-4 { margin-block-end: 16px; }
 .text-medium-emphasis { opacity: 0.7; }
-.v-text-field .v-input__details {
-    padding-inline: 0px !important;
-}
+
 @media (min-width: 960px) { .pa-4 { padding: 24px !important; } }
 </style>

@@ -3,10 +3,10 @@
     <h3>Edit Project</h3>
   </div>
 
-  <VForm ref="refForm" @submit.prevent="submitForm">
+  <VForm ref="refForm" @submit.prevent="updateProject">
     <VRow>
       <!-- Name -->
-      <VCol cols="12" md="12">
+      <VCol cols="12">
         <VTextField
           v-model="project.name"
           label="Name"
@@ -48,28 +48,21 @@
         />
       </VCol>
 
-      <!-- Budget (optional) -->
-      <!-- <VCol cols="12" md="4">
-        <VTextField
-          v-model="project.budget"
-          label="Budget"
-          type="number"
-          step="0.01"
-          :error-messages="errorMessages.budget"
-          clearable
-        />
-      </VCol> -->
-
       <!-- Description -->
       <VCol cols="12">
-        <VTextarea
-          v-model="project.description"
-          label="Description"
-          :rows="3"
-          :error-messages="errorMessages.description"
+        <label class="mb-1 d-block">Description</label>
+        <QuillEditor
+          v-model:content="project.description"
+          content-type="html"
+          theme="snow"
+          toolbar="full"
         />
+        <small v-if="errorMessages.description" class="text-red">
+          {{ errorMessages.description[0] }}
+        </small>
       </VCol>
 
+      <!-- Submit -->
       <VCol cols="12">
         <VBtn type="submit" color="primary" :loading="loading" :disabled="loading">
           Update
@@ -82,23 +75,24 @@
 </template>
 
 <script setup>
-import axios from 'axios';
-import { onMounted, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { VBtn, VCol, VForm, VRow, VTextField, VTextarea } from 'vuetify/components';
+import axios from 'axios'
+import { ref, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { QuillEditor } from '@vueup/vue-quill'
+import { VBtn, VCol, VForm, VRow, VTextField } from 'vuetify/components'
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-
-const route = useRoute()
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 const router = useRouter()
-const projectId = Number(route.params.id)
+const route = useRoute()
+
+const projectId = route.params.id
+const today = new Date().toISOString().split('T')[0]
 
 const project = ref({
   name: '',
   project_code: '',
-  start_date: '',
-  // end_date: '',
-  // budget: '',
+  start_date: today,
+  end_date: '',
   description: '',
 })
 
@@ -107,7 +101,36 @@ const loading = ref(false)
 const message = ref('')
 const errorMessages = ref({})
 
-const requiredValidator = v => !!v || 'This field is required'
+const requiredValidator = value => !!value || 'This field is required'
+
+// ✅ Watchers for date validation
+watch(
+  () => project.value.start_date,
+  newDate => {
+    if (newDate && newDate < today) {
+      errorMessages.value.start_date = ['Start date is older than today.']
+    } else {
+      errorMessages.value.start_date = []
+    }
+
+    if (project.value.end_date && project.value.end_date < newDate) {
+      errorMessages.value.end_date = ['End date cannot be before start date.']
+    } else {
+      errorMessages.value.end_date = []
+    }
+  }
+)
+
+watch(
+  () => project.value.end_date,
+  newDate => {
+    if (newDate && newDate < project.value.start_date) {
+      errorMessages.value.end_date = ['End date cannot be before start date.']
+    } else {
+      errorMessages.value.end_date = []
+    }
+  }
+)
 
 const getCookie = name => {
   const value = `; ${document.cookie}`
@@ -116,38 +139,57 @@ const getCookie = name => {
   return null
 }
 
-/* --------- Load existing project ---------- */
-const loadProject = async () => {
-  const accessToken = getCookie('accessToken')
-  if (!accessToken) throw new Error('Access token is missing. Please log in.')
-  const decodedToken = decodeURIComponent(accessToken)
-
-  const res = await axios.get(`${apiBaseUrl}/projects/${projectId}`, {
-    headers: { Authorization: `Bearer ${decodedToken}`, Accept: 'application/json' },
-  })
-
-  // Accept common shapes: array item, {data:{...}}, {project:{...}}, or plain object
-  const p = res.data?.data ?? res.data?.project ?? res.data
-
-  project.value.name = p.name ?? ''
-  project.value.project_code = p.project_code ?? ''
-  project.value.start_date = p.start_date ?? ''
-  project.value.end_date = p.end_date ?? ''
-  project.value.description = p.description ?? ''
-  // project.value.budget = p.budget ?? '' // keep as '' if null for editing
-}
-
-/* --------- Submit (UPDATE) ---------- */
-const submitForm = async () => {
+// ✅ Fetch existing project data
+onMounted(async () => {
   try {
     loading.value = true
+    const accessToken = getCookie('accessToken')
+    if (!accessToken) throw new Error('Access token missing.')
+    const decodedToken = decodeURIComponent(accessToken)
+
+    const res = await axios.get(`${apiBaseUrl}/projects/${projectId}`, {
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${decodedToken}`,
+      },
+    })
+
+    project.value = res.data.data || res.data
+  } catch (error) {
+    console.error('Error loading project:', error)
+    message.value = 'Failed to load project data.'
+  } finally {
+    loading.value = false
+  }
+})
+
+// ✅ Update project handler
+const updateProject = async () => {
+  try {
+    loading.value = true
+    message.value = ''
     errorMessages.value = {}
 
     const { valid } = await refForm.value?.validate?.() ?? { valid: true }
-    if (!valid) { loading.value = false; return }
+    if (!valid) {
+      loading.value = false
+      return
+    }
+
+    if (project.value.start_date < today) {
+      errorMessages.value.start_date = ['Start date is older than today.']
+      loading.value = false
+      return
+    }
+
+    if (project.value.end_date && project.value.end_date < project.value.start_date) {
+      errorMessages.value.end_date = ['End date cannot be before start date.']
+      loading.value = false
+      return
+    }
 
     const accessToken = getCookie('accessToken')
-    if (!accessToken) throw new Error('Access token is missing. Please log in.')
+    if (!accessToken) throw new Error('Access token missing.')
     const decodedToken = decodeURIComponent(accessToken)
 
     const payload = {
@@ -156,10 +198,9 @@ const submitForm = async () => {
       start_date: project.value.start_date,
       end_date: project.value.end_date,
       description: project.value.description,
-      // budget: project.value.budget === '' ? null : Number(project.value.budget),
     }
 
-    await axios.put(`${apiBaseUrl}/projects/${projectId}`, payload, {
+    const res = await axios.put(`${apiBaseUrl}/projects/${projectId}`, payload, {
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
@@ -167,7 +208,7 @@ const submitForm = async () => {
       },
     })
 
-    message.value = 'Project updated successfully!'
+    message.value = res.data?.message || 'Project updated successfully!'
     router.push('/dashboards/projects')
   } catch (error) {
     console.error('Error updating project:', error)
@@ -181,20 +222,61 @@ const submitForm = async () => {
     loading.value = false
   }
 }
-
-onMounted(async () => {
-  try {
-    loading.value = true
-    await loadProject()
-  } finally {
-    loading.value = false
-  }
-})
 </script>
 
 <style>
-.mb-4 { margin-block-end: 16px; }
-.d-flex { display: flex; }
-.justify-between { justify-content: space-between; }
-.align-center { align-items: center; }
+.mb-4 {
+  margin-block-end: 16px;
+}
+.d-flex {
+  display: flex;
+}
+.justify-between {
+  justify-content: space-between;
+}
+.align-center {
+  align-items: center;
+}
+.v-text-field .v-input__details {
+  padding-inline: 0px !important;
+}
+
+
+.ql-toolbar,
+.ql-container {
+  background-color: #1e1e2f;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  height: fit-content !important;
+}
+
+.ql-toolbar {
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+}
+
+.ql-container {
+  border-radius: 0 0 8px 8px;
+  margin-bottom: 24px;
+  height: fit-content !important;
+  min-height: 100px !important;
+}
+
+.ql-editor {
+  min-height: 150px !important;
+  max-height: none !important;
+  height: 100 !important;
+  color: #fff;
+  overflow-y: visible !important;
+}
+
+.ql-editor.ql-blank::before {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.ql-picker,
+.ql-stroke {
+  color: #fff;
+  stroke: #fff;
+}
 </style>

@@ -7,9 +7,9 @@
 
     <VCard class="pa-4">
       <VForm ref="refForm" @submit.prevent="saveRentalRequest">
-        <VRow dense>
+        <VRow>
           <!-- Project -->
-          <VCol cols="12" md="3">
+          <VCol cols="12" md="8">
             <VSelect
               v-model="form.project_id"
               :items="projectOptions"
@@ -21,16 +21,14 @@
               :loading="loading.projects"
               :disabled="loading.projects"
               hide-details="auto"
-              variant="outlined"
-              density="compact"
               clearable
               prepend-inner-icon="mdi-briefcase"
             />
-            <small class="text-medium-emphasis">Select a project for the rental request</small>
+
           </VCol>
 
           <!-- Date -->
-          <VCol cols="12" md="3">
+          <VCol cols="12" md="4">
             <VTextField
               v-model="form.date"
               type="date"
@@ -38,20 +36,17 @@
               :rules="[requiredValidator]"
               :error-messages="errorMessages.date"
               hide-details="auto"
-              variant="outlined"
-              density="compact"
               clearable
               prepend-inner-icon="mdi-calendar"
             />
-            <small class="text-medium-emphasis">Date of the rental request</small>
           </VCol>
         </VRow>
 
         <!-- Asset Requests -->
         <div class="mt-6">
-          <div class="font-weight-medium mb-2">Asset Requests</div>
-          <VRow dense>
-            <VCol cols="12" md="3">
+          <div class="font-weight-medium mb-2">LIST OF EQUIPMENT REQUIRED</div>
+          <VRow>
+            <VCol cols="12" md="4">
               <VSelect
                 v-model="assetRequest.asset_category_id"
                 :items="categories"
@@ -62,14 +57,12 @@
                 :loading="loading.categories"
                 :disabled="loading.categories"
                 hide-details="auto"
-                variant="outlined"
-                density="compact"
                 clearable
                 prepend-inner-icon="mdi-category"
               />
-              <small class="text-medium-emphasis">Choose category to load subcategories</small>
+
             </VCol>
-            <VCol cols="12" md="3">
+            <VCol cols="12" md="4">
               <VSelect
                 v-model="assetRequest.asset_sub_category_id"
                 :items="subCategoriesForAsset"
@@ -80,14 +73,12 @@
                 :disabled="!assetRequest.asset_category_id || loading.subCategories"
                 :loading="loading.subCategories"
                 hide-details="auto"
-                variant="outlined"
-                density="compact"
                 clearable
                 prepend-inner-icon="mdi-subdirectory-arrow-right"
               />
-              <small class="text-medium-emphasis">Subcategories for selected category</small>
+
             </VCol>
-            <VCol cols="12" md="3">
+            <VCol cols="12" md="4">
               <VSelect
                 v-model="assetRequest.asset_id"
                 :items="assets"
@@ -98,27 +89,23 @@
                 :loading="loading.assets"
                 :disabled="!assetRequest.asset_sub_category_id || loading.assets"
                 hide-details="auto"
-                variant="outlined"
-                density="compact"
                 clearable
                 prepend-inner-icon="mdi-cube"
               />
-              <small class="text-medium-emphasis">Select an asset</small>
+
             </VCol>
-            <VCol cols="12" md="3">
+            <VCol cols="12" md="12">
               <VTextField
                 v-model="assetRequest.activity"
                 label="Activity"
                 :rules="[requiredValidator]"
                 :error-messages="errorMessages.asset_request?.activity"
                 hide-details="auto"
-                variant="outlined"
-                density="compact"
                 prepend-inner-icon="mdi-format-list-bulleted"
               />
-              <small class="text-medium-emphasis">Describe the activity</small>
+
             </VCol>
-            <VCol cols="12" md="2">
+            <VCol cols="12" md="3">
               <VTextField
                 v-model.number="assetRequest.quantity"
                 type="number"
@@ -128,13 +115,11 @@
                 :rules="[requiredValidator]"
                 :error-messages="errorMessages.asset_request?.quantity"
                 hide-details="auto"
-                variant="outlined"
-                density="compact"
                 prepend-inner-icon="mdi-numeric"
               />
-              <small class="text-medium-emphasis">Number of assets needed</small>
+
             </VCol>
-            <VCol cols="12" md="2">
+            <VCol cols="12" md="3">
               <VTextField
                 v-model="assetRequest.date_of_need"
                 type="date"
@@ -142,14 +127,12 @@
                 :rules="[requiredValidator]"
                 :error-messages="errorMessages.asset_request?.date_of_need"
                 hide-details="auto"
-                variant="outlined"
-                density="compact"
                 clearable
                 prepend-inner-icon="mdi-calendar"
               />
-              <small class="text-medium-emphasis">When the asset is needed</small>
+
             </VCol>
-            <VCol cols="12" md="2">
+            <VCol cols="12" md="3">
               <VTextField
                 v-model="assetRequest.requested_no_days"
                 type="date"
@@ -157,20 +140,16 @@
                 :rules="[requiredValidator]"
                 :error-messages="errorMessages.asset_request?.requested_no_days"
                 hide-details="auto"
-                variant="outlined"
-                density="compact"
                 clearable
                 prepend-inner-icon="mdi-calendar"
               />
-              <small class="text-medium-emphasis">End date of rental</small>
+
             </VCol>
-            <VCol cols="12" md="2" class="d-flex align-end">
+            <VCol cols="12" md="3" class="d-flex align-end">
               <VBtn
                 color="primary"
                 @click="addAssetRequest"
                 :disabled="!isAssetRequestValid"
-                variant="outlined"
-                density="compact"
               >
                 <VIcon start>mdi-plus</VIcon> Add
               </VBtn>
@@ -217,8 +196,8 @@
 
         <!-- Rental Equipment -->
         <div class="mt-6">
-          <div class="font-weight-medium mb-2">Rental Equipment</div>
-          <VRow dense>
+          <div class="font-weight-medium mb-2">LIST OF EQUIPMENT ALREADY WORKING ON THE PROJECT</div>
+          <VRow>
             <VCol cols="12" md="2">
               <VTextField
                 v-model.number="rentalEquipment.rental_equipment_id"
@@ -229,8 +208,6 @@
                 :rules="[requiredValidator]"
                 :error-messages="errorMessages.rental_equipment?.rental_equipment_id"
                 hide-details="auto"
-                variant="outlined"
-                density="compact"
                 prepend-inner-icon="mdi-pound"
               />
               <small class="text-medium-emphasis">Unique equipment ID</small>
@@ -246,8 +223,6 @@
                 :loading="loading.categories"
                 :disabled="loading.categories"
                 hide-details="auto"
-                variant="outlined"
-                density="compact"
                 clearable
                 prepend-inner-icon="mdi-category"
               />
@@ -264,8 +239,6 @@
                 :disabled="!rentalEquipment.asset_category_id || loading.subCategories"
                 :loading="loading.subCategories"
                 hide-details="auto"
-                variant="outlined"
-                density="compact"
                 clearable
                 prepend-inner-icon="mdi-subdirectory-arrow-right"
               />
@@ -282,8 +255,6 @@
                 :loading="loading.assets"
                 :disabled="!rentalEquipment.asset_sub_category_id || loading.assets"
                 hide-details="auto"
-                variant="outlined"
-                density="compact"
                 clearable
                 prepend-inner-icon="mdi-cube"
               />
@@ -296,8 +267,6 @@
                 :rules="[requiredValidator]"
                 :error-messages="errorMessages.rental_equipment?.activity"
                 hide-details="auto"
-                variant="outlined"
-                density="compact"
                 prepend-inner-icon="mdi-format-list-bulleted"
               />
               <small class="text-medium-emphasis">Describe the equipment activity</small>
@@ -312,8 +281,6 @@
                 :rules="[requiredValidator]"
                 :error-messages="errorMessages.rental_equipment?.quantity_at_site"
                 hide-details="auto"
-                variant="outlined"
-                density="compact"
                 prepend-inner-icon="mdi-numeric"
               />
               <small class="text-medium-emphasis">Number of equipment at site</small>
@@ -326,8 +293,6 @@
                 :rules="[requiredValidator]"
                 :error-messages="errorMessages.rental_equipment?.start_date"
                 hide-details="auto"
-                variant="outlined"
-                density="compact"
                 clearable
                 prepend-inner-icon="mdi-calendar"
               />
@@ -341,8 +306,6 @@
                 :rules="[requiredValidator]"
                 :error-messages="errorMessages.rental_equipment?.end_date"
                 hide-details="auto"
-                variant="outlined"
-                density="compact"
                 clearable
                 prepend-inner-icon="mdi-calendar"
               />
@@ -356,8 +319,6 @@
                 :rules="[requiredValidator]"
                 :error-messages="errorMessages.rental_equipment?.requested_no_days"
                 hide-details="auto"
-                variant="outlined"
-                density="compact"
                 clearable
                 prepend-inner-icon="mdi-calendar"
               />
@@ -370,8 +331,6 @@
                 :rules="[requiredValidator]"
                 :error-messages="errorMessages.rental_equipment?.spo_number"
                 hide-details="auto"
-                variant="outlined"
-                density="compact"
                 prepend-inner-icon="mdi-pound"
               />
               <small class="text-medium-emphasis">Unique SPO number</small>
@@ -381,8 +340,6 @@
                 color="primary"
                 @click="addRentalEquipment"
                 :disabled="!isRentalEquipmentValid"
-                variant="outlined"
-                density="compact"
               >
                 <VIcon start>mdi-plus</VIcon> Add
               </VBtn>
@@ -469,7 +426,8 @@ import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { VAlert, VBtn, VCard, VChip, VCol, VDataTable, VForm, VIcon, VRow, VSelect, VTextField } from 'vuetify/components'
 
-const apiBaseUrl = 'https://dm.kreashionsoftwarehouse.com/astraConst/public/api'
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL // should end with /api
+
 const router = useRouter()
 
 // ---- state ----
@@ -599,6 +557,7 @@ const totalEquipmentQuantity = computed(() =>
 
 const assetNameById = id => {
   const asset = assets.value.find(a => Number(a.id) === Number(id))
+
   return asset?.code ?? 'Unknown Asset'
 }
 

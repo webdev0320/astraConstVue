@@ -145,7 +145,8 @@ import {
   VImg,
 } from 'vuetify/components'
 
-const apiBaseUrl = 'https://dm.kreashionsoftwarehouse.com/astraConst/public/api'
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL // should end with /api
+
 const API_ORIGIN = new URL(apiBaseUrl).origin
 
 // Table headers mapped to your API fields

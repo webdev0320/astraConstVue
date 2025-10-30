@@ -127,7 +127,7 @@ import {
   VSelect
 } from "vuetify/components";
 
-const apiBaseUrl = "https://dm.kreashionsoftwarehouse.com/astraConst/public/api";
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 
 // Table headers aligned to API fields
 const headers = [
@@ -152,12 +152,11 @@ const users = ref([]);
 const selectedUser = ref(null);
 const currentdepartmentId = ref(null);
 
-const getCookie = (name) => {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(";").shift();
-  return null;
-};
+const getCookie = name => {
+  const value = `; ${document.cookie}`
+  const parts = value.split(`; ${name}=`)
+  if (parts.length === 2) return parts.pop().split(';').shift()
+}
 
 // Helpers to format dates/times from ISO strings
 const fmt = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Karachi" });
@@ -182,16 +181,24 @@ const fmtTime = (iso) => {
   }
 };
 
+const getAuthHeaders = () => {
+  const accessToken = getCookie('accessToken')
+
+  if (!accessToken) throw new Error('Access token is missing.')
+  const decodedToken = decodeURIComponent(accessToken)
+  return { Authorization: `Bearer ${decodedToken}`, Accept: 'application/json' }
+}
+
 // Fetch Asset Transfers (matches /api/asset-transfers)
 const fetchAssetTransfers = async () => {
   try {
-    const accessToken = getCookie("accessToken");
-    if (!accessToken) throw new Error("Access token is missing. Please log in.");
-    const decodedToken = decodeURIComponent(accessToken);
 
     const res = await axios.get(`${apiBaseUrl}/asset-transfers`, {
-      headers: { Authorization: `Bearer ${decodedToken}`, Accept: "application/json" },
+      headers: getAuthHeaders(),
     });
+     if (res.data.status) {
+      assettransfers.value = res.data.data
+    }
 
     const list = Array.isArray(res.data)
       ? res.data
@@ -263,8 +270,6 @@ const assignUser = () => {
 
 .custom-th {
   padding: 10px;
-  background-color: #99de64;
-  color: #000;
   font-weight: bold;
   text-align: start;
 }

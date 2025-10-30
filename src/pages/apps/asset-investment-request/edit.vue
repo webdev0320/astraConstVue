@@ -1,542 +1,423 @@
 <template>
   <div>
+    <!-- Header -->
     <div class="d-flex justify-between align-center mb-4">
-      <VBtn variant="text" @click="goBack">← Back</VBtn>
-      <h3>Edit Asset Investment Request</h3>
+      <VBtn variant="text" @click="$router.back()">← Back</VBtn>
+      <h3>Create Asset Investment Request</h3>
     </div>
 
     <VCard class="pa-4">
       <VForm @submit.prevent="saveAll" ref="refForm">
         <VRow dense>
           <!-- Project -->
-          <VCol cols="12" md="6">
+          <VCol cols="12" md="4">
+              <VTextField
+                v-model="air_number"
+                label="AIR Number"
+                :error-messages="topErrors.air_number"
+                clearable
+              />
+            </VCol>
+          <VCol cols="12" md="4" py-5>
             <VSelect
               v-model="selectedProjectId"
-              :items="projects"
-              item-title="name"
+              :items="projectItems"
+              item-title="title"
               item-value="id"
               label="PROJECT NAME"
               placeholder="Select Project"
               :error-messages="topErrors.project_id"
-              :loading="loading.form"
-              :disabled="loading.form"
-              variant="outlined" density="compact" hide-details="auto" clearable
-            />
-          </VCol>
-
-          <!-- Date -->
-          <VCol cols="12" md="6">
-            <VTextField
-              v-model="date"
-              type="date"
-              label="Date"
-              :error-messages="topErrors.date"
-              :loading="loading.form"
-              :disabled="loading.form"
-              variant="outlined" density="compact" hide-details="auto"
-            />
-          </VCol>
-
-          <!-- Description -->
-          <VCol cols="12" md="12">
-            <VTextarea
-              v-model="line.description"
-              label="Description"
               variant="outlined"
-              density="compact"
               hide-details="auto"
               clearable
             />
           </VCol>
 
+          <!-- Air Number -->
+            
+          <!-- Date -->
+          <VCol cols="12" md="4">
+            <VTextField
+              v-model="date"
+              type="date"
+              label="Asset Required Date"
+              variant="outlined"
+              hide-details="auto"
+              :error-messages="topErrors.date"
+            />
+          </VCol>
+
+          
+
           <!-- Category -->
-          <VCol cols="12" md="4" class="py-5">
+          <VCol cols="12" md="3" class="py-5">
             <VSelect
               v-model="selectedCategoryId"
               :items="parentCategoryItems"
-              item-title="title" item-value="id"
+              item-title="title"
+              item-value="id"
               label="Select Asset Category"
-              :loading="loading.categories || loading.form"
-              :disabled="loading.categories || loading.form"
+              :loading="loading.categories"
+              :disabled="loading.categories"
               @update:modelValue="onCategoryChange"
-              variant="outlined" density="compact" hide-details="auto" clearable
+              hide-details="auto"
+              variant="outlined"
+              clearable
             />
           </VCol>
 
           <!-- Subcategory -->
-          <VCol cols="12" md="4" class="py-5">
+          <VCol cols="12" md="3" class="py-5">
             <VSelect
               v-model="selectedSubCategoryId"
               :items="subcategoryItemsForCategory"
-              item-title="title" item-value="id"
+              item-title="title"
+              item-value="id"
               label="Select Sub Asset Category"
-              :disabled="!selectedCategoryId || loading.form"
+              :disabled="!selectedCategoryId"
               @update:modelValue="onSubCategoryChange"
-              variant="outlined" density="compact" hide-details="auto" clearable
+              hide-details="auto"
+              variant="outlined"
+              clearable
             />
           </VCol>
 
           <!-- Asset (optional) -->
-          <VCol cols="12" md="4" class="py-5">
+          <VCol cols="12" md="3" class="py-5">
             <VSelect
               v-model="selectedAsset"
               :items="assets"
-              item-title="code" item-value="id"
+              :item-title="asset => `${asset.code} - ${asset.title}`"
+              item-value="id"
               label="Select Asset (Optional)"
-              :loading="loading.assets || loading.form"
-              :disabled="!selectedSubCategoryId || loading.assets || loading.form"
+              :loading="loading.assets"
+              :disabled="!selectedSubCategoryId || loading.assets"
               return-object
-              variant="outlined" density="compact" hide-details="auto" clearable
+              hide-details="auto"
+              variant="outlined"
+              clearable
+            />
+          </VCol>
+
+
+
+          <VCol cols="12" md="3" class="py-5">
+            <VTextField
+              v-model.number="line.asset_life_period"
+              label="Asset Life Period"
+              type="number"
+              variant="outlined"
+              hide-details="auto"
+            />
+          </VCol>
+
+
+
+          <!-- Unit Cost -->
+          <VCol cols="12" md="3" class="py-5">
+            <VTextField
+              v-model.number="line.unit_cost"
+              label="Unit Cost"
+              type="number"
+              prefix="SAR"              
+              min="0"
+              step="0.01"
+              variant="outlined"
+              hide-details="auto"
+            />
+          </VCol>
+
+          <!-- Quantity -->
+          <VCol cols="12" md="3" class="py-5">
+            <VTextField
+              v-model.number="line.quantity"
+              label="Qty"
+              type="number"
+              min="1"
+              step="1"
+              variant="outlined"
+              hide-details="auto"
+            />
+          </VCol>
+
+          <!-- Planned Cost (auto) -->
+          <VCol cols="12" md="3" class="py-5">
+            <VTextField
+              :model-value="line.planned_cost"
+              label="Planned Cost (auto)"
+              type="number"
+              prefix="SAR"
+              variant="outlined"
+              hide-details="auto"
+              readonly
             />
           </VCol>
 
           <!-- Request Type -->
-          <VCol cols="12" md="4" class="py-5">
+          <VCol cols="12" md="3" class="py-5">
             <VSelect
               v-model="line.request_type"
               :items="REQUEST_TYPE_OPTIONS"
               label="Request Type"
-              variant="outlined" density="compact" hide-details="auto" clearable
-            />
-          </VCol>
-
-          <!-- Qty -->
-          <VCol cols="12" md="4" class="py-5">
-            <VTextField v-model.number="line.quantity" label="Qty" type="number"
-              min="1" step="1" variant="outlined" density="compact" hide-details="auto" />
-          </VCol>
-
-          <!-- Planned Cost -->
-          <VCol cols="12" md="4" class="py-5">
-            <VTextField v-model.number="line.planned_cost" label="Planned Cost" type="number"
-              min="0" step="0.01" prefix="Rs"
-              variant="outlined" density="compact" hide-details="auto" />
-          </VCol>
-
-          <!-- Reason -->
-          <VCol cols="12" md="12">
-            <VTextarea
-              v-model="line.reason"
-              label="Reason"
               variant="outlined"
-              density="compact"
               hide-details="auto"
               clearable
             />
           </VCol>
 
-          <!-- Add -->
-          <VCol cols="12" md="3" class="d-flex align-end">
-            <VBtn color="primary" @click="addRecord" :disabled="!canAddLine || loading.form">Add</VBtn>
+          <!-- Description -->
+          <VCol cols="12" md="12" class="py-5">
+            <VTextarea
+              v-model="line.description"
+              label="Detailed Asset Description"
+              variant="outlined"
+              hide-details="auto"
+              clearable
+            />
           </VCol>
 
-          <!-- Summary -->
-          <VCol cols="12" md="5" class="d-flex align-end justify-end">
-            <div class="text-end">
-              <div class="text-medium-emphasis">Records: <b>{{ records.length }}</b></div>
-              <div class="text-medium-emphasis">Planned Total: <b>{{ formatAmount(plannedTotal) }}</b></div>
-            </div>
+          <!-- Reason -->
+          <VCol cols="12" md="12" class="py-5">
+            <VTextarea
+              v-model="line.reason"
+              label="Reasons/Purpose of the Investment"
+              variant="outlined"
+              hide-details="auto"
+              clearable
+            />
           </VCol>
+
+        
         </VRow>
 
-        <!-- Chips -->
-        <div v-if="records.length" class="mt-4">
-          <VChip v-for="(r, idx) in records" :key="idx" class="ma-1" closable @click:close="removeRecord(r)">
-            {{ r.asset_code }} — {{ r.request_type }} — Qty: {{ r.quantity }} — {{ formatAmount(r.planned_cost) }}
-            <template v-if="r.description"> — {{ r.description }}</template>
-          </VChip>
-        </div>
-
-        <!-- Table -->
-        <VDataTable
-          v-if="records.length"
-          :headers="headers"
-          :items="records"
-          :items-per-page="5"
-          class="mt-4"
-        >
-          <template #item.planned_cost="{ item }">
-            {{ formatAmount(item.planned_cost) }}
-          </template>
-          <template #item.line_total="{ item }">
-            {{ formatAmount(item.quantity * item.planned_cost) }}
-          </template>
-          <template #item.actions="{ item }">
-            <VBtn color="error" size="small" @click="removeRecord(item)">Delete</VBtn>
-          </template>
-        </VDataTable>
-
-        <!-- Save / Cancel -->
+        <!-- Save -->
         <div class="d-flex gap-2 mt-4">
-          <VBtn color="primary" @click="saveAll" :loading="loading.submit" :disabled="!canSave">Update Request</VBtn>
-          <VBtn variant="tonal" @click="goBack" :disabled="loading.submit">Cancel</VBtn>
-        </div>
+          <VBtn
+              color="primary"
+              type="submit"
+              :loading="saving"
+            >
+              Submit Request
+            </VBtn>
 
-        <div v-if="message" class="mt-4">{{ message }}</div>
+        </div>
       </VForm>
     </VCard>
   </div>
 </template>
 
 <script setup>
-import axios from 'axios'
-import { computed, onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-// Using Vuetify global registration like in your other files
+import axios from "axios";
+import { computed, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
-const route = useRoute()
-const router = useRouter()
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+const route = useRoute();
+const router = useRouter();
+const id = route.params.id; // <-- Investment Request ID
 
-const id = route.params.id
-const REQUEST_TYPE_OPTIONS = ['NEW', 'LEASED', 'USED']
-const today = new Date().toISOString().split('T')[0]
+const REQUEST_TYPE_OPTIONS = ["NEW", "LEASED", "USED"];
 
-/* -------- state -------- */
-const projects = ref([])
-const selectedProjectId = ref(null)
-const date = ref(today)
 
-const allCategories = ref([])
-const loading = ref({ categories: false, assets: false, form: false, submit: false })
-const assets = ref([])
-const selectedCategoryId = ref(null)
-const selectedSubCategoryId = ref(null)
-const selectedAsset = ref(null)
+/* ---------------- State ---------------- */
+const projects = ref([]);
+const selectedProjectId = ref(null);
+const air_number = ref(null);
+const date = ref(null);
+const saving = ref(false);
+const topErrors = ref({});
+
+const allCategories = ref([]);
+const loading = ref({ categories: false, assets: false });
+
+const selectedCategoryId = ref(null);
+const selectedSubCategoryId = ref(null);
+const selectedAsset = ref(null);
+const assets = ref([]);
 
 const line = ref({
+  asset_life_period: null,
+  unit_cost: null,
   planned_cost: null,
   quantity: 1,
-  request_type: 'NEW',
-  description: '',
-  reason: '',
+  request_type: "NEW",
+  description: "",
+  reason: "",
+});
+
+const dateError = ref("");
+
+watch(date, (newVal) => {
+  if (!newVal) {
+    dateError.value = "";
+    return;
+  }
+
+  const today = new Date().setHours(0,0,0,0);
+  const selected = new Date(newVal).setHours(0,0,0,0);
+
+  if (selected < today) {
+    dateError.value = "Start date is older than today.";
+  } else {
+    dateError.value = "";
+  }
+});
+
+watch(selectedAsset, (asset) => {
+  if (asset) {
+    line.value.asset_life_period = asset.useful_life
+    line.value.unit_cost = asset.price
+  } else {
+    line.value.asset_life_period = null
+    line.value.unit_cost = null
+  }
 })
 
-const records = ref([])
-
-const topErrors = ref({})
-const rowErrors = ref([]) // (optional) if you want to surface per-row server errors
-const message = ref('')
-
-/* -------- headers (table) -------- */
-const headers = [
-  { title: 'Asset Code', key: 'asset_code' },
-  { title: 'Category', key: 'category_name' },
-  { title: 'Subcategory', key: 'subcategory_name' },
-  { title: 'Type', key: 'request_type' },
-  { title: 'Description', key: 'description' },
-  { title: 'Reason', key: 'reason' },
-  { title: 'Qty', key: 'quantity' },
-  { title: 'Planned Cost', key: 'planned_cost' },
-  { title: 'Line Total', key: 'line_total' },
-  { title: 'Actions', key: 'actions', sortable: false },
-]
-
-/* -------- auth helpers -------- */
-const getCookie = (name) => {
-  const value = `; ${document.cookie}`
-  const parts = value.split(`; ${name}=`)
-  if (parts.length === 2) return parts.pop().split(';').shift()
-  return null
-}
+/* ------------- Auth helpers ------------- */
 const getAuthHeaders = () => {
-  const access = getCookie('accessToken')
-  if (!access) throw new Error('Access token is missing. Please log in.')
-  return { Authorization: `Bearer ${decodeURIComponent(access)}`, Accept: 'application/json', 'Content-Type': 'application/json' }
-}
+  const access = getCookie("accessToken");
+  return { Authorization: `Bearer ${decodeURIComponent(access)}` };
+};
+const getCookie = (name) => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(";").shift();
+};
 
-/* -------- lookups -------- */
-const parentCategoryItems = computed(() =>
-  allCategories.value
-    .filter(c => c.is_parent)
-    .map(c => ({ id: Number(c.id), title: String(c.title ?? c.slug ?? `Category #${c.id}`) }))
-)
+/* ---------------- Fetch Existing Data ---------------- */
+const fetchExisting = async () => {
+  const res = await axios.get(`${apiBaseUrl}/asset-investment-requests/${id}`, {
+    headers: getAuthHeaders(),
+  });
 
-const subcategoryItemsForCategory = computed(() => {
-  if (!selectedCategoryId.value) return []
-  return allCategories.value
-    .filter(c => !c.is_parent && Number(c.parent_id) === Number(selectedCategoryId.value))
-    .map(c => ({ id: Number(c.id), title: String(c.title ?? c.slug ?? `Subcategory #${c.id}`) }))
-})
+  const d = res.data.data;
+  const item = d.items[0];  // as your API returns single item per request
 
-const categoryNameById = (id) => {
-  const c = allCategories.value.find(x => Number(x.id) === Number(id))
-  return c?.title ?? c?.slug ?? `Category #${id}`
-}
-const subcategoryNameById = (id) => {
-  const c = allCategories.value.find(x => Number(x.id) === Number(id))
-  return c?.title ?? c?.slug ?? `Subcategory #${id}`
-}
+  // set main fields
+  air_number.value = d.air_number;
+  selectedProjectId.value = d.project_id;
+  date.value = d.date;
 
-/* -------- events -------- */
-const onCategoryChange = () => {
-  selectedSubCategoryId.value = null
-  selectedAsset.value = null
-  assets.value = []
-}
-const onSubCategoryChange = async (val) => {
-  selectedAsset.value = null
-  assets.value = []
-  if (!val) return
-  await fetchAssetsBySubCategory(val)
-}
+  // prefill item fields
+  selectedCategoryId.value = item.asset_category_id;
+  selectedSubCategoryId.value = item.asset_sub_category_id;
 
-/* -------- api: fetches -------- */
+  // fill line values
+  line.value.asset_life_period = Number(item.asset_life_period || 0);
+  line.value.unit_cost = Number(item.unit_cost);
+  line.value.quantity = Number(item.quantity);
+  line.value.request_type = item.request_type;
+  line.value.description = item.description;
+  line.value.reason = item.reason;
+  line.value.planned_cost = Number(item.unit_cost) * Number(item.quantity);
+
+  // fetch sub assets then pre-select asset if exists
+  await fetchAssetsBySubCategory(item.asset_sub_category_id);
+  if (item.asset_id) {
+    selectedAsset.value = assets.value.find(a => Number(a.id) === Number(item.asset_id)) || null;
+  }
+};
+
+/* ---------------- fetching methods (same as create) ---------------- */
 const fetchProjects = async () => {
-  try {
-    const res = await axios.get(`${apiBaseUrl}/projects`, { headers: getAuthHeaders() })
-    projects.value = Array.isArray(res.data) ? res.data : (res.data?.data ?? [])
-  } catch (e) {
-    console.error('Error fetching projects:', e)
-  }
-}
-
+  const res = await axios.get(`${apiBaseUrl}/projects`, { headers: getAuthHeaders() });
+  projects.value = res.data.data || res.data;
+};
 const fetchAssetCategories = async () => {
-  loading.value.categories = true
-  try {
-    let page = 1, perPage = 15, total = Infinity
-    const acc = []
-    while ((page - 1) * perPage < total) {
-      const res = await axios.get(`${apiBaseUrl}/asset-categories`, {
-        params: { page },
-        headers: getAuthHeaders(),
-      })
-      const data = res.data || {}
-      const chunk = Array.isArray(data.categories) ? data.categories
-        : Array.isArray(data.data) ? data.data
-        : Array.isArray(data) ? data : []
-      acc.push(...chunk)
-      total   = Number(data.total_records ?? total)
-      perPage = Number(data.perPage ?? perPage)
-      if (!chunk.length) break
-      page += 1
-    }
-    allCategories.value = acc
-  } catch (e) {
-    console.error('Error fetching categories:', e)
-    allCategories.value = []
-  } finally {
-    loading.value.categories = false
-  }
-}
+  loading.value.categories = true;
+  const res = await axios.get(`${apiBaseUrl}/asset-categories`, { headers: getAuthHeaders() });
+  allCategories.value = res.data.categories ?? res.data.data ?? res.data;
+  loading.value.categories = false;
+};
 
 const fetchAssetsBySubCategory = async (subId) => {
-  loading.value.assets = true
-  try {
-    const res = await axios.get(`${apiBaseUrl}/assets`, {
-      params: { asset_sub_category_id: subId, asset_subcategory_id: subId },
-      headers: getAuthHeaders(),
-    })
-    const list = res.data?.data?.data ?? res.data?.data ?? res.data ?? []
-    assets.value = Array.isArray(list) ? list : []
-  } catch (e) {
-    console.error('Error fetching assets:', e)
-    assets.value = []
-  } finally {
-    loading.value.assets = false
-  }
-}
+  loading.value.assets = true;
+  const res = await axios.get(`${apiBaseUrl}/assets`, {
+    params: { asset_subcategory_id: subId },
+    headers: getAuthHeaders(),
+  });
+  assets.value = res.data.data?.data ?? res.data.data ?? res.data ?? [];
+  loading.value.assets = false;
+};
 
-/* -------- load existing master + lines -------- */
-const loadRecord = async () => {
-  loading.value.form = true
-  try {
-    const res = await axios.get(`${apiBaseUrl}/asset-investment-requests/${id}`, { headers: getAuthHeaders() })
-    const p = res.data?.data ?? res.data ?? {}
+const onCategoryChange = () => {
+  selectedSubCategoryId.value = null;
+  selectedAsset.value = null;
+  assets.value = [];
+};
+const onSubCategoryChange = async (val) => {
+  selectedAsset.value = null;
+  assets.value = [];
+  if (val) await fetchAssetsBySubCategory(val);
+};
 
-    // top-level
-    selectedProjectId.value = Number(p.project_id ?? p.project?.id ?? route.params.projectId ?? route.query.projectId) || null
-    date.value = p.date ?? date.value
+const parentCategoryItems = computed(() =>
+  allCategories.value.filter(c => c.is_parent).map(c => ({
+    id: c.id,
+    title: c.title
+  }))
+);
 
-    // lines array (accept several keys to be safe)
-    const rawLines =
-      Array.isArray(p.data)  ? p.data  :
-      Array.isArray(p.lines) ? p.lines :
-      Array.isArray(p.items) ? p.items : []
+const subcategoryItemsForCategory = computed(() => {
+  if (!selectedCategoryId.value) return [];
+  return allCategories.value.filter(
+    c => !c.is_parent && Number(c.parent_id) === Number(selectedCategoryId.value)
+  ).map(c => ({ id: c.id, title: c.title }));
+});
 
-    // map to UI records
-    records.value = rawLines.map((r) => {
-      const catId  = Number(r.asset_category_id ?? r.category_id ?? r.category?.id)
-      const subId  = Number(r.asset_sub_category_id ?? r.asset_subcategory_id ?? r.subcategory_id ?? r.subcategory?.id)
-      const assetId = Number(r.asset_id ?? r.asset?.id)
-
-      return {
-        __key: [catId, subId, assetId || 'none', (r.request_type || 'NEW'), (r.description || '').toLowerCase(), (r.reason || '').toLowerCase()].join('|'),
-        asset_category_id: catId,
-        asset_sub_category_id: subId,
-        asset_id: assetId || null,
-        description: r.description ?? null,
-        planned_cost: Number(r.planned_cost ?? r.cost ?? 0),
-        request_type: r.request_type || 'NEW',
-        quantity: Number(r.quantity ?? 1),
-        reason: r.reason ?? null,
-
-        asset_code: r.asset?.code ?? '—',
-        category_name: categoryNameById(catId),
-        subcategory_name: subcategoryNameById(subId),
-      }
-    })
-  } catch (e) {
-    console.error('Error loading record:', e?.response?.data || e)
-    message.value = e?.response?.data?.message || 'Failed to load record.'
-  } finally {
-    loading.value.form = false
-  }
-}
-
-/* -------- add/remove/clear -------- */
-const canAddLine = computed(() =>
-  !!(
-    selectedCategoryId.value &&
-    selectedSubCategoryId.value &&
-    Number(line.value.quantity || 1) > 0 &&
-    Number(line.value.planned_cost) > 0 &&
-    (line.value.request_type?.length > 0)
-  )
-)
-
-const addRecord = () => {
-  if (!canAddLine.value) return
-  const a    = selectedAsset.value || null
-  const qty  = Number(line.value.quantity || 1)
-  const desc = (line.value.description || '').trim()
-  const rsn  = (line.value.reason || '').trim()
-  const type = line.value.request_type || 'NEW'
-
-  const recordKey = [
-    selectedCategoryId.value,
-    selectedSubCategoryId.value,
-    a?.id ?? 'none',
-    type,
-    desc.toLowerCase(),
-    rsn.toLowerCase(),
-  ].join('|')
-
-  const existing = records.value.find(r => r.__key === recordKey)
-  if (existing) {
-    existing.planned_cost = Number(existing.planned_cost) + Number(line.value.planned_cost || 0)
-    existing.quantity     = Number(existing.quantity || 0) + qty
-  } else {
-    records.value.push({
-      __key: recordKey,
-      asset_category_id: Number(selectedCategoryId.value),
-      asset_sub_category_id: Number(selectedSubCategoryId.value),
-      asset_id: a?.id ?? null,
-      description: desc || null,
-      planned_cost: Number(line.value.planned_cost),
-      request_type: type,
-      quantity: qty,
-      reason: rsn || null,
-
-      asset_code: a?.code ?? '—',
-      category_name: categoryNameById(selectedCategoryId.value),
-      subcategory_name: subcategoryNameById(selectedSubCategoryId.value),
-    })
-  }
-
-  // reset inline inputs
-  selectedCategoryId.value    = null
-  selectedSubCategoryId.value = null
-  selectedAsset.value         = null
-  assets.value                = []
-  line.value.planned_cost     = null
-  line.value.quantity         = 1
-  line.value.request_type     = 'NEW'
-  line.value.description      = ''
-  line.value.reason           = ''
-}
-
-const removeRecord = (item) => {
-  records.value = records.value.filter(r => r !== item)
-}
-const clearAll = () => { records.value = [] }
-
-/* -------- save (PUT/PATCH) -------- */
-const canSave = computed(() => {
-  const hasProject = Number(selectedProjectId.value) > 0
-  const hasDate = !!date.value
-  const hasRows = records.value.length > 0
-  return hasProject && hasDate && hasRows
-})
-
+/* ---------------- Update API ---------------- */
 const saveAll = async () => {
-  if (!canSave.value) return
-  loading.value.submit = true
-  topErrors.value = {}
-  rowErrors.value = []
+  saving.value = true;
+  topErrors.value = {};
 
   try {
     const payload = {
       project_id: Number(selectedProjectId.value),
+      air_number: air_number.value,
       date: date.value,
-      data: records.value.map(r => ({
-        asset_category_id: Number(r.asset_category_id),
-        asset_sub_category_id: Number(r.asset_sub_category_id),
-        asset_id: r.asset_id ?? null,
-        description: r.description ?? null,
-        planned_cost: Number(r.planned_cost),
-        request_type: r.request_type,
-        quantity: Number(r.quantity || 1),
-        reason: r.reason ?? null,
-      })),
-    }
-
-    const headers = getAuthHeaders()
-    try {
-      await axios.put(`${apiBaseUrl}/asset-investment-requests/${id}`, payload, { headers })
-    } catch (err) {
-      if (err?.response?.status === 405) {
-        await axios.patch(`${apiBaseUrl}/asset-investment-requests/${id}`, payload, { headers })
-      } else {
-        throw err
-      }
-    }
-
-    router.push('/dashboards/asset-investment-requests')
-  } catch (e) {
-    const msg  = e?.response?.data?.message
-    const errs = e?.response?.data?.errors
-    if (errs?.project_id) topErrors.value.project_id = errs.project_id
-    if (errs?.date) topErrors.value.date = errs.date
-
-    // Map data.N.field style errors back to rows (optional)
-    if (errs && typeof errs === 'object') {
-      Object.entries(errs).forEach(([k, v]) => {
-        const m = k.match(/^data\.(\d+)\.(.+)$/)
-        if (m) {
-          const idx = Number(m[1])
-          if (!rowErrors.value[idx]) rowErrors.value[idx] = {}
-          rowErrors.value[idx][m[2]] = Array.isArray(v) ? v : [String(v)]
+      data: [
+        {
+          asset_category_id: Number(selectedCategoryId.value),
+          asset_sub_category_id: Number(selectedSubCategoryId.value),
+          asset_id: selectedAsset.value?.id ?? null,
+          asset_life_period: line.value.asset_life_period,
+          unit_cost: Number(line.value.unit_cost),
+          planned_cost: Number(line.value.planned_cost),
+          request_type: line.value.request_type,
+          quantity: Number(line.value.quantity),
+          description: line.value.description,
+          reason: line.value.reason,
         }
-      })
-    }
+      ]
+    };
 
-    alert(msg || 'Failed to update request.')
-    console.error('Update error:', e?.response ?? e)
+    await axios.put(`${apiBaseUrl}/asset-investment-requests/${id}`, payload, {
+      headers: getAuthHeaders()
+    });
+
+    router.push("/dashboards/asset-investment-requests");
+  } catch (e) {
+    topErrors.value = e.response?.data?.errors ?? {};
+    alert(e.response?.data?.message ?? "Update failed");
   } finally {
-    loading.value.submit = false
+    saving.value = false;
   }
-}
+};
 
-/* -------- totals -------- */
-const plannedTotal = computed(() =>
-  records.value.reduce((sum, r) => sum + Number(r.planned_cost || 0) * Number(r.quantity || 1), 0)
-)
-function formatAmount(val) {
-  if (val === null || val === undefined || val === '') return '-'
-  const num = Number(val)
-  if (Number.isNaN(num)) return String(val)
-  return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
+/* auto-calc planned cost */
+watch(
+  () => [line.value.unit_cost, line.value.quantity],
+  ([uc, qty]) => {
+    line.value.planned_cost = (Number(uc) || 0) * (Number(qty) || 0);
+  },
+  { immediate: true }
+);
 
-/* -------- nav -------- */
-const goBack = () => router.push('/dashboards/asset-investment-requests')
-
-/* -------- init -------- */
+/* init */
 onMounted(async () => {
-  await Promise.all([fetchProjects(), fetchAssetCategories()])
-  await loadRecord()
-})
+  await Promise.all([fetchProjects(), fetchAssetCategories()]);
+  await fetchExisting();
+});
 </script>
 
 <style scoped>
@@ -546,6 +427,8 @@ onMounted(async () => {
 .gap-2 { gap: 8px; }
 .mb-4 { margin-block-end: 16px; }
 .text-medium-emphasis { opacity: 0.7; }
-
+.v-text-field .v-input__details {
+    padding-inline: 0px !important;
+}
 @media (min-width: 960px) { .pa-4 { padding: 24px !important; } }
 </style>

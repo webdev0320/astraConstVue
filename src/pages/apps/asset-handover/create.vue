@@ -9,7 +9,7 @@
       <VCol cols="12" md="6">
         <VTextField
           v-model="form.employee_name"
-          label="Name of Employee"
+          label="HandOver By Employee Name"
           readonly
           :error-messages="errorMessages.employee_name"
           hide-details="auto"
@@ -35,7 +35,7 @@
       <VCol cols="12" md="6">
         <VTextField
           v-model="form.employee_code"
-          label="Employee Code No"
+          label="HandOver By Employee Code"
           readonly
           :error-messages="errorMessages.employee_code"
           hide-details="auto"
@@ -101,7 +101,8 @@
                 <tr>
                   <th style="inline-size: 80px;">S.No</th>
                   <th>Description</th>
-                  <th style="inline-size: 160px;">Asset Code</th>
+                  <th style="inline-size: 160px;">Asset Requested</th>
+                   <th style="inline-size: 160px;">Asset Providing</th>
                   <th style="inline-size: 180px;">Quantity (Requested)</th>
                   <th style="inline-size: 180px;">Quantity (Handover)</th>
                   <th>Remarks</th>
@@ -131,6 +132,25 @@
                       readonly
                     />
                   </td>
+
+                  <!-- Asset Code (dropdown, optional) -->
+                 <!-- Asset (dropdown, optional) -->
+                  <td>
+                    <VSelect
+                      v-model="row.asset_id"
+                      :items="assetOptions"
+                      item-title="title"
+                      item-value="value"
+                      variant="outlined"
+                      density="compact"
+                      hide-details="auto"
+                      placeholder="Select Asset (optional)"
+                      clearable
+                      :loading="loadingAssets"
+                    />
+                  </td>
+
+
 
                   <!-- Quantity (Requested) readonly -->
                   <td>
@@ -304,7 +324,6 @@ const fetchCurrentUser = async () => {
 
   const candidates = [
     `${apiBaseUrl}/me`,
-    `${apiBaseUrl}/auth/me`,
     `${apiBaseUrl}/user`,
     `${apiBaseUrl}/profile`,
   ]
@@ -469,6 +488,36 @@ const validateRows = () => {
   return ok
 }
 
+
+/* ========= ASSETS DROPDOWN ========= */
+const loadingAssets = ref(false)
+const assets = ref([])
+
+const assetOptions = computed(() =>
+  assets.value.map(a => ({
+    value: a.id,
+    title: `${a.asset_code ?? a.id} — ${a.title ?? a.title ?? 'Unnamed Asset'}`,
+  }))
+)
+
+const fetchAssets = async () => {
+  loadingAssets.value = true
+  try {
+    const res = await axios.get(`${apiBaseUrl}/assets`, { headers: getAuthHeaders() })
+    assets.value = Array.isArray(res.data)
+      ? res.data
+      : Array.isArray(res.data?.data)
+        ? res.data.data
+        : []
+  } catch (err) {
+    console.error('Error loading assets:', err)
+    message.value = err.response?.data?.message || 'Failed to load assets.'
+  } finally {
+    loadingAssets.value = false
+  }
+}
+
+
 const submitForm = async () => {
   try {
     loading.value = true
@@ -499,6 +548,7 @@ const submitForm = async () => {
       user_id: form.value.user_id || undefined,
       data: requestItems.value.map(r => ({
         item_id: r.item_id,
+        asset_id : r.asset_id,
         asset_code: (r.asset_code === null || r.asset_code === '') ? null : Number(r.asset_code),
         quantity: Number(r.handover_qty),
         remarks: r.remarks || '',
@@ -531,12 +581,14 @@ const submitForm = async () => {
 /* ========= LIFECYCLE ========= */
 onMounted(async () => {
   await Promise.all([
-    fetchCurrentUser(),     // fill employee name + code from logged-in user
+    fetchCurrentUser(),
     fetchAssetRequests(),
     fetchDepartments(),
-    fetchUsers(),           // load global users for "Handover To"
+    fetchUsers(),
+    fetchAssets(), // ✅ load all assets for dropdown
   ])
 })
+
 </script>
 
 <style scoped>

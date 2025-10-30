@@ -14,7 +14,16 @@
       </VCol>
 
       <!-- Code (REQUIRED) -->
-      <VCol cols="12" md="6">
+       <VCol cols="12" md="8">
+        <VTextField
+          v-model="asset.title"
+          label="Title"
+          :rules="[requiredValidator]"
+          :error-messages="errorMessages.title"
+          clearable
+        />
+      </VCol>
+      <VCol cols="12" md="4">
         <VTextField
           v-model="asset.code"
           label="Code"
@@ -25,7 +34,7 @@
       </VCol>
 
       <!-- Asset Investment Request (REQUIRED) -->
-      <VCol cols="12" md="6">
+      <VCol cols="12" md="4">
         <VSelect
           v-model="asset.asset_investment_requests_id"
           :items="investmentRequests"
@@ -40,18 +49,10 @@
       </VCol>
 
       <!-- Title (REQUIRED) -->
-      <VCol cols="12" md="6">
-        <VTextField
-          v-model="asset.title"
-          label="Title"
-          :rules="[requiredValidator]"
-          :error-messages="errorMessages.title"
-          clearable
-        />
-      </VCol>
+     
 
       <!-- Category (REQUIRED) -->
-      <VCol cols="12" md="6">
+      <VCol cols="12" md="4">
         <VSelect
           v-model="asset.asset_category_id"
           :items="categories"
@@ -67,7 +68,7 @@
       </VCol>
 
       <!-- Sub Category (REQUIRED) -->
-      <VCol cols="12" md="6">
+      <VCol cols="12" md="4">
         <VSelect
           v-model="asset.asset_sub_category_id"
           :items="subCategories"
@@ -93,7 +94,7 @@
       </VCol> -->
 
       <!-- Asset Type (optional) -->
-      <VCol cols="12" md="6">
+      <VCol cols="12" md="4">
         <VSelect
           v-model="asset.asset_type"
           :items="ASSET_TYPE_OPTIONS"
@@ -103,7 +104,7 @@
       </VCol>
 
       <!-- Location (optional) -->
-      <VCol cols="12" md="6">
+      <VCol cols="12" md="4">
         <VSelect
           v-model="asset.location_id"
           :items="locations"
@@ -331,6 +332,10 @@
         <VTextField v-model="asset.nbv" type="number" label="Book Value (NBV)" :rules="[numberOptionalValidator]" clearable />
       </VCol>
       
+
+    
+
+
       <!-- ===================== -->
       <!-- images                 -->
       <!-- ===================== -->
@@ -505,6 +510,8 @@ const fetchAllCategories = async () => {
 
   return all
 }
+
+
 
 /* Load top-level categories where parent_id is null */
 const fetchCategories = async () => {
@@ -701,7 +708,7 @@ const submitForm = async () => {
     safeAppend('book_value', numOrEmpty(asset.value.nbv))
     safeAppend('useful_life', numOrEmpty(asset.value.useful_life))
     // (optional) agar chahen to depreciation_rate bhi bhej dein:
-    // safeAppend('depreciation_rate', numOrEmpty(asset.value.depreciation_rate))
+    safeAppend('depreciation_rate', numOrEmpty(asset.value.depreciation_rate))
 
     // IMAGES
     ;(asset.value.images || []).forEach(file => {
