@@ -50,7 +50,7 @@
             <VSelect
               v-model="selectedAsset"
               :items="assets"
-              item-title="code"
+              :item-title="asset => `${asset.code} - ${asset.title}`"
               item-value="id"
               label="Select Asset (Optional)"
               :loading="loading.assets || loading.form"

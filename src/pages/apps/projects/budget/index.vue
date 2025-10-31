@@ -34,20 +34,27 @@
         {{ formatAmount(item.amount) }}
       </template>
 
-      <template #item.actions="{ item }">
-        <div class="d-flex gap-2">
-          <!-- Uncomment to enable editing
-          <VBtn color="warning" size="small" @click="editBudget(item.id)">
-            Edit
-          </VBtn>
-          -->
-          <VBtn color="error" size="small" @click="deleteBudget(item.id)">
-            Delete
-          </VBtn>
-        </div>
-      </template>
+      <template v-slot:item.actions="{ item }">
+            <div class="d-flex gap-2">
+              <VBtn color="primary" size="small" @click="viewDetails(item)">
+                Details
+              </VBtn>
+
+              <!-- <VBtn color="primary" size="small" @click="editBudget(item.id)">
+                Edit
+              </VBtn> -->
+
+              <VBtn color="error" size="small" @click="deleteBudget(item.id)">
+                Delete
+              </VBtn>
+            </div>
+          </template>
+
     </VDataTable>
 
+
+      <!-- Budget Details Dialog -->
+      
     <!-- Empty state -->
     <VCard v-else class="mt-6 pa-6 text-center" variant="tonal">
       <VCardTitle>No budgets found</VCardTitle>
@@ -61,6 +68,40 @@
         Add Budget
       </VBtn>
     </VCard>
+
+    <VDialog v-model="detailsDialog" max-width="600px">
+        <VCard>
+          <VCardTitle class="font-weight-bold">
+            Budget Details
+          </VCardTitle>
+
+          <VCardText>
+            <div class="mb-2"><strong>ID:</strong> {{ selectedBudget?.id }}</div>
+            <div class="mb-2"><strong>Category:</strong> {{ selectedBudget?.category }}</div>
+            <div class="mb-2"><strong>Subcategory:</strong> {{ selectedBudget?.subcategory }}</div>
+            <div class="mb-2"><strong>Asset:</strong> {{ selectedBudget?.asset }}</div>
+            <div class="mb-2"><strong>Quantity:</strong> {{ selectedBudget?.quantity }}</div>
+            <div class="mb-2"><strong>Amount (SAR):</strong> {{ formatAmount(selectedBudget?.amount) }}</div>
+            <div class="mb-2"><strong>Created At:</strong> {{ selectedBudget?.created_at }}</div>
+
+            <div class="mt-4">
+              <strong>Description:</strong>
+              <div class="mt-1 pa-2 bg-grey-lighten-4 rounded border text-sm">
+                {{ selectedBudget?.asset_description || '—' }}
+              </div>
+            </div>
+          </VCardText>
+
+          <VCardActions>
+            <VBtn color="primary" block @click="detailsDialog = false">
+              Close
+            </VBtn>
+          </VCardActions>
+        </VCard>
+      </VDialog>
+
+
+
   </div>
 </template>
 
@@ -69,6 +110,7 @@ import axios from "axios";
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { VBtn, VCard, VCardText, VCardTitle, VDataTable } from "vuetify/components";
+import { VDialog, VCardActions } from "vuetify/components";
 
 const route = useRoute();
 const router = useRouter();
@@ -80,9 +122,8 @@ const headers = [
   { title: "CATEGORY", key: "category", sortable: true },
   { title: "SUBCATEGORY", key: "subcategory", sortable: true },
   { title: "ASSET CODE & NAME", key: "asset", sortable: true },
-  { title: "DESCRIPTION", key: "asset_description", sortable: false },
   { title: "QTY", key: "quantity", sortable: true },
-  { title: "AMOUNT", key: "amount", sortable: true },
+  { title: "AMOUNT (SAR)", key: "amount", sortable: true },
   { title: "CREATED AT", key: "created_at", sortable: true },
   { title: "ACTIONS", key: "actions", sortable: false },
 ];
@@ -91,6 +132,14 @@ const budgets = ref([]);
 const project = ref(null);
 const loading = ref(true);
 const errorMessage = ref("");
+
+const detailsDialog = ref(false);
+const selectedBudget = ref(null);
+
+const viewDetails = (item) => {
+  selectedBudget.value = item;
+  detailsDialog.value = true;
+};
 
 const mappedBudgets = computed(() =>
   (budgets.value || []).map(b => ({

@@ -173,6 +173,9 @@
               variant="outlined"
               hide-details="auto"
               clearable
+              maxlength="1000"
+              :counter="1000"
+
             />
           </VCol>
 
@@ -184,6 +187,9 @@
               variant="outlined"
               hide-details="auto"
               clearable
+              maxlength="1000"
+              :counter="1000"
+
             />
           </VCol>
 

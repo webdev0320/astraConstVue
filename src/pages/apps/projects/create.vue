@@ -50,18 +50,16 @@
 
       <!-- Description -->
       <VCol cols="12">
-          <label class="mb-1 d-block">Description</label>
-          <QuillEditor
-            v-model:content="project.description"
-            content-type="html"
-            theme="snow"
-            toolbar="full"
-          />
-          <small v-if="errorMessages.description" class="text-red">
-            {{ errorMessages.description[0] }}
-          </small>
-        </VCol>
-
+        <VTextarea
+          v-model="project.description"
+          label="Description"
+          variant="outlined"
+          rows="5"
+          :error-messages="errorMessages.description"
+          hide-details="auto"
+          clearable
+        />
+      </VCol>
 
       <VCol cols="12">
         <VBtn type="submit" color="primary" :loading="loading" :disabled="loading">
@@ -74,12 +72,12 @@
   </VForm>
 </template>
 
+
 <script setup>
 import axios from 'axios'
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { VBtn, VCol, VForm, VRow, VTextField, VTextarea } from 'vuetify/components'
-import { QuillEditor } from '@vueup/vue-quill'
 
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL

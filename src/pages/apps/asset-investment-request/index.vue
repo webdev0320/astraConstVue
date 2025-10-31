@@ -209,7 +209,7 @@ const headers = [
   { title: "Project", key: "project_name" },
   { title: "Created By", key: "user_display", sortable: false },
   { title: "Asset Req. Date", key: "date" },
-  { title: "Planned Cost", key: "planned_cost" },
+  { title: "Planned Cost (SAR)", key: "planned_cost" },
   { title: "Actions", key: "actions", sortable: false },
 ];
 
@@ -222,8 +222,8 @@ const lineHeaders = [
   { title: "Description", key: "description" },
   { title: "Reason", key: "reason" },
   { title: "Qty", key: "quantity" },
-  { title: "Planned Cost", key: "planned_cost" },
-  { title: "Line Total", key: "line_total" },
+  { title: "Planned Cost (SAR)", key: "planned_cost" },
+  { title: "Line Total (SAR)", key: "line_total" },
 ];
 
 const assetInvestmentRequests = ref([]);

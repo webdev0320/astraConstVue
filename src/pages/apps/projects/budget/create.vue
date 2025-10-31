@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="d-flex justify-between align-center mb-4">
-      <h3>Create Budget</h3>
+      <h3>Add Budget</h3>
     </div>
 
     <VCard class="pa-4">
@@ -47,7 +47,7 @@
             <VSelect
               v-model="selectedAsset"
               :items="assets"
-              item-title="code"
+              :item-title="asset => `${asset.code} - ${asset.title}`"
               item-value="id"
               label="Select Asset (Optional)"
               :loading="loading.assets"
@@ -91,7 +91,7 @@
           <VCol cols="12" md="12">
             <VTextField
               v-model="budget.asset_description"
-              label="Asset Description (Optional)"
+              label="Other Asset Request"
               variant="outlined"
               hide-details="auto"
               clearable
@@ -192,7 +192,7 @@ const headers = [
   { title: "Asset Code", key: "asset_code" },
   { title: "Category", key: "category_name" },
   { title: "Subcategory", key: "subcategory_name" },
-  { title: "Description", key: "asset_description" },
+  { title: "Other Asset Request", key: "asset_description" },
   { title: "Qty", key: "quantity" },
   { title: "Amount", key: "amount" },
   { title: "Actions", key: "actions", sortable: false },
@@ -341,7 +341,7 @@ const addBudgetRecord = () => {
       asset_description: desc || null,
 
       // UI-only
-      asset_code: a?.code ?? '—',
+      asset_code: a?.title+'-'+a?.code ?? '—',
       category_name: categoryNameById(selectedCategoryId.value),
       subcategory_name: subcategoryNameById(selectedSubCategoryId.value),
     });

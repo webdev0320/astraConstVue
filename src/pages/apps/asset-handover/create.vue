@@ -274,6 +274,9 @@ const loadingItems = ref(false)
 const requestItems = ref([])   // [{ item_id, description, request_qty, handover_qty, asset_code|null, remarks, asset_type }]
 const rowErrors = ref([])      // per-row client errors
 
+// Watcher for handover date
+
+
 /* today as default date */
 const today = new Date().toISOString().split('T')[0]
 
@@ -287,6 +290,25 @@ const form = ref({
   department_id: null,
   handover_date: today,
 })
+
+watch(
+  () => form.value.handover_date,
+  (newVal) => {
+    if (!newVal) {
+      errorMessages.value.handover_date = "";
+      return;
+    }
+
+    const today = new Date().setHours(0, 0, 0, 0);
+    const selected = new Date(newVal).setHours(0, 0, 0, 0);
+
+    if (selected < today) {
+      errorMessages.value.handover_date = "Handover date cannot be older than today.";
+    } else {
+      errorMessages.value.handover_date = "";
+    }
+  }
+);
 
 /* ========= VALIDATORS ========= */
 const requiredValidator = v => (!!v || v === 0) || 'This field is required'

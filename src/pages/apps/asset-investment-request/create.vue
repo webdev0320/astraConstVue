@@ -132,6 +132,7 @@
               type="number"
               variant="outlined"
               hide-details="auto"
+              readonly
             />
           </VCol>
 
@@ -148,6 +149,7 @@
               step="0.01"
               variant="outlined"
               hide-details="auto"
+              readonly
             />
           </VCol>
 
@@ -169,17 +171,18 @@
          
 
           <!-- Description -->
-          <VCol cols="12" md="12" class="py-5">
+         <VCol cols="12" md="12" class="py-5">
             <VTextarea
               v-model="line.description"
               label="Detailed Asset Description"
               variant="outlined"
               hide-details="auto"
               clearable
+              maxlength="1000"
+              :counter="1000"
             />
           </VCol>
 
-          <!-- Reason -->
           <VCol cols="12" md="12" class="py-5">
             <VTextarea
               v-model="line.reason"
@@ -187,6 +190,8 @@
               variant="outlined"
               hide-details="auto"
               clearable
+              maxlength="1000"
+              :counter="1000"
             />
           </VCol>
 

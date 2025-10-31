@@ -78,11 +78,11 @@
                           </template>
 
                           <template v-if="item.status == 1">
-                            Change Status to In-Active
+                            Mark As Completed
                           </template>
 
                           <template v-else>
-                            Change Status to Active
+                            Resume Project
                           </template>
                         </VListItem>
 
@@ -123,7 +123,7 @@ const headers = [
   { title: "START DATE", key: "start_date" },
   { title: "END DATE", key: "end_date" },
   { title: "DESCRIPTION", key: "description" },
-  { title: "BUDGET", key: "budget" },
+  { title: "BUDGET (SAR)", key: "budget" },
   { title: "ACTIONS", key: "actions", sortable: false },
 ];
 

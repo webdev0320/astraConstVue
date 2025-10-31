@@ -268,6 +268,25 @@ const form = ref({
   handover_date: today,
 })
 
+watch(
+  () => form.value.handover_date,
+  (newVal) => {
+    if (!newVal) {
+      errorMessages.value.handover_date = "";
+      return;
+    }
+
+    const today = new Date().setHours(0, 0, 0, 0);
+    const selected = new Date(newVal).setHours(0, 0, 0, 0);
+
+    if (selected < today) {
+      errorMessages.value.handover_date = "Handover date cannot be older than today.";
+    } else {
+      errorMessages.value.handover_date = "";
+    }
+  }
+);
+
 /* ========= VALIDATORS ========= */
 const requiredValidator = v => (!!v || v === 0) || 'This field is required'
 const posInt = v => Number.isInteger(+v) && +v > 0
