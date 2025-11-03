@@ -53,21 +53,6 @@
         />
       </VCol>
 
-      <!-- Language (dynamic) -->
-      <VCol cols="12" md="6">
-        <VSelect
-          v-model="user.language_id"
-          :items="languageOptions"
-          item-title="name"
-          item-value="id"
-          label="Language"
-          :loading="languagesLoading"
-          :disabled="languagesLoading"
-          :rules="[requiredValidator]"
-          :error-messages="errorMessages.language_id"
-        />
-      </VCol>
-
       <!-- Location (dynamic) -->
       <VCol cols="12" md="6">
         <VSelect
@@ -83,25 +68,6 @@
         />
       </VCol>
 
-      <!-- Latitude -->
-      <VCol cols="12" md="6">
-        <VTextField
-          v-model="user.latitude"
-          label="Latitude"
-          :rules="[latitudeValidator]"
-          :error-messages="errorMessages.latitude"
-        />
-      </VCol>
-
-      <!-- Longitude -->
-      <VCol cols="12" md="6">
-        <VTextField
-          v-model="user.longitude"
-          label="Longitude"
-          :rules="[longitudeValidator]"
-          :error-messages="errorMessages.longitude"
-        />
-      </VCol>
 
       <!-- Address -->
       <VCol cols="12" md="6">
@@ -154,20 +120,16 @@ const user = ref({
   password: "",
   password_confirmation: "",
   mobile_number: "",
-  language_id: null,
+
   location_id: null, // <-- NEW
-  latitude: "",
-  longitude: "",
   address: "",
   role: "", // role NAME string (backend expects name in assignRole)
 });
 
 const roleOptions = ref([]);
-const languageOptions = ref([]);
 const locationOptions = ref([]); // <-- NEW
 
 const rolesLoading = ref(false);
-const languagesLoading = ref(false);
 const locationsLoading = ref(false); // <-- NEW
 
 const refForm = ref();
@@ -211,20 +173,6 @@ const fetchRoles = async () => {
   }
 };
 
-const fetchLanguages = async () => {
-  languagesLoading.value = true;
-  try {
-    const res = await axios.get(`${apiBaseUrl}/getLanguages`, { headers: getHeaders() });
-    // API has a key typo sometimes: "langauges"
-    const arr = res?.data?.langauges ?? res?.data?.languages ?? res?.data?.data?.languages ?? [];
-    languageOptions.value = arr.map(l => ({ id: l.id, name: l.name, short_code: l.short_code }));
-  } catch (e) {
-    console.error("Error loading languages:", e);
-  } finally {
-    languagesLoading.value = false;
-  }
-};
-
 // NEW: load locations from /api/locations
 const fetchLocations = async () => {
   locationsLoading.value = true;
@@ -253,10 +201,7 @@ const submitForm = async () => {
       password: user.value.password,
       password_confirmation: user.value.password_confirmation,
       mobile_number: user.value.mobile_number,
-      language_id: user.value.language_id,
       location_id: user.value.location_id, // <-- NEW
-      latitude: user.value.latitude || null,
-      longitude: user.value.longitude || null,
       address: user.value.address,
       role: user.value.role,
     };
@@ -281,7 +226,7 @@ const submitForm = async () => {
 };
 
 onMounted(async () => {
-  await Promise.all([fetchRoles(), fetchLanguages(), fetchLocations()]);
+  await Promise.all([fetchRoles(), fetchLocations()]);
 });
 </script>
 

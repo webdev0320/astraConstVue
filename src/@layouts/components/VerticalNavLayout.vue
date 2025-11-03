@@ -2,6 +2,18 @@
 import { VerticalNav } from '@layouts/components'
 import { useLayoutConfigStore } from '@layouts/stores/config'
 
+
+import { useRoute } from 'vue-router'
+import { computed } from 'vue'
+
+const route = useRoute()
+
+const breadcrumbs = computed(() => {
+  const bc = route.meta?.breadcrumb
+  return typeof bc === 'function' ? bc(route) : (bc || [])
+})
+
+
 const props = defineProps({
   navItems: {
     type: null,
@@ -89,6 +101,25 @@ const verticalNavAttrs = computed(() => {
       </header>
       <main class="layout-page-content">
         <div class="page-content-container">
+
+                <!-- ✅ Breadcrumbs -->
+                <div v-if="breadcrumbs.length" class="py-3 d-flex align-center text-body-2">
+                  <template v-for="(crumb, i) in breadcrumbs" :key="i">
+                    <router-link
+                      v-if="crumb.to"
+                      :to="crumb.to"
+                      class="text-primary font-weight-medium"
+                    >
+                      {{ crumb.title }}
+                    </router-link>
+
+                    <span v-else class="font-weight-medium">{{ crumb.title }}</span>
+
+                    <span v-if="i < breadcrumbs.length - 1" class="mx-2">/</span>
+                  </template>
+                </div>
+                <!-- ✅ End Breadcrumbs -->
+
           <slot />
         </div>
       </main>

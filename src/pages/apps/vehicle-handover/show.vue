@@ -2,10 +2,6 @@
   <div class="vh-page">
     <!-- Top bar -->
     <div class="d-flex justify-between align-center mb-4">
-      <div class="d-flex align-center gap-2">
-        <VBtn variant="text" prepend-icon="mdi-arrow-left" @click="$router.back()">Back</VBtn>
-        <h3 class="page-title">Vehicle Handover — #{{ id }}</h3>
-      </div>
 
       <div class="d-flex align-center gap-2">
         <VBtn
@@ -42,6 +38,8 @@
           <VCardText>
             <div class="kv">
               <div><strong>Date</strong><span>{{ handover.report_date || '—' }}</span></div>
+              <div><strong>Asset Code</strong><span>{{ handover.asset.code || '—' }}</span></div>
+              <div><strong>Asset Name</strong><span>{{ handover.asset.title || '—' }}</span></div>
               <div><strong>Plate No</strong><span>{{ handover.plate_no || '—' }}</span></div>
               <div><strong>Driver Name</strong><span>{{ handover.driverName || '—' }}</span></div>
               <div><strong>KM Reading</strong><span>{{ handover.km_reading ?? '—' }}</span></div>
@@ -54,7 +52,7 @@
         </VCard>
 
         <VCard>
-          <VCardTitle class="pb-0">People & Locations</VCardTitle>
+          <VCardTitle class="pb-0">Handover Details</VCardTitle>
           <VCardText>
             <div class="kv">
               <div><strong>Releasing By</strong><span>{{ handover.releasingName || '—' }}</span></div>
@@ -66,6 +64,8 @@
             </div>
           </VCardText>
         </VCard>
+
+
 
         <VCard class="md:col-span-2">
           <VCardTitle class="pb-0">Checks</VCardTitle>

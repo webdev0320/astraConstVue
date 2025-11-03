@@ -136,13 +136,15 @@ const errorMessage = ref("");
 
 /* ====== Table headers ====== */
 const headers = [
-  { title: "ID", key: "id", width: 80 },
+  { title: "ID", key: "handover_id", width: 80 },
+
   { title: "Handover Date", key: "handover_date" },
   { title: "Asset Request ID", key: "asset_investment_request_id" },
-  // { title: "Quantity", key: "quantity" },
+
   { title: "Handover By", key: "handover_by_name" },
   { title: "Handover To", key: "user_name" },
   { title: "Remarks", key: "remarks" },
+  { title: "Status", key: "status" },
   { title: "Actions", key: "actions", sortable: false, width: 160 },
 ];
 
@@ -213,12 +215,14 @@ const fetchHandovers = async () => {
 
     handovers.value = list.map((p) => ({
       id: p.id,
+      handover_id: p.handover_id,
       handover_date: p.handover_date ?? null,
       asset_investment_request_id: p.asset_investment_request_id ?? "—",
       quantity: p.quantity ?? "—",
       handover_by_name: p.handover_by?.name ?? "—",
       user_name: p.user?.name ?? "—",
       remarks: p.remarks ?? "—",
+      status: p.status ?? "—",
     }));
   } catch (err) {
     console.error("Error fetching asset handovers:", err);

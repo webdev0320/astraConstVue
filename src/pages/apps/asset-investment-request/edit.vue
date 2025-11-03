@@ -27,9 +27,11 @@
               label="PROJECT NAME"
               placeholder="Select Project"
               :error-messages="topErrors.project_id"
+              return-object
               variant="outlined"
               hide-details="auto"
               clearable
+
             />
           </VCol>
 
@@ -51,18 +53,17 @@
 
           <!-- Category -->
           <VCol cols="12" md="3" class="py-5">
-            <VSelect
+           <VSelect
               v-model="selectedCategoryId"
               :items="parentCategoryItems"
               item-title="title"
               item-value="id"
+              :loading="loading.parentCategoryItems"
               label="Select Asset Category"
-              :loading="loading.categories"
-              :disabled="loading.categories"
-              @update:modelValue="onCategoryChange"
-              hide-details="auto"
               variant="outlined"
+              hide-details="auto"
               clearable
+              return-object
             />
           </VCol>
 
@@ -79,6 +80,7 @@
               hide-details="auto"
               variant="outlined"
               clearable
+              return-object
             />
           </VCol>
 
@@ -227,7 +229,7 @@ const REQUEST_TYPE_OPTIONS = ["NEW", "LEASED", "USED"];
 
 /* ---------------- State ---------------- */
 const projects = ref([]);
-const selectedProjectId = ref(null);
+const selectedProjectId = ref([]);
 const air_number = ref(null);
 const date = ref(null);
 const saving = ref(false);
@@ -236,8 +238,8 @@ const topErrors = ref({});
 const allCategories = ref([]);
 const loading = ref({ categories: false, assets: false });
 
-const selectedCategoryId = ref(null);
-const selectedSubCategoryId = ref(null);
+const selectedCategoryId = ref([]);
+const selectedSubCategoryId = ref([]);
 const selectedAsset = ref(null);
 const assets = ref([]);
 
@@ -249,6 +251,8 @@ const line = ref({
   request_type: "NEW",
   description: "",
   reason: "",
+  asset_category_id: "",
+  asset_sub_category_id: "",
 });
 
 const dateError = ref("");
@@ -358,10 +362,13 @@ const onSubCategoryChange = async (val) => {
 };
 
 const parentCategoryItems = computed(() =>
-  allCategories.value.filter(c => c.is_parent).map(c => ({
-    id: c.id,
-    title: c.title
-  }))
+  allCategories.value
+    .filter(c => c.is_parent)
+    .map(c => ({
+      // keep all original fields and ensure `title` exists
+      ...c,
+      title: c.title ?? c.name ?? c.label ?? String(c.id)
+    }))
 );
 
 const subcategoryItemsForCategory = computed(() => {
@@ -383,7 +390,7 @@ const saveAll = async () => {
       date: date.value,
       data: [
         {
-          asset_category_id: Number(selectedCategoryId.value),
+          asset_category_id: Number(selectedCategoryId.value?.id),
           asset_sub_category_id: Number(selectedSubCategoryId.value),
           asset_id: selectedAsset.value?.id ?? null,
           asset_life_period: line.value.asset_life_period,

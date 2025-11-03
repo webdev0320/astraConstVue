@@ -68,28 +68,63 @@ export const routes = [
     name: 'apps-ecommerce-dashboard',
     component: () => import('@/pages/dashboards/ecommerce.vue'),
   },
-  {
-    path: '/dashboards/assets',
-    name: 'dashboards-assets',
-    component: () => import('@/pages/apps/assets/index.vue'),
+
+{
+  path: '/dashboards/assets',
+  name: 'dashboards-assets',
+  component: () => import('@/pages/apps/assets/index.vue'),
+  meta: {
+    breadcrumb: [
+      { title: 'Dashboard', to: '/dashboards' },
+      { title: 'Assets' },
+    ],
   },
-  {
-    path: '/dashboards/assets/create',
-    name: 'dashboards-assets-create',
-    component: () => import('@/pages/apps/assets/create.vue'),
-    meta: { layout: 'default', navActiveLink: 'dashboards-assets' },
+},
+
+{
+  path: '/dashboards/assets/create',
+  name: 'dashboards-assets-create',
+  component: () => import('@/pages/apps/assets/create.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-assets',
+    breadcrumb: [
+      { title: 'Dashboard', to: '/dashboards' },
+      { title: 'Assets', to: '/dashboards/assets' },
+      { title: 'Create Asset' },
+    ],
   },
-  {
-    path: '/dashboards/assets/edit/:id',
-    name: 'dashboards-assets-edit',
-    component: () => import('@/pages/apps/assets/edit.vue'),
-    meta: { layout: 'default', navActiveLink: 'dashboards-assets' },
+},
+
+{
+  path: '/dashboards/assets/edit/:id',
+  name: 'dashboards-assets-edit',
+  component: () => import('@/pages/apps/assets/edit.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-assets',
+    breadcrumb: route => [
+      { title: 'Dashboard', to: '/dashboards' },
+      { title: 'Assets', to: '/dashboards/assets' },
+      { title: `Edit Asset #${route.params.id}` },
+    ],
   },
-  {
-    path: '/dashboards/assets/detail/:id',
-    name: 'dashboards-assets-detail',
-    component: () => import('@/pages/apps/assets/detail.vue'),
-  },  
+},
+
+{
+  path: '/dashboards/assets/detail/:id',
+  name: 'dashboards-assets-detail',
+  component: () => import('@/pages/apps/assets/detail.vue'),
+  meta: {
+    breadcrumb: route => [
+      { title: 'Dashboard', to: '/dashboards' },
+      { title: 'Assets', to: '/dashboards/assets' },
+      { title: `Asset #${route.params.id}` },
+    ],
+  },
+},
+
+ 
   {
     path: '/dashboards/assetcategories',
     name: 'dashboards-assetcategories',
@@ -107,102 +142,238 @@ export const routes = [
     component: () => import('@/pages/apps/asset-category/edit.vue'),
     meta: { layout: 'default', navActiveLink: 'dashboards-assetcategories' },
   },
-  {
-    path: '/dashboards/asset-investment-requests',
-    name: 'dashboards-asset-investment-requests',
-    component: () => import('@/pages/apps/asset-investment-request/index.vue'),
-  },
-  {
-    path: '/dashboards/asset-investment-requests/create',
-    name: 'dashboards-asset-investment-requests-create',
-    component: () => import('@/pages/apps/asset-investment-request/create.vue'),
-    meta: { layout: 'default', navActiveLink: 'dashboards-asset-investment-requests' },
-  },
-  {
-    path: '/dashboards/asset-investment-requests/edit/:id',
-    name: 'dashboards-asset-investment-requests-edit',
-    component: () => import('@/pages/apps/asset-investment-request/edit.vue'),
-    meta: { layout: 'default', navActiveLink: 'dashboards-asset-investment-requests' },
-  },
-  {
-    path: '/dashboards/asset-investment-requests/detail/:id',
-    name: 'dashboards-asset-investment-requests-detail',
-    component: () => import('@/pages/apps/asset-investment-request/detail.vue'),
-    meta: { layout: 'default', navActiveLink: 'dashboards-asset-investment-requests' },
-  },
-  
-  {
-    path: '/dashboards/assethandovers',
-    name: 'dashboards-assethandovers',
-    component: () => import('@/pages/apps/asset-handover/index.vue'),
-  },
-  {
-    path: '/dashboards/assethandovers/create',
-    name: 'dashboards-assethandovers-create',
-    component: () => import('@/pages/apps/asset-handover/create.vue'),
-    meta: { layout: 'default', navActiveLink: 'dashboards-assethandovers' },
-  },
-  {
-    path: '/dashboards/assethandovers/edit/:id',
-    name: 'dashboards-assethandovers-edit',
-    component: () => import('@/pages/apps/asset-handover/edit.vue'),
-    meta: { layout: 'default', navActiveLink: 'dashboards-assethandovers' },
-  },
 
-    {
-    path: '/dashboards/assethandovers/detail/:id',
-    name: 'dashboards-assethandovers-detail',
-    component: () => import('@/pages/apps/asset-handover/detail.vue'),
-    meta: { layout: 'default', navActiveLink: 'dashboards-assethandovers' },
-  },
 
   {
-    path: '/dashboards/assettransfers',
-    name: 'dashboards-assettransfers',
-    component: () => import('@/pages/apps/asset-transfer/index.vue'),
+  path: '/dashboards/asset-investment-requests',
+  name: 'dashboards-asset-investment-requests',
+  component: () => import('@/pages/apps/asset-investment-request/index.vue'),
+  meta: {
+    breadcrumb: [
+      { title: 'Dashboard', to: '/dashboards' },
+      { title: 'Asset Investment Requests' },
+    ],
   },
+},
 
-    {
-    path: '/dashboards/assettransfers/:id',
-    name: 'dashboards-assettransfers-show',
-    component: () => import('@/pages/apps/asset-transfer/show.vue'),
+{
+  path: '/dashboards/asset-investment-requests/create',
+  name: 'dashboards-asset-investment-requests-create',
+  component: () => import('@/pages/apps/asset-investment-request/create.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-asset-investment-requests',
+    breadcrumb: [
+      { title: 'Dashboard', to: '/dashboards' },
+      { title: 'Asset Investment Requests', to: '/dashboards/asset-investment-requests' },
+      { title: 'Create Request' },
+    ],
   },
+},
+
+{
+  path: '/dashboards/asset-investment-requests/edit/:id',
+  name: 'dashboards-asset-investment-requests-edit',
+  component: () => import('@/pages/apps/asset-investment-request/edit.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-asset-investment-requests',
+    breadcrumb: route => [
+      { title: 'Dashboard', to: '/dashboards' },
+      { title: 'Asset Investment Requests', to: '/dashboards/asset-investment-requests' },
+      { title: `Edit #${route.params.id}` },
+    ],
+  },
+},
+
+{
+  path: '/dashboards/asset-investment-requests/detail/:id',
+  name: 'dashboards-asset-investment-requests-detail',
+  component: () => import('@/pages/apps/asset-investment-request/detail.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-asset-investment-requests',
+    breadcrumb: route => [
+      { title: 'Dashboard', to: '/dashboards' },
+      { title: 'Asset Investment Requests', to: '/dashboards/asset-investment-requests' },
+      { title: `Request #${route.params.id}` },
+    ],
+  },
+},
+
+
+
+ {
+  path: '/dashboards/assethandovers',
+  name: 'dashboards-assethandovers',
+  component: () => import('@/pages/apps/asset-handover/index.vue'),
+  meta: {
+    breadcrumb: [
+      { title: 'Dashboard', to: '/dashboards' },
+      { title: 'Asset Handovers' },
+    ],
+  },
+},
+
+{
+  path: '/dashboards/assethandovers/create',
+  name: 'dashboards-assethandovers-create',
+  component: () => import('@/pages/apps/asset-handover/create.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-assethandovers',
+    breadcrumb: [
+      { title: 'Dashboard', to: '/dashboards' },
+      { title: 'Asset Handovers', to: '/dashboards/assethandovers' },
+      { title: 'Create Handover' },
+    ],
+  },
+},
+
+{
+  path: '/dashboards/assethandovers/edit/:id',
+  name: 'dashboards-assethandovers-edit',
+  component: () => import('@/pages/apps/asset-handover/edit.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-assethandovers',
+    breadcrumb: route => [
+      { title: 'Dashboard', to: '/dashboards' },
+      { title: 'Asset Handovers', to: '/dashboards/assethandovers' },
+      { title: `Edit Handover #${route.params.id}` },
+    ],
+  },
+},
+
+{
+  path: '/dashboards/assethandovers/detail/:id',
+  name: 'dashboards-assethandovers-detail',
+  component: () => import('@/pages/apps/asset-handover/detail.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-assethandovers',
+    breadcrumb: route => [
+      { title: 'Dashboard', to: '/dashboards' },
+      { title: 'Asset Handovers', to: '/dashboards/assethandovers' },
+      { title: `Handover #${route.params.id}` },
+    ],
+  },
+},
 
   {
-    path: '/dashboards/assettransfers/create',
-    name: 'dashboards-assettransfers-create',
-    component: () => import('@/pages/apps/asset-transfer/create.vue'),
-    meta: { layout: 'default', navActiveLink: 'dashboards-assettransfers' },
+  path: '/dashboards/assettransfers',
+  name: 'dashboards-assettransfers',
+  component: () => import('@/pages/apps/asset-transfer/index.vue'),
+  meta: {
+    breadcrumb: [
+      { title: 'Dashboard', to: '/dashboards' },
+      { title: 'Asset Transfer' },
+    ],
   },
-  {
-    path: '/dashboards/assettransfers/edit/:id',
-    name: 'dashboards-assettransfers-edit',
-    component: () => import('@/pages/apps/asset-transfer/edit.vue'),
-    meta: { layout: 'default', navActiveLink: 'dashboards-assettransfers' },
-  },
+},
 
-  {
-    path: '/dashboards/vehiclehandovers',
-    name: 'dashboards-vehiclehandovers',
-    component: () => import('@/pages/apps/vehicle-handover/index.vue'),
+{
+  path: '/dashboards/assettransfers/create',
+  name: 'dashboards-assettransfers-create',
+  component: () => import('@/pages/apps/asset-transfer/create.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-assettransfers',
+    breadcrumb: [
+      { title: 'Dashboard', to: '/dashboards' },
+      { title: 'Asset Transfer', to: '/dashboards/assettransfers' },
+      { title: 'Create' },
+    ],
   },
-  {
-    path: '/dashboards/vehiclehandovers/:id',
-    name: 'dashboards-vehiclehandovers-show',
-    component: () => import('@/pages/apps/vehicle-handover/show.vue'),
+},
+
+{
+  path: '/dashboards/assettransfers/edit/:id',
+  name: 'dashboards-assettransfers-edit',
+  component: () => import('@/pages/apps/asset-transfer/edit.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-assettransfers',
+    breadcrumb: [
+      { title: 'Dashboard', to: '/dashboards' },
+      { title: 'Asset Transfer', to: '/dashboards/assettransfers' },
+      { title: 'Edit' },
+    ],
   },
-  {
-    path: '/dashboards/vehiclehandovers/create',
-    name: 'dashboards-vehiclehandovers-create',
-    component: () => import('@/pages/apps/vehicle-handover/create.vue'),
-    meta: { layout: 'default', navActiveLink: 'dashboards-vehiclehandovers' },
+},
+
+{
+  path: '/dashboards/assettransfers/:id',
+  name: 'dashboards-assettransfers-show',
+  component: () => import('@/pages/apps/asset-transfer/show.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-assettransfers',
+    breadcrumb: [
+      { title: 'Dashboard', to: '/dashboards' },
+      { title: 'Asset Transfer', to: '/dashboards/assettransfers' },
+      { title: 'Detail' },
+    ],
   },
-  {
-    path: '/dashboards/vehiclehandovers/edit/:id',
-    name: 'dashboards-vehiclehandovers-edit',
-    component: () => import('@/pages/apps/vehicle-handover/edit.vue'),
-    meta: { layout: 'default', navActiveLink: 'dashboards-vehiclehandovers' },
+},
+
+{
+  path: '/dashboards/vehiclehandovers',
+  name: 'dashboards-vehiclehandovers',
+  component: () => import('@/pages/apps/vehicle-handover/index.vue'),
+  meta: {
+    breadcrumb: [
+      { title: 'Dashboard', to: '/dashboards' },
+      { title: 'Vehicle Handover' },
+    ],
   },
+},
+
+{
+  path: '/dashboards/vehiclehandovers/:id',
+  name: 'dashboards-vehiclehandovers-show',
+  component: () => import('@/pages/apps/vehicle-handover/show.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-vehiclehandovers',
+    breadcrumb: [
+      { title: 'Dashboard', to: '/dashboards' },
+      { title: 'Vehicle Handover', to: '/dashboards/vehiclehandovers' },
+      { title: 'Detail' },
+    ],
+  },
+},
+
+{
+  path: '/dashboards/vehiclehandovers/create',
+  name: 'dashboards-vehiclehandovers-create',
+  component: () => import('@/pages/apps/vehicle-handover/create.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-vehiclehandovers',
+    breadcrumb: [
+      { title: 'Dashboard', to: '/dashboards' },
+      { title: 'Vehicle Handover', to: '/dashboards/vehiclehandovers' },
+      { title: 'Create' },
+    ],
+  },
+},
+
+{
+  path: '/dashboards/vehiclehandovers/edit/:id',
+  name: 'dashboards-vehiclehandovers-edit',
+  component: () => import('@/pages/apps/vehicle-handover/edit.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-vehiclehandovers',
+    breadcrumb: [
+      { title: 'Dashboard', to: '/dashboards' },
+      { title: 'Vehicle Handover', to: '/dashboards/vehiclehandovers' },
+      { title: 'Edit' },
+    ],
+  },
+},
+
   
   {
     path: '/dashboards/rental-required',
@@ -240,60 +411,151 @@ export const routes = [
     meta: { layout: 'default', navActiveLink: 'dashboards-locations' },
   },
 
-  {
-    path: '/dashboards/projects',
-    name: 'dashboards-projects',
-    component: () => import('@/pages/apps/projects/index.vue'),
+ {
+  path: '/dashboards/projects',
+  name: 'dashboards-projects',
+  component: () => import('@/pages/apps/projects/index.vue'),
+  meta: {
+    navActiveLink: 'dashboards-projects',
+    breadcrumb: [
+      { title: 'Dashboard', to: '/dashboards/projects' },
+      { title: 'Projects' }
+    ]
   },
-  {
-    path: '/dashboards/projects/create',
-    name: 'dashboards-projects-create',
-    component: () => import('@/pages/apps/projects/create.vue'),
-    meta: { layout: 'default', navActiveLink: 'dashboards-projects' },
-  },
-  {
-    path: '/dashboards/projects/edit/:id',
-    name: 'dashboards-projects-edit',
-    component: () => import('@/pages/apps/projects/edit.vue'),
-    meta: { layout: 'default', navActiveLink: 'dashboards-projects' },
-  },
-  {
-    path: '/dashboards/projects/:id/assignusers',
-    name: 'dashboards-project-assignusers',
-    component: () => import('@/pages/apps/projects/assignusers/index.vue'),
-    meta: { layout: 'default', navActiveLink: 'dashboards-projects' },
-  },
-  {
-    path: '/dashboards/projects/:id/assignusers/create',
-    name: 'dashboards-project-assignusers-create',
-    component: () => import('@/pages/apps/projects/assignusers/create.vue'),
-    meta: { layout: 'default', navActiveLink: 'dashboards-projects' },
-  },
-  {
-    path: '/dashboards/projects/:id/assignusers/:assignusersId/edit',
-    name: 'dashboards-project-assignusers-edit',
-    component: () => import('@/pages/apps/projects/assignusers/edit.vue'),
-    meta: { layout: 'default', navActiveLink: 'dashboards-projects' },
-  },
+},
 
-  {
-    path: '/dashboards/projects/:id/budgets',
-    name: 'dashboards-project-budget',
-    component: () => import('@/pages/apps/projects/budget/index.vue'),
-    meta: { layout: 'default', navActiveLink: 'dashboards-projects' },
+{
+  path: '/dashboards/projects/create',
+  name: 'dashboards-projects-create',
+  component: () => import('@/pages/apps/projects/create.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-projects',
+    breadcrumb: [
+      { title: 'Dashboard', to: '/dashboards/projects' },
+      { title: 'Projects', to: '/dashboards/projects' },
+      { title: 'Create Project' }
+    ],
   },
-  {
-    path: '/dashboards/projects/:id/budgets/create',
-    name: 'dashboards-project-budgets-create',
-    component: () => import('@/pages/apps/projects/budget/create.vue'),
-    meta: { layout: 'default', navActiveLink: 'dashboards-projects' },
+},
+
+{
+  path: '/dashboards/projects/edit/:id',
+  name: 'dashboards-projects-edit',
+  component: () => import('@/pages/apps/projects/edit.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-projects',
+    breadcrumb: route => [
+      { title: 'Dashboard', to: '/dashboards/projects' },
+      { title: 'Projects', to: '/dashboards/projects' },
+      { title: `Edit #${route.params.id}` }
+    ],
   },
-    {
-    path: '/dashboards/projects/:id/budgets/:budgetId/edit',
-    name: 'dashboards-project-budgets-edit',
-    component: () => import('@/pages/apps/projects/budget/edit.vue'),
-    meta: { layout: 'default', navActiveLink: 'dashboards-projects' },
+},
+
+// Assign Users Routes
+{
+  path: '/dashboards/projects/:id/assignusers',
+  name: 'dashboards-project-assignusers',
+  component: () => import('@/pages/apps/projects/assignusers/index.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-projects',
+    breadcrumb: route => [
+      { title: 'Dashboard', to: '/dashboards/projects' },
+      { title: 'Projects', to: '/dashboards/projects' },
+      { title: `Project #${route.params.id}`, to: `/dashboards/projects/edit/${route.params.id}` },
+      { title: 'Assigned Users' }
+    ],
   },
+},
+
+{
+  path: '/dashboards/projects/:id/assignusers/create',
+  name: 'dashboards-project-assignusers-create',
+  component: () => import('@/pages/apps/projects/assignusers/create.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-projects',
+    breadcrumb: route => [
+      { title: 'Dashboard', to: '/dashboards/projects' },
+      { title: 'Projects', to: '/dashboards/projects' },
+      { title: `Project #${route.params.id}`, to: `/dashboards/projects/edit/${route.params.id}` },
+      { title: 'Assigned Users', to: `/dashboards/projects/${route.params.id}/assignusers` },
+      { title: 'Add User' }
+    ],
+  },
+},
+
+{
+  path: '/dashboards/projects/:id/assignusers/:assignusersId/edit',
+  name: 'dashboards-project-assignusers-edit',
+  component: () => import('@/pages/apps/projects/assignusers/edit.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-projects',
+    breadcrumb: route => [
+      { title: 'Dashboard', to: '/dashboards/projects' },
+      { title: 'Projects', to: '/dashboards/projects' },
+      { title: `Project #${route.params.id}`, to: `/dashboards/projects/edit/${route.params.id}` },
+      { title: 'Assigned Users', to: `/dashboards/projects/${route.params.id}/assignusers` },
+      { title: `Edit Assigned User #${route.params.assignusersId}` }
+    ],
+  },
+},
+
+// Budget Routes
+{
+  path: '/dashboards/projects/:id/budgets',
+  name: 'dashboards-project-budget',
+  component: () => import('@/pages/apps/projects/budget/index.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-projects',
+    breadcrumb: route => [
+      { title: 'Dashboard', to: '/dashboards/projects' },
+      { title: 'Projects', to: '/dashboards/projects' },
+      { title: `Project #${route.params.id}`, to: `/dashboards/projects/edit/${route.params.id}` },
+      { title: 'Budgets' }
+    ],
+  },
+},
+
+{
+  path: '/dashboards/projects/:id/budgets/create',
+  name: 'dashboards-project-budgets-create',
+  component: () => import('@/pages/apps/projects/budget/create.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-projects',
+    breadcrumb: route => [
+      { title: 'Dashboard', to: '/dashboards/projects' },
+      { title: 'Projects', to: '/dashboards/projects' },
+      { title: `Project #${route.params.id}`, to: `/dashboards/projects/edit/${route.params.id}` },
+      { title: 'Budgets', to: `/dashboards/projects/${route.params.id}/budgets` },
+      { title: 'Create Budget' }
+    ],
+  },
+},
+
+{
+  path: '/dashboards/projects/:id/budgets/:budgetId/edit',
+  name: 'dashboards-project-budgets-edit',
+  component: () => import('@/pages/apps/projects/budget/edit.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-projects',
+    breadcrumb: route => [
+      { title: 'Dashboard', to: '/dashboards/projects' },
+      { title: 'Projects', to: '/dashboards/projects' },
+      { title: `Project #${route.params.id}`, to: `/dashboards/projects/edit/${route.params.id}` },
+      { title: 'Budgets', to: `/dashboards/projects/${route.params.id}/budgets` },
+      { title: `Edit Budget #${route.params.budgetId}` }
+    ],
+  },
+},
+
 
   {
     path: '/dashboards/departments',

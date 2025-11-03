@@ -24,7 +24,7 @@
               :items="projectItems"
               item-title="title"
               item-value="id"
-              label="PROJECT NAME"
+              label="Project Name"
               placeholder="Select Project"
               :error-messages="topErrors.project_id"
               variant="outlined"
@@ -47,6 +47,18 @@
           />
         </VCol>
           
+           <!-- Request Type -->
+          <VCol cols="12" md="3" class="py-5">
+            <VSelect
+              v-model="line.request_type"
+              :items="REQUEST_TYPE_OPTIONS"
+              label="Request Type"
+              variant="outlined"
+              hide-details="auto"
+              clearable
+            />
+          </VCol>
+
 
           <!-- Category -->
           <VCol cols="12" md="3" class="py-5">
@@ -99,17 +111,7 @@
           </VCol>
 
 
-           <!-- Request Type -->
-          <VCol cols="12" md="3" class="py-5">
-            <VSelect
-              v-model="line.request_type"
-              :items="REQUEST_TYPE_OPTIONS"
-              label="Request Type"
-              variant="outlined"
-              hide-details="auto"
-              clearable
-            />
-          </VCol>
+          
 
           <!-- Quantity -->
           <VCol cols="12" md="3" class="py-5">
@@ -390,8 +392,10 @@ const onSubCategoryChange = async (val) => {
 const fetchAssetsBySubCategory = async (subId) => {
   loading.value.assets = true;
   try {
+
+    const requestType = line.value.request_type;
     const res = await axios.get(`${apiBaseUrl}/assets`, {
-      params: { asset_sub_category_id: subId, asset_subcategory_id: subId },
+      params: { asset_sub_category_id: subId, asset_subcategory_id: subId,requestType:requestType },
       headers: getAuthHeaders(),
     });
     const list = res.data?.data?.data ?? res.data?.data ?? res.data ?? [];

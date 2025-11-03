@@ -5,19 +5,33 @@
 
   <VForm ref="refForm" @submit.prevent="submitForm">
     <VRow>
-      <!-- Name of Employee (from logged-in user) -->
-      <VCol cols="12" md="6">
-        <VTextField
-          v-model="form.employee_name"
-          label="HandOver By Employee Name"
-          readonly
-          :error-messages="errorMessages.employee_name"
-          hide-details="auto"
-        />
-      </VCol>
+
+      <VCol cols="12" md="4">
+              <VTextField
+                v-model="form.hor_number"
+                label="HandOver Number"
+                :error-messages="errorMessages.hor_number"
+                clearable
+              />
+            </VCol>
+     
+    <VCol cols="12" md="4">
+          <VSelect
+            v-model="form.project_id"
+            :items="projects"
+            item-title="label"
+            item-value="id"
+            label="Project"
+            :loading="loadingProjects"
+            :disabled="loadingProjects"
+            :error-messages="errorMessages.project_id"
+            clearable
+            @update:modelValue="onProjectChange"
+          />
+        </VCol>
 
       <!-- Asset Investment Request -->
-      <VCol cols="12" md="6">
+      <VCol cols="12" md="4">
         <VSelect
           v-model="form.asset_investment_requests_id"
           :items="requestOptions"
@@ -31,19 +45,9 @@
         />
       </VCol>
 
-      <!-- Employee Code No (from logged-in user.user_code) -->
-      <VCol cols="12" md="6">
-        <VTextField
-          v-model="form.employee_code"
-          label="HandOver By Employee Code"
-          readonly
-          :error-messages="errorMessages.employee_code"
-          hide-details="auto"
-        />
-      </VCol>
 
       <!-- Handover Date (defaults to today) -->
-      <VCol cols="12" md="6">
+      <VCol cols="12" md="4">
         <VTextField
           v-model="form.handover_date"
           label="Handover Date"
@@ -54,7 +58,7 @@
       </VCol>
 
       <!-- Department -->
-      <VCol cols="12" md="6">
+      <VCol cols="12" md="4">
         <VSelect
           v-model="form.department_id"
           :items="departmentsOptions"
@@ -69,7 +73,7 @@
       </VCol>
 
       <!-- Handover To (global users) -->
-      <VCol cols="12" md="6">
+      <VCol cols="12" md="4">
         <VSelect
           v-model="form.user_id"
           :items="usersOptions"
@@ -166,18 +170,18 @@
                   </td>
 
                   <!-- Quantity (Handover) -->
-                  <td>
                     <VTextField
                       v-model.number="row.handover_qty"
                       type="number"
                       min="1"
+                      :max="row.request_qty"
                       hide-details="auto"
                       variant="outlined"
                       density="compact"
                       :error-messages="rowErrors[idx]?.handover_qty"
                       placeholder="Enter qty"
+                      @input="validateQty(row, idx)"
                     />
-                  </td>
 
                   <!-- Remarks -->
                   <td>
@@ -269,6 +273,8 @@ const allUsers = ref([])
 const loadingDepartments = ref(false)
 const departments = ref([])
 
+const hor_number = ref(null);
+
 /* items for selected request */
 const loadingItems = ref(false)
 const requestItems = ref([])   // [{ item_id, description, request_qty, handover_qty, asset_code|null, remarks, asset_type }]
@@ -289,6 +295,7 @@ const form = ref({
   user_id: null,
   department_id: null,
   handover_date: today,
+  hor_number: null,
 })
 
 watch(
@@ -336,6 +343,16 @@ const getAuthHeaders = () => {
 /* ========= CURRENT USER (fill Name/Code) ========= */
 const currentUser = ref(null)
 
+const validateQty = (row, index) => {
+  if (row.handover_qty > row.request_qty) {
+    rowErrors.value[index] = {
+      handover_qty: "Handover quantity cannot exceed requested quantity"
+    }
+  } else {
+    rowErrors.value[index] = {}
+  }
+}
+
 /**
  * Tries common "who am I" endpoints. If you already have a dedicated endpoint,
  * replace the candidates array with that single URL.
@@ -381,7 +398,7 @@ const fetchCurrentUser = async () => {
 const requestOptions = computed(() =>
   assetRequests.value.map(r => ({
     value: r.id,
-    title: `#${r.air_number} — Project ${r.project_id ?? 'N/A'}`,
+    title: `#${r.air_number}`,
   })),
 )
 const usersOptions = computed(() =>
@@ -395,10 +412,13 @@ const departmentsOptions = computed(() =>
 )
 
 /* ========= LOADERS ========= */
-const fetchAssetRequests = async () => {
+const fetchAssetRequests = async (projectId = null) => {
   loadingRequests.value = true
   try {
-    const res = await axios.get(apiRequestsUrl, { headers: getAuthHeaders() })
+    const res = await axios.get(apiRequestsUrl, {
+      params: { project_id: projectId },
+      headers: getAuthHeaders()
+    })
     assetRequests.value = Array.isArray(res.data)
       ? res.data
       : Array.isArray(res.data?.data)
@@ -467,12 +487,14 @@ const fetchInvestmentRequestDetail = async (id) => {
     requestItems.value = items.map(it => ({
       item_id: it.id,
       description: it.description,
-      request_qty: Number(it.quantity) || 1,      // readonly
-      handover_qty: Number(it.quantity) || 1,     // editable default
+      request_qty: Number(it.pending_quantity) || 1,      // readonly
+      handover_qty: 1,     // editable default
       asset_code: it.asset_code != null ? String(it.asset_code) : null,
       remarks: '',
       asset_type: it.request_type || 'NEW',
     }))
+
+    form.value.user_id = detail?.user_id ?? null;
 
     rowErrors.value = requestItems.value.map(() => ({}))
   } catch (err) {
@@ -514,6 +536,10 @@ const validateRows = () => {
 /* ========= ASSETS DROPDOWN ========= */
 const loadingAssets = ref(false)
 const assets = ref([])
+
+const projects = ref([])
+const loadingProjects = ref(false)
+
 
 const assetOptions = computed(() =>
   assets.value.map(a => ({
@@ -563,11 +589,11 @@ const submitForm = async () => {
       employee_id: form.value.employee_id,
       employee_name: form.value.employee_name,
       employee_code: form.value.employee_code,
-
-      asset_investment_requests_id: form.value.asset_investment_requests_id,
+      hor_number: form.value.hor_number,
       handover_date: form.value.handover_date,
       department_id: form.value.department_id,
       user_id: form.value.user_id || undefined,
+      asset_investment_requests_id : form.value.asset_investment_requests_id,
       data: requestItems.value.map(r => ({
         item_id: r.item_id,
         asset_id : r.asset_id,
@@ -594,20 +620,71 @@ const submitForm = async () => {
       message.value = 'Please fix the highlighted errors.'
     } else {
       message.value = error.response?.data?.message || 'Failed to create asset handover.'
+      alert(error.response?.data?.message);
     }
   } finally {
     loading.value = false
   }
 }
 
+const onProjectChange = (projectId) => {
+  if (!projectId) {
+    investmentRequests.value = []
+    asset.asset_investment_requests_id = null
+    return
+  }
+
+  fetchAssetRequests(projectId)
+}
+
+const fetchProjects = async () => {
+  try {
+    loadingProjects.value = true
+    const res = await axios.get(`${apiBaseUrl}/projects`, {
+      headers: { ...getAuthHeaders(), Accept: 'application/json' },
+    })
+    const list = Array.isArray(res.data?.data) ? res.data.data : Array.isArray(res.data) ? res.data : []
+    projects.value = list.map(ir => ({
+      id: ir.id,
+      label:ir.project_code+'-'+ir.name,
+    }))
+  } catch (e) {
+    console.error('Failed to load projects', e)
+    projects.value = []
+  } finally {
+    loadingProjects.value = false
+  }
+}
+
+
+const fetchLatestId = async () => {
+  try {
+    const res = await axios.get(`${apiBaseUrl}/getLatestNumber`, {
+      params: { type: 'HandOverRequest'},
+      headers: getAuthHeaders(),
+    });
+
+
+    const numberId = res.data.value;
+    console.log(numberId);
+    form.value.hor_number = numberId;
+  } catch (e) {
+    console.error(e);
+    form.value.hor_number = '';
+  } finally {
+
+  }
+};
+
 /* ========= LIFECYCLE ========= */
 onMounted(async () => {
   await Promise.all([
     fetchCurrentUser(),
-    fetchAssetRequests(),
+    fetchProjects(),
     fetchDepartments(),
     fetchUsers(),
     fetchAssets(), // ✅ load all assets for dropdown
+    fetchLatestId()
   ])
 })
 

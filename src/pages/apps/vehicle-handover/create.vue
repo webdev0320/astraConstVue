@@ -6,7 +6,22 @@
   <VForm ref="refForm" @submit.prevent="submitForm">
     <VRow>
       <!-- Investment Request -->
-      <VCol cols="12" md="6">
+       <VCol cols="12" md="4">
+          <VSelect
+            v-model="form.project_id"
+            :items="projects"
+            item-title="label"
+            item-value="id"
+            label="Project"
+            :loading="loadingProjects"
+            :disabled="loadingProjects"
+            :error-messages="errorMessages.project_id"
+            clearable
+            @update:modelValue="onProjectChange"
+          />
+        </VCol>
+
+      <VCol cols="12" md="4">
         <VSelect
           v-model="form.investment_req_id"
           :items="investmentOptions"
@@ -17,12 +32,23 @@
           :error-messages="errorMessages.investment_req_id"
           :loading="loadingInvestments"
           clearable
-          @update:model-value="onInvestmentChange"
+          @update:modelValue="onInvestmentChange"
         />
       </VCol>
 
+     <VCol cols="12" md="4">      
+           <VSelect
+          v-model="form.asset_id"
+          :items="assetOptions"
+          item-title="label"
+          item-value="id"
+          label="Select Asset"
+          clearable
+        />
+      </VCol>
+      
       <!-- Report Date -->
-      <VCol cols="12" md="6">
+      <VCol cols="12" md="4">
         <VTextField
           v-model="form.report_date"
           type="date"
@@ -48,7 +74,7 @@
       <VCol cols="12" md="4">
         <VTextField
           v-model="form.vehicle_type"
-          label="Vehicle Type"
+          label="Model"
           :rules="[requiredValidator]"
           :error-messages="errorMessages.vehicle_type"
           clearable
@@ -80,7 +106,7 @@
       </VCol>
 
       <!-- Driver -->
-      <VCol cols="12" md="8">
+      <VCol cols="12" md="4">
         <VSelect
           v-model="form.driver_id"
           :items="driverOptions"
@@ -238,6 +264,9 @@ import {
   VSelect, VTextField, VTextarea,
 } from 'vuetify/components'
 
+import { watch } from "vue"
+
+
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL // should end with /api
 
 const router = useRouter()
@@ -249,6 +278,8 @@ const message = ref('')
 const errorMessages = ref({})
 
 // dropdown data
+const assetRequests = ref([])
+
 const investmentOptions = ref([])
 const loadingInvestments = ref(false)
 
@@ -258,10 +289,19 @@ const loadingProjectUsers = ref(false)
 const locationOptions = ref([])
 const loadingLocations = ref(false)
 
+const projects = ref([])
+const loadingProjects = ref(false)
+
+const users = ref([])
+const loadingusers = ref(false)
+
+
+
 // form model
 const form = ref({
   investment_req_id: null,
   report_date: '',
+  asset_id: null,
   plate_no: '',
   driver_id: null,
   km_reading: null,
@@ -288,6 +328,48 @@ const form = ref({
   images: [], // <— files go here
 })
 
+
+const assetOptions = ref([])
+const loadingAssets = ref(false)
+
+const loadAssets = async () => {
+  loadingAssets.value = true
+  try {
+     const res = await axios.get(`${apiBaseUrl}/assets`, {
+      headers: authHeaders(),
+    })
+    assetOptions.value = res.data.data.map(asset => ({
+      id: asset.id,
+      label: asset.code+'-'+asset.title,   // ✅ change if your key name is different
+      asset: asset,
+    }))
+  } catch (e) {
+    console.error('Error loading assets:', e)
+  } finally {
+    loadingAssets.value = false
+  }
+}
+
+watch(
+  () => form.value.asset_id,
+  (newVal) => {
+    const selected = assetOptions.value.find(a => a.id === newVal)
+    console.log("Selected Asset:", selected.asset.plate_number)
+
+    if (selected && selected.asset) {
+      form.value.plate_no     = selected.asset.plate_number ?? ''
+      form.value.vehicle_type = selected.asset.brand ?? ''
+      form.value.model_no     = selected.asset.model_number ?? ''
+    } else {
+      form.value.plate_no = ''
+      form.value.vehicle_type = ''
+      form.value.model_no = ''
+    }
+  }
+)
+
+
+
 const checkList = [
   { key: 'tires', label: 'Tires' },
   { key: 'battery', label: 'Battery' },
@@ -301,12 +383,8 @@ const checkList = [
 ]
 
 // Prefer "Drivers" role for driver dropdown, else show all
-const driverOptions = computed(() => {
-  const drivers = projectUsers.value.filter(u =>
-    (u.role || '').toLowerCase().includes('driver'),
-  )
-  return drivers.length ? drivers : projectUsers.value
-})
+const driverOptions = ref([]);
+
 
 // ---- utils ----
 const requiredValidator = v => (!!v || v === 0) || 'This field is required'
@@ -331,6 +409,17 @@ const authHeaders = () => {
     Authorization: `Bearer ${token}`,
     Accept: 'application/json',
   }
+}
+
+
+const onProjectChange = (projectId) => {
+  if (!projectId) {
+    investmentRequests.value = []
+    form.investment_req_id = null
+    return
+  }
+
+  fetchAssetRequests(projectId)
 }
 
 // ---- data loaders ----
@@ -381,6 +470,18 @@ const onInvestmentChange = async (investmentId) => {
       headers: authHeaders(),
     })
     projectUsers.value = res.data?.users ?? []
+
+
+
+    driverOptions = computed(() => {
+    const drivers = projectUsers.value.filter(u =>
+      (u.role || '').toLowerCase().includes('driver'),
+    )
+    return drivers.length ? drivers : projectUsers.value
+  })
+
+
+
   } catch (e) {
     console.error('Load project users failed', e)
     message.value = e.response?.data?.message || 'Failed to load project users (401).'
@@ -388,6 +489,31 @@ const onInvestmentChange = async (investmentId) => {
     loadingProjectUsers.value = false
   }
 }
+
+const apiRequestsUrl = `${apiBaseUrl}/asset-investment-requests`
+const fetchAssetRequests = async (projectId = null) => {
+ 
+ loadingInvestments.value = true
+  try {
+    const res = await axios.get(`${apiBaseUrl}/asset-investment-requests`, {
+      params: { project_id: projectId },
+      headers: authHeaders(),
+    })
+    const list = res.data?.data ?? []
+    investmentOptions.value = list.map(r => ({
+      id: r.id,
+      label: `#${r.air_number}`,
+      project_id: r.project_id,
+    }))
+  } catch (e) {
+    console.error('Load investments failed', e)
+    message.value = e.response?.data?.message || 'Failed to load investment requests (401).'
+  } finally {
+    loadingInvestments.value = false
+  }
+
+}
+
 
 // ---- submit ----
 const submitForm = async () => {
@@ -425,6 +551,7 @@ const submitForm = async () => {
     }
 
     appendIf('investment_req_id', form.value.investment_req_id)
+    appendIf('asset_id', form.value.asset_id)
     appendIf('report_date', form.value.report_date)
     appendIf('plate_no', form.value.plate_no)
     appendIf('driver_id', form.value.driver_id)
@@ -476,15 +603,36 @@ const submitForm = async () => {
   }
 }
 
-onMounted(async () => {
+const fetchProjects = async () => {
   try {
-    if (!getAccessToken()) throw new Error('Access token is missing. Please log in.')
-    await Promise.all([loadInvestments(), loadLocations()])
+    loadingProjects.value = true
+    const res = await axios.get(`${apiBaseUrl}/projects`, {
+      headers: { ...authHeaders(), Accept: 'application/json' },
+    })
+    const list = Array.isArray(res.data?.data) ? res.data.data : Array.isArray(res.data) ? res.data : []
+    projects.value = list.map(ir => ({
+      id: ir.id,
+      label:ir.project_code+'-'+ir.name,
+    }))
   } catch (e) {
-    console.error(e)
-    message.value = e.message
+    console.error('Failed to load projects', e)
+    projects.value = []
+  } finally {
+    loadingProjects.value = false
   }
+}
+
+
+
+onMounted(async () => {
+  await Promise.all([
+    loadLocations(),
+    fetchProjects(),
+    loadAssets(),
+  ])
 })
+
+
 </script>
 
 <style>

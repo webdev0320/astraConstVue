@@ -179,7 +179,7 @@ const updateProject = async () => {
     if (project.value.start_date < today) {
       errorMessages.value.start_date = ['Start date is older than today.']
       loading.value = false
-      return
+      //return
     }
 
     if (project.value.end_date && project.value.end_date < project.value.start_date) {

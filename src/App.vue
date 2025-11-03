@@ -11,8 +11,6 @@ import { useTheme } from 'vuetify'
 
 const { global } = useTheme()
 
-console.log('Vuetify Primary HEX:', global.current.value.colors.primary)
-console.log('Vuetify Primary RGB:', hexToRgb(global.current.value.colors.primary))
 
 // ℹ️ Sync current theme with initial loader theme
 initCore()
@@ -23,9 +21,10 @@ const configStore = useConfigStore()
 
 <template>
   <VLocaleProvider :rtl="configStore.isAppRTL">
-    <!-- ℹ️ This is required to set the background color of active nav link based on currently active global theme's primary -->
     <VApp :style="`--v-global-theme-primary: ${hexToRgb(global.current.value.colors.primary)}`">
+
       <RouterView />
+
       <BuyNow />
       <ScrollToTop />
     </VApp>

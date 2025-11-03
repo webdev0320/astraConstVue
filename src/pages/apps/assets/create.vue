@@ -17,7 +17,7 @@
        <VCol cols="12" md="8">
         <VTextField
           v-model="asset.title"
-          label="Title"
+          label="Title *"
           :rules="[requiredValidator]"
           :error-messages="errorMessages.title"
           clearable
@@ -26,14 +26,31 @@
       <VCol cols="12" md="4">
         <VTextField
           v-model="asset.code"
-          label="Code"
+          label="Code *"
           :rules="[requiredValidator]"
           :error-messages="errorMessages.code"
           clearable
         />
       </VCol>
 
+      <VCol cols="12" md="4">
+          <VSelect
+            v-model="asset.project_id"
+            :items="projects"
+            item-title="label"
+            item-value="id"
+            label="Project"
+            :loading="loadingProjects"
+            :disabled="loadingProjects"
+            :error-messages="errorMessages.project_id"
+            clearable
+            @update:modelValue="onProjectChange"
+          />
+        </VCol>
+
+
       <!-- Asset Investment Request (REQUIRED) -->
+      
       <VCol cols="12" md="4">
         <VSelect
           v-model="asset.asset_investment_requests_id"
@@ -42,9 +59,10 @@
           item-value="id"
           label="Asset Investment Request"
           :loading="loadingInvestmentRequests"
-          :disabled="loadingInvestmentRequests"
+          :disabled="loadingInvestmentRequests || !asset.project_id"
           :error-messages="errorMessages.asset_investment_requests_id"
           clearable
+
         />
       </VCol>
 
@@ -58,7 +76,7 @@
           :items="categories"
           item-title="name"
           item-value="id"
-          label="Category"
+          label="Category *"
           :rules="[requiredValidator]"
           :loading="loadingCategories"
           :disabled="loadingCategories"
@@ -74,7 +92,7 @@
           :items="subCategories"
           item-title="name"
           item-value="id"
-          label="Sub Category"
+          label="Sub Category *"
           :rules="[requiredValidator]"
           :loading="loadingSubCategories"
           :disabled="!asset.asset_category_id || loadingSubCategories"
@@ -98,7 +116,7 @@
         <VSelect
           v-model="asset.asset_type"
           :items="ASSET_TYPE_OPTIONS"
-          label="Asset Type"
+          label="Asset Type *"
           clearable
         />
       </VCol>
@@ -170,7 +188,7 @@
       <VCol cols="12" md="6">
         <VTextField
           v-model="asset.brand"
-          label="Brand"
+          label="Brand *"
           clearable
         />
       </VCol>
@@ -197,7 +215,7 @@
       <VCol cols="12" md="6">
         <VTextField
           v-model="asset.manufacturing_year"
-          label="Manufacturing Year"
+          label="Manufacturing Year *"
           type="date"
           :error-messages="errorMessages.manufacturing_year"
         />
@@ -313,11 +331,11 @@
       </VCol>
 
       <VCol cols="12" md="4">
-        <VTextField v-model="asset.price" type="number" label="Price" :rules="[numberOptionalValidator]" clearable />
+        <VTextField v-model="asset.price" type="number" label="Price *" :rules="[numberOptionalValidator]" clearable />
       </VCol>
 
       <VCol cols="12" md="4">
-        <VTextField v-model="asset.useful_life" type="number" label="Useful Life" :rules="[numberOptionalValidator]" clearable />
+        <VTextField v-model="asset.useful_life" type="number" label="Useful Life *" :rules="[numberOptionalValidator]" clearable />
       </VCol>
 
       <VCol cols="12" md="4">
@@ -325,11 +343,11 @@
       </VCol>
 
       <VCol cols="12" md="4">
-        <VTextField v-model="asset.purchase_cost" type="number" label="Purchase Cost" :rules="[numberOptionalValidator]" clearable />
+        <VTextField v-model="asset.purchase_cost" type="number" label="Purchase Cost *" :rules="[numberOptionalValidator]" clearable />
       </VCol>
 
       <VCol cols="12" md="4">
-        <VTextField v-model="asset.nbv" type="number" label="Book Value (NBV)" :rules="[numberOptionalValidator]" clearable />
+        <VTextField v-model="asset.nbv" type="number" label="Book Value (NBV) *" :rules="[numberOptionalValidator]" clearable />
       </VCol>
       
 
@@ -380,7 +398,7 @@ const router = useRouter()
 
 /* ---------------- Options ---------------- */
 const TYPE_OPTIONS = ['Vehicle', 'IT Equipment', 'Machinery', 'Furniture', 'Other']
-const ASSET_TYPE_OPTIONS = ['Owned', 'Rental', 'Leased', 'Used', 'New']
+const ASSET_TYPE_OPTIONS = ['NEW', 'USED', 'LEASED', 'RENTAL']
 const today = new Date().toISOString().split('T')[0]
 
 /* ---------------- State ---------------- */
@@ -439,11 +457,12 @@ const yesNoOptions = [
 const categories = ref([])
 const subCategories = ref([])
 const investmentRequests = ref([])
-
+const projects = ref([])
 const loading = ref(false)
 const loadingCategories = ref(false)
 const loadingSubCategories = ref(false)
 const loadingInvestmentRequests = ref(false)
+const loadingProjects = ref(false)
 
 const refForm = ref()
 const message = ref('')
@@ -586,30 +605,60 @@ const fetchLocations = async () => {
 
 /* Investment Requests (for required select) */
 const formatIRLabel = ir => {
-  const proj = ir?.project?.name ? `• ${ir.project.name}` : ''
-  const type = ir?.request_type || ''
-  const qty  = ir?.quantity ?? ''
-  const cost = ir?.planned_cost ?? ''
-  const date = ir?.date || ''
-  return `#${ir.id} ${type} ${date} ${proj} (qty ${qty}, cost ${cost})`.trim()
+  const air_number = ir?.air_number
 }
 
-const fetchInvestmentRequests = async () => {
+const onProjectChange = (projectId) => {
+  if (!projectId) {
+    investmentRequests.value = []
+    asset.asset_investment_requests_id = null
+    return
+  }
+
+  fetchInvestmentRequests(projectId)
+}
+
+
+
+const fetchInvestmentRequests = async (projectId = null) => {
   try {
     loadingInvestmentRequests.value = true
+
     const res = await axios.get(`${apiBaseUrl}/asset-investment-requests`, {
+      params: { project_id: projectId }, // ✅ pass project id
       headers: { ...authHeader(), Accept: 'application/json' },
     })
+
     const list = Array.isArray(res.data?.data) ? res.data.data : Array.isArray(res.data) ? res.data : []
     investmentRequests.value = list.map(ir => ({
       id: ir.id,
-      label: formatIRLabel(ir),
+      label: ir.air_number,
     }))
   } catch (e) {
     console.error('Failed to load asset investment requests', e)
     investmentRequests.value = []
   } finally {
     loadingInvestmentRequests.value = false
+  }
+}
+
+
+const fetchProjects = async () => {
+  try {
+    loadingProjects.value = true
+    const res = await axios.get(`${apiBaseUrl}/projects`, {
+      headers: { ...authHeader(), Accept: 'application/json' },
+    })
+    const list = Array.isArray(res.data?.data) ? res.data.data : Array.isArray(res.data) ? res.data : []
+    projects.value = list.map(ir => ({
+      id: ir.id,
+      label:ir.name,
+    }))
+  } catch (e) {
+    console.error('Failed to load projects', e)
+    projects.value = []
+  } finally {
+    loadingProjects.value = false
   }
 }
 
@@ -755,7 +804,7 @@ const resetForm = () => {
 /* Lifecycle */
 onMounted(() => {
   fetchCategories()
-  fetchInvestmentRequests()
+  fetchProjects()
   fetchLocations()
 })
 </script>

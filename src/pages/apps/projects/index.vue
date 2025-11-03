@@ -43,6 +43,13 @@
                     </template>
 
                     <VList class="py-0">
+                      
+                      <VListItem @click="openDescriptionDialog(item.raw ?? item)">
+                        <VIcon start>mdi-eye</VIcon>
+                        Details
+                      </VListItem>
+
+
                       <VListItem
                         @click="$router.push(`/dashboards/projects/edit/${item.raw?.id ?? item.id}`)"
                       >
@@ -103,6 +110,25 @@
         Create Project
       </VBtn>
     </VCard>
+
+    <VDialog v-model="showDescriptionDialog" max-width="600px">
+  <VCard>
+    <VCardTitle class="text-h6">
+      {{ selectedProjectName }} - Details
+    </VCardTitle>
+
+    <VCardText style="white-space: pre-wrap;">
+      {{ selectedProjectDescription }}
+    </VCardText>
+
+    <VCardActions>
+      <VSpacer />
+      <VBtn color="primary" @click="showDescriptionDialog = false">Close</VBtn>
+    </VCardActions>
+  </VCard>
+</VDialog>
+
+    
   </div>
 </template>
 
@@ -122,8 +148,8 @@ const headers = [
   { title: "Project Code", key: "project_code" },
   { title: "START DATE", key: "start_date" },
   { title: "END DATE", key: "end_date" },
-  { title: "DESCRIPTION", key: "description" },
   { title: "BUDGET (SAR)", key: "budget" },
+  { title: "STATUS", key: "status" },
   { title: "ACTIONS", key: "actions", sortable: false },
 ];
 
@@ -137,6 +163,16 @@ const truncateSmart = (text, wordLimit = 20, charFallback = 120) => {
   const words = str.split(/\s+/).filter(Boolean);
   if (words.length > 1) return words.length > wordLimit ? words.slice(0, wordLimit).join(" ") + "..." : str;
   return str.length > charFallback ? str.slice(0, charFallback) + "..." : str;
+};
+
+const showDescriptionDialog = ref(false);
+const selectedProjectDescription = ref("");
+const selectedProjectName = ref("");
+
+const openDescriptionDialog = (project) => {
+  selectedProjectDescription.value = project.description || "No description available";
+  selectedProjectName.value = project.name;
+  showDescriptionDialog.value = true;
 };
 
 const getCookie = (name) => {

@@ -8,7 +8,7 @@
     <VForm ref="refForm" @submit.prevent="submitForm">
       <VRow>
         <!-- Top meta -->
-        <VCol cols="12" md="4">
+        <VCol cols="12" md="3">
           <VTextField
             v-model="form.issue_no"
             label="Issue No"
@@ -17,7 +17,7 @@
             clearable
           />
         </VCol>
-        <VCol cols="12" md="4">
+        <VCol cols="12" md="3">
           <VTextField
             v-model="form.form_no"
             label="Form No"
@@ -26,26 +26,26 @@
             clearable
           />
         </VCol>
-        <VCol cols="12" md="4">
+        <VCol cols="12" md="2">
           <VTextField
             v-model="form.revision_date"
             type="date"
             label="Revision Date"
-            :rules="[requiredValidator]"
+            :rules="[requiredValidator,dateNotPastValidator]"
             :error-messages="errorMessages.revision_date"
           />
         </VCol>
 
-        <VCol cols="12" md="6">
+        <VCol cols="12" md="2">
           <VTextField
             v-model="form.date"
             type="date"
             label="Date"
-            :rules="[requiredValidator]"
+            :rules="[requiredValidator,dateNotPastValidator]"
             :error-messages="errorMessages.date"
           />
         </VCol>
-        <VCol cols="12" md="6">
+        <VCol cols="12" md="2">
           <VTextField
             v-model="form.tag_no"
             label="Tag No"
@@ -108,7 +108,7 @@
         </VCol>
 
         <!-- People & logistics -->
-        <VCol cols="12" md="6">
+        <VCol cols="12" md="4">
           <VSelect
             v-model="form.prepared_by"
             :items="usersFromProject"
@@ -122,7 +122,7 @@
             clearable
           />
         </VCol>
-        <VCol cols="12" md="6">
+        <VCol cols="12" md="4">
           <VSelect
             v-model="form.driver_id"
             :items="usersToProject.filter(u => u.role === 'Drivers')"
@@ -136,19 +136,11 @@
           />
         </VCol>
 
-        <VCol cols="12" md="6">
+        <VCol cols="12" md="4">
           <VTextField
             v-model="form.contact_details"
             label="Contact Details"
             :error-messages="errorMessages.contact_details"
-            clearable
-          />
-        </VCol>
-        <VCol cols="12" md="6">
-          <VTextField
-            v-model="form.vehicle_plate_no"
-            label="Vehicle Plate No"
-            :error-messages="errorMessages.vehicle_plate_no"
             clearable
           />
         </VCol>
@@ -366,7 +358,6 @@ const form = ref({
   prepared_by: null,
   driver_id: null,
   contact_details: '',
-  vehicle_plate_no: '',
   plant_manager_status: '',
   plant_manager_remarks: '',
   plant_manager_status_date: today,
@@ -394,6 +385,11 @@ const errorMessages = ref({})
 
 const requiredValidator = v => (!!v || v === 0) || 'This field is required'
 const requiredNumberValidator = v => (v !== null && v !== '' && !Number.isNaN(Number(v))) || 'A number is required'
+
+const dateNotPastValidator = v => {
+  if (!v) return true
+  return v >= today || 'Date cannot be older than today'
+}
 
 const getCookie = name => {
   const value = `; ${document.cookie}`

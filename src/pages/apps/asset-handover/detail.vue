@@ -19,12 +19,14 @@
       <VCardText>
         <!-- Top Info Grid -->
         <div class="detail-grid mb-6">
-          <div class="kv"><span class="k">Handover ID</span><span class="v">{{ show(handover.id) }}</span></div>
+          <div class="kv"><span class="k">Handover ID</span><span class="v">{{ show(handover.handover_id) }}</span></div>
           <div class="kv"><span class="k">Handover Date</span><span class="v">{{ show(handover.handover_date) }}</span></div>
-          <div class="kv"><span class="k">Request ID</span><span class="v">{{ show(handover.asset_investment_request_id) }}</span></div>
+          <div class="kv"><span class="k">Project Name</span><span class="v">{{ show(handover.projectName) }}</span></div>
+          <div class="kv"><span class="k">Asset Investment Request ID</span><span class="v">{{ show(handover.asset_investment_request_id) }}</span></div>
+
           <div class="kv"><span class="k">Handover By</span><span class="v">{{ show(handover.handover_by?.name) }} ({{ show(handover.handover_by?.user_code) }})</span></div>
           <div class="kv"><span class="k">Handover To</span><span class="v">{{ show(handover.user?.name) }} ({{ show(handover.user?.user_code) }})</span></div>
-          <div class="kv"><span class="k">Remarks</span><span class="v">{{ show(handover.remarks) }}</span></div>
+          <div class="kv"><span class="k">Status</span><span class="v">{{ show(handover.status) }}</span></div>
         </div>
 
         <!-- Items Table -->
@@ -36,7 +38,7 @@
                 <th>#</th>
                 <th>Asset Name</th>
                 <th>Asset Type</th>
-                <th>Quantity</th>
+                <th>Quantity Requested</th>
                 <th>Remarks</th>
               </tr>
             </thead>
@@ -49,6 +51,38 @@
                 <td>{{ show(item.remarks) }}</td>
               </tr>
               <tr v-if="!handover.items?.length">
+                <td colspan="7" class="text-center">No items found</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+
+
+         <div>
+          <h3 class="mb-2">History</h3>
+          <table class="handover-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Date</th>
+                <th>Given By User Name</th>
+                <th>Given By User Code</th>
+                <th>Quantity Given</th>
+                <th>Quantity Pending</th>
+
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(item, index) in handover.history" :key="item.id">
+                <td>{{ index + 1 }}</td>
+                <td>{{ show(item.created_at) }}</td>
+                <td>{{ show(item.user.name) }}</td>
+                <td>{{ show(item.user.user_code) }}</td>
+                <td>{{ show(item.quantity_given) }}</td>
+                <td>{{ show(item.quantity_pending) }}</td>
+              </tr>
+              <tr v-if="!handover.history?.length">
                 <td colspan="7" class="text-center">No items found</td>
               </tr>
             </tbody>

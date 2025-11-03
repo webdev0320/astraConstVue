@@ -159,7 +159,7 @@ const headers = [
   { title: "Title", key: "title" },
   { title: "Category Name", key: "category_name" },
   { title: "SUB CATEGORY", key: "sub_category" },
-  { title: "PURCHASE COST", key: "purchase_cost" },
+  { title: "PURCHASE COST (SAR)", key: "purchase_cost" },
   { title: "ACTIONS", key: "actions", sortable: false },
 ];
 
