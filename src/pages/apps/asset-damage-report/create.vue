@@ -154,17 +154,17 @@
 
       <!-- Asset -->
       <VCol cols="12" md="6">
-        <VSelect
-          v-model="form.asset_id"
-          :items="assetOptions"
-          item-title="title"
-          item-value="value"
-          label="Asset"
-          :loading="loadingAssets"
-          :rules="[requiredValidator]"
-          :error-messages="errorMessages.asset_id"
-          clearable
-        />
+         <VSelect
+            v-model="form.asset_id"
+            :items="assetOptions"
+            item-title="title"
+            item-value="value"
+            label="Asset"
+            :loading="loadingAssets"
+            :rules="[requiredValidator]"
+            :error-messages="errorMessages.asset_id"
+            clearable
+          />
       </VCol>
 
       <!-- Assessed By -->
@@ -351,7 +351,12 @@ const requiredValidator = v => (!!v || v === 0) || 'This field is required'
 ------------------------------ */
 const projectOptions = computed(() => projects.value.map(p => ({ value: p.id, title: p.name ?? `Project #${p.id}` })))
 const userOptions = computed(() => users.value.map(u => ({ value: u.id, title: `${u.name ?? '(no name)'} — ${u.user_code ?? u.id}` })))
-const assetOptions = computed(() => assets.value.map(a => ({ value: a.id, title: a.asset_code ?? a.title ?? `Asset #${a.id}` })))
+const assetOptions = computed(() =>
+  assets.value.map(a => ({
+    value: a.id,
+    title: `${a.code} — ${a.name}`.trim(),
+  }))
+)
 
 /* ------------------------------
    Fetching Logic
@@ -378,17 +383,41 @@ const fetchUsers = async () => {
   }
 }
 
-const fetchAssetsByProject = async projectId => {
-  if (!projectId) { assets.value = []; return }
+const fetchAssetsByProject = async (projectId) => {
+  if (!projectId) {
+    assets.value = []
+    return
+  }
+
   loadingAssets.value = true
   try {
-    const res = await axios.get(`${apiAssetsUrl}?project_id=${projectId}`, { headers: getAuthHeaders() })
-    const possible = [res.data?.data, res.data?.assets, res.data]
-    assets.value = possible.find(Array.isArray) || []
+    const res = await axios.get(apiAssetsUrl, {
+      headers: getAuthHeaders(),
+      params: { project_id: projectId },
+    })
+
+    const list =
+      Array.isArray(res.data?.data) ? res.data.data :
+      Array.isArray(res.data?.assets) ? res.data.assets :
+      Array.isArray(res.data) ? res.data : []
+
+    // ✅ just assign to assets
+    assets.value = list.map(a => ({
+      id: a.id,
+      name: a.title ?? '',
+      code: a.code ?? '',
+      quantity: a.quantity,
+      remaining_quantity: a.remaining_quantity,
+    }))
+  } catch (error) {
+    console.error('Error fetching assets by project:', error)
+    assets.value = []
   } finally {
     loadingAssets.value = false
   }
 }
+
+
 
 /* ------------------------------
    Submit Form

@@ -140,15 +140,12 @@
       <!-- Asset -->
       <VCol cols="12" md="6">
         <VSelect
-          v-model="form.asset_id"
-          :items="assetOptions"
-          item-title="title"
-          item-value="value"
-          label="Asset"
-          :loading="loadingAssets"
-          :rules="[requiredValidator]"
-          :error-messages="errorMessages.asset_id"
-        />
+            v-model="form.asset_id"
+            :items="assets"
+            item-title="name"
+            item-value="id"
+            label="Asset"
+          />
       </VCol>
 
       <!-- Report Received On -->
@@ -411,13 +408,31 @@ const fetchUsers = async () => {
 }
 
 
-const fetchAssets = async () => {
+const fetchAssets = async (pid) => {
   loadingAssets.value = true
   try {
-    const res = await axios.get(apiAssetsUrl, { headers: getAuthHeaders() })
-    assets.value = res.data?.data || res.data || []
-  } finally { loadingAssets.value = false }
+    const res = await axios.get(apiAssetsUrl, { 
+      headers: getAuthHeaders(),
+      params: { project_id: pid }
+    })
+
+    const list = res.data?.data || res.data || []
+
+    // map name + code as display label
+    assets.value = list.map(a => ({
+      id: a.id,
+      name: `${a.code ?? ''} — ${a.title ?? ''}`.trim(),
+      code: a.code,
+      quantity: a.quantity,
+      remaining_quantity: a.remaining_quantity
+    }))
+  } catch (error) {
+    console.error('Error fetching assets:', error)
+  } finally {
+    loadingAssets.value = false
+  }
 }
+
 
 const fetchLocations = async () => {
   loadingLocations.value = true
@@ -447,11 +462,19 @@ const submitForm = async () => {
   }
 }
 
+watch(() => form.value.project_id, async (pid) => {
+  form.value.asset_id = null
+  if (!pid) return
+
+  fetchAssets(pid)
+})
+
+
 /* ------------------------------
    Lifecycle
 ------------------------------ */
 onMounted(async () => {
-  await Promise.all([fetchProjects(), fetchUsers(), fetchAssets(), fetchLocations()])
+  await Promise.all([fetchProjects(), fetchUsers(), fetchLocations()])
 })
 </script>
 

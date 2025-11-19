@@ -62,44 +62,53 @@
               class="d-flex align-center gap-1"
             >
               Actions
-              <VIcon :icon="isActive ? 'mdi-chevron-up' : 'mdi-chevron-down'" />
+              <VIcon :icon="isActive ? 'tabler-caret-up' : 'tabler-caret-down'" />
             </VBtn>
           </template>
 
           <VList density="compact">
             <VListItem @click="$router.push(`/dashboards/asset-investment-requests/detail/${item.raw.id}`)">
-              <template #prepend><VIcon icon="mdi-file-document" /></template>
+              <template #prepend><VIcon icon="tabler-eye" /></template>
               <VListItemTitle>Detail</VListItemTitle>
             </VListItem>
 
             <VListItem @click="$router.push(`/dashboards/asset-investment-requests/edit/${item.raw.id}`)">
-              <template #prepend><VIcon icon="mdi-pencil" /></template>
+              <template #prepend><VIcon icon="tabler-edit" /></template>
               <VListItemTitle>Edit</VListItemTitle>
             </VListItem>
 
-            <VListItem @click="openStatusModal(item.raw.id)">
+         <!--    <VListItem @click="openStatusModal(item.raw.id)">
               <template #prepend><VIcon icon="mdi-flag" /></template>
               <VListItemTitle>Status</VListItemTitle>
-            </VListItem>
+            </VListItem> -->
 
-            <VListItem @click="openAccordanceModal(item.raw.id)">
-              <template #prepend><VIcon icon="mdi-check-decagram" /></template>
-              <VListItemTitle>Mark As Accordance With Budget</VListItemTitle>
-            </VListItem>
+              <VListItem
+                v-if="roles.includes('Accountant')"
+                @click="openAccordanceModal(item.raw.id)"
+              >
+                <template #prepend>
+                  <VIcon icon="tabler-checks" />
+                </template>
+                <VListItemTitle>
+                  Mark As Accordance With Budget
+                  <span v-if="user.name">({{ user.name }})</span> <!-- optional: show username -->
+                </VListItemTitle>
+              </VListItem>
+
 
             <!-- ✅ New Buttons -->
-            <VListItem @click="approveRequest(item.raw.id)">
-              <template #prepend><VIcon icon="mdi-thumb-up" /></template>
-              <VListItemTitle>Approve</VListItemTitle>
-            </VListItem>
+             <VListItem v-if="item.raw.myApproval !== null && (item.myApprovalStatus=='Rejected' || item.myApprovalStatus=='Pending')" @click="openApproveDialog(item.raw.id,item.raw.myApproval,'APPROVED')">
+                <template #prepend><VIcon icon="tabler-check" /></template>
+                <VListItemTitle>Approve</VListItemTitle>
+              </VListItem>
 
-            <VListItem @click="rejectRequest(item.raw.id)">
-              <template #prepend><VIcon icon="mdi-thumb-down" /></template>
+            <VListItem v-if="item.raw.myApproval !== null && (item.myApprovalStatus=='Approved' || item.myApprovalStatus=='Pending')" @click="openApproveDialog(item.raw.id,item.raw.myApproval,'REJECTED')">
+              <template #prepend><VIcon icon="tabler-player-stop" /></template>
               <VListItemTitle>Reject</VListItemTitle>
             </VListItem>
 
             <VListItem @click="openDeleteDialog(item.raw.id)">
-              <template #prepend><VIcon icon="mdi-delete" /></template>
+              <template #prepend><VIcon icon="tabler-trash" /></template>
               <VListItemTitle>Delete</VListItemTitle>
             </VListItem>
 
@@ -122,6 +131,14 @@
         Create Asset Investment Request
       </VBtn>
     </VCard>
+
+     <ConfirmDialog
+      v-model="confirmDialog.value"
+      :title="confirmDialog.title"
+      :message="confirmDialog.message"
+      :color="confirmDialog.color"
+      :onConfirm="confirmDialog.onConfirm"
+    />
 
     <!-- STATUS MODAL -->
     <VDialog v-model="statusDialog" max-width="480">
@@ -188,6 +205,8 @@
 <script setup>
 import axios from "axios";
 import { onMounted, ref } from "vue";
+import ConfirmDialog from "@core/components/GlobalConfirmDialog.vue";
+
 import {
   VBtn, VCard,
   VCardActions,
@@ -203,14 +222,60 @@ import {
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
+const confirmDialog = ref({
+  value: false,
+  title: "",
+  message: "",
+  color: "primary",
+  onConfirm: null,
+});
+
+const openApproveDialog = (assetInvestmentRequestId, approvalId,status) => {
+  confirmDialog.value = {
+    value: true,
+    title: "Approve Request",
+    message: "Are you sure you want to approve this request?",
+    color: "primary",
+    onConfirm: async () => {
+      try {
+        const accessToken = decodeURIComponent(getCookie("accessToken"));
+
+        await axios.get(
+          `${apiBaseUrl}/asset-investment-requests/${assetInvestmentRequestId}/changeStatus/${approvalId}/${status}`,
+          {
+            headers: { 
+              Authorization: `Bearer ${accessToken}`,
+              Accept: "application/json",
+            },
+          }
+        );
+
+        console.log(`Request ${assetInvestmentRequestId} approved by ${approvalId}`);
+        // Optionally reload your table data
+        await fetchAssetInvestmentRequests();
+
+      } catch (error) {
+        console.error("Approve action failed:", error);
+        alert(error.response?.data?.message || "Failed to approve request.");
+      }
+    },
+  };
+};
+
+
+
 /* ------------ Master headers (one row per request) ------------ */
 const headers = [
+  { title: "Asset Req. Date", key: "date" },
+  { title: "Request Date", key: "created_at", sortable: true },
+  { title: "Created By", key: "user_display", sortable: true },
   { title: "# Air Number", key: "air_number", sortable: true },
   { title: "Project", key: "project_name" },
-  { title: "Created By", key: "user_display", sortable: false },
-  { title: "Asset Req. Date", key: "date" },
   { title: "Planned Cost (SAR)", key: "planned_cost" },
-  { title: "Actions", key: "actions", sortable: false },
+  { title: "Accordance To Budget", key: "is_accordance_with_budget" },
+  { title: "Last Approved By", key: "lastApprovedByUser" },
+  { title: "My Approval Status", key: "myApprovalStatus" },
+  { title: "Actions", key: "actions", sortable: true },
 ];
 
 /* ------------ Line headers (expanded table) ------------ */
@@ -222,6 +287,9 @@ const lineHeaders = [
   { title: "Description", key: "description" },
   { title: "Reason", key: "reason" },
   { title: "Qty", key: "quantity" },
+  { title: "Accordance To Budget", key: "is_accordance_with_budget" },  
+  { title: "Last Approved By", key: "lastApprovedByUser" },
+  { title: "My Approval Status", key: "myApprovalStatus" },
   { title: "Planned Cost (SAR)", key: "planned_cost" },
   { title: "Line Total (SAR)", key: "line_total" },
 ];
@@ -274,6 +342,7 @@ const nn = (n) => {
 };
 
 const formatDate = (d) => {
+  return d;
   if (!d) return "—";
   try {
     const dt = new Date(d);
@@ -297,12 +366,14 @@ const normalizeLines = (rawLines, reqId) => {
       category_name: r.category_name ?? r.category?.title ?? r.asset_category?.title ?? "—",
       subcategory_name: r.sub_category ?? r.subcategory?.title ?? r.asset_subcategory?.title ?? "—",
       request_type: r.request_type ?? "NEW",
+      created_at: r.created_at ?? "NEW",
       description: truncateSmart(r.description ?? "—"),
       reason: truncateSmart(r.reason ?? "—"),
       quantity: qty,
+      is_accordance_with_budget: r.is_accordance_with_budget,
       planned_cost: cost,
       line_total: lineTotal,
-      raw: { ...r, planned_cost: cost, line_total: lineTotal },
+      raw: { ...r, planned_cost: cost, line_total: lineTotal, myApproval: r.myApproval,lastApprovedByUser: r.lastApprovedBy },
     };
   });
 };
@@ -345,8 +416,12 @@ const fetchAssetInvestmentRequests = async () => {
         user_email: p.user?.email ?? "",
         user_display: `${p.user?.name ?? p.user_name ?? "—"}${p.user?.email ? " (" + p.user.email + ")" : ""}`,
         date: p.date ?? "—",
+        created_at: p.created_at ?? "—",
         lines_count: linesCount,
         planned_cost: plannedCost || null,
+        is_accordance_with_budget:p.is_accordance_with_budget || 'False',
+        lastApprovedByUser: p.lastApprovedBy?p.lastApprovedBy.user_name:null,
+        myApprovalStatus: p.myApproval?p.myApproval.status:null,
         raw: {
           id: p.id,
           date: p.date ?? "—",
@@ -354,6 +429,8 @@ const fetchAssetInvestmentRequests = async () => {
           user_name: p.user_name ?? "—",
           user_email: p.user?.email ?? "",
           planned_cost: plannedCost || null,
+          myApproval: p.myApproval?p.myApproval.id:null,
+          
         },
       };
     });
@@ -415,8 +492,34 @@ const onExpandedChange = async (ids) => {
   }
 };
 
+
+const user = ref({ name: '', email: '', role: '' })
+const roles = ref([])
+
+const fetchUserFromCookie = () => {
+  const userData = useCookie('userData').value
+  const userRoles = useCookie('userAbilityRules').value
+
+  if (userData) {
+    user.value = {
+      name: userData.name ?? '',
+      email: userData.email ?? '',
+      role: userData.role ?? (userRoles?.[0] ?? '') // fallback
+    }
+  }
+
+  if (userRoles) {
+    roles.value = Array.isArray(userRoles) ? userRoles : [userRoles]
+  }
+}
+
+
+
 /* ---------- init ---------- */
-onMounted(fetchAssetInvestmentRequests);
+onMounted(() => {
+  fetchUserFromCookie()        // fetch user + roles from cookie
+  fetchAssetInvestmentRequests() // fetch the table data
+})
 
 /* ---------- DELETE HANDLER ---------- */
 const openDeleteDialog = (id) => {

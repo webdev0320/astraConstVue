@@ -134,7 +134,7 @@
               type="number"
               variant="outlined"
               hide-details="auto"
-              readonly
+              
             />
           </VCol>
 
@@ -151,7 +151,7 @@
               step="0.01"
               variant="outlined"
               hide-details="auto"
-              readonly
+             
             />
           </VCol>
 

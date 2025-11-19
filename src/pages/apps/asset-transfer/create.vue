@@ -8,7 +8,15 @@
     <VForm ref="refForm" @submit.prevent="submitForm">
       <VRow>
         <!-- Top meta -->
-        <VCol cols="12" md="3">
+        <VCol cols="12" md="4">
+              <VTextField
+                v-model="form.asset_transer_no"
+                label="Asset Transfer Request #"
+                :error-messages="errorMessages.asset_transer_no"
+                clearable
+              />
+          </VCol>
+        <VCol cols="12" md="4">
           <VTextField
             v-model="form.issue_no"
             label="Issue No"
@@ -17,7 +25,7 @@
             clearable
           />
         </VCol>
-        <VCol cols="12" md="3">
+        <VCol cols="12" md="4">
           <VTextField
             v-model="form.form_no"
             label="Form No"
@@ -26,7 +34,7 @@
             clearable
           />
         </VCol>
-        <VCol cols="12" md="2">
+        <VCol cols="12" md="4">
           <VTextField
             v-model="form.revision_date"
             type="date"
@@ -36,7 +44,7 @@
           />
         </VCol>
 
-        <VCol cols="12" md="2">
+        <VCol cols="12" md="4">
           <VTextField
             v-model="form.date"
             type="date"
@@ -45,7 +53,7 @@
             :error-messages="errorMessages.date"
           />
         </VCol>
-        <VCol cols="12" md="2">
+        <VCol cols="12" md="4">
           <VTextField
             v-model="form.tag_no"
             label="Tag No"
@@ -55,7 +63,7 @@
         </VCol>
 
         <!-- Projects -->
-        <VCol cols="12" md="6">
+        <VCol cols="12" md="4">
           <VSelect
             v-model="form.transferred_from_project_id"
             :items="projects"
@@ -70,7 +78,7 @@
           />
         </VCol>
 
-        <VCol cols="12" md="6">
+        <VCol cols="12" md="4">
           <VSelect
             v-model="form.transferred_to_project_id"
             :items="projects"
@@ -86,7 +94,7 @@
         </VCol>
 
         <!-- Transfer scheduling -->
-        <VCol cols="12" md="6">
+        <VCol cols="12" md="4">
           <VTextField
             v-model="form.transfer_date"
             type="date"
@@ -95,7 +103,7 @@
             :error-messages="errorMessages.transfer_date"
           />
         </VCol>
-        <VCol cols="12" md="6">
+        <VCol cols="12" md="4">
           <VTextField
             v-model="ui.transfer_time_hhmm"
             type="time"
@@ -125,10 +133,10 @@
         <VCol cols="12" md="4">
           <VSelect
             v-model="form.driver_id"
-            :items="usersToProject.filter(u => u.role === 'Drivers')"
+            :items="usersToProject"
             :item-title="userTitle"
             item-value="id"
-            label="Driver"
+            label="Assigned to User"
             :loading="usersToLoading"
             :disabled="!form.transferred_to_project_id || usersToLoading || usersToProject.length === 0"
             :error-messages="errorMessages.driver_id"
@@ -144,6 +152,60 @@
             clearable
           />
         </VCol>
+
+          <VCol cols="12">
+          <h4 class="mb-2">Items</h4>
+        </VCol> 
+
+        <VCol cols="12">
+          <div class="d-flex justify-between align-center">
+            <VBtn size="small" @click="addItem">Add Item</VBtn>
+          </div>
+          <div v-if="form.items.length === 0" class="text-medium-emphasis mt-2">
+            No items yet. Click “Add Item”.
+          </div>
+        </VCol>
+
+              <VCol cols="12" v-for="(it, idx) in form.items" :key="idx">
+              <VRow>
+                  <VCol cols="3">
+                      <VSelect
+                      v-model="it.asset_id"
+                      :items="assets"
+                      item-title="label"
+                      item-value="id"
+                      label="Asset"
+                      :loading="assetsLoading"
+                      :disabled="assetsLoading || assets.length === 0"
+                      :rules="[requiredNumberValidator]"
+                      clearable
+                      @update:modelValue="val => onAssetChange(idx, val)"
+                      />
+                  </VCol>
+                
+                <VCol cols="2">    
+                <VTextField
+                      v-model.number="it.qty"
+                      type="number"
+                      min="1"
+                      :max="it.remaining_quantity"
+                      label="Qty"
+                      :rules="[
+                        requiredNumberValidator,
+                        v => (!it.remaining_quantity || v <= it.remaining_quantity) || `Cannot exceed remaining qty (${it.remaining_quantity})`
+                      ]"
+                    />
+
+
+                  </VCol>
+                    <VCol cols="6">
+                         <VTextField v-model="it.remarks" label="Remarks" />
+                    </VCol>
+                  <VCol cols="1">
+                       <VBtn color="error" variant="tonal" @click="removeItem(idx)">X</VBtn>
+                  </VCol>
+              </VRow>
+              </VCol>
 
         <!-- Approvals -->
         <VCol cols="12">
@@ -264,43 +326,10 @@
         </VCol>
 
         <!-- Items -->
-        <VCol cols="12">
-          <div class="d-flex justify-between align-center">
-            <h4>Items</h4>
-            <VBtn size="small" @click="addItem">Add Item</VBtn>
-          </div>
-          <div v-if="form.items.length === 0" class="text-medium-emphasis mt-2">
-            No items yet. Click “Add Item”.
-          </div>
-        </VCol>
+        
 
         <!-- ✅ asset_id input replaced with dropdown from /api/assets -->
-        <VCol cols="12" v-for="(it, idx) in form.items" :key="idx">
-          <div class="item-row">
-            <VSelect
-              v-model="it.asset_id"
-              :items="assets"
-              item-title="label"
-              item-value="id"
-              label="Asset"
-              :loading="assetsLoading"
-              :disabled="assetsLoading || assets.length === 0"
-              :rules="[requiredNumberValidator]"
-              class="mr-2 flex-1"
-              clearable
-            />
-            <VTextField
-              v-model.number="it.qty"
-              type="number"
-              min="1"
-              label="Qty"
-              :rules="[requiredNumberValidator]"
-              class="mr-2"
-            />
-            <VTextField v-model="it.remarks" label="Remarks" class="mr-2 flex-1" />
-            <VBtn color="error" variant="tonal" @click="removeItem(idx)">Remove</VBtn>
-          </div>
-        </VCol>
+        
 
         <!-- Submit -->
         <VCol cols="12" class="mt-2">
@@ -332,6 +361,8 @@ const router = useRouter()
 const projects = ref([])
 const projectsLoading = ref(false)
 
+
+const asset_transer_no = ref(null);
 // Users (from & to projects)
 const usersFromProject = ref([])
 const usersToProject = ref([])
@@ -340,6 +371,12 @@ const usersToLoading = ref(false)
 const userTitle = u => (u?.user_code ? `${u.name} — ${u.user_code}` : u?.name ?? '')
 
 const today = new Date().toISOString().split('T')[0]
+const now = new Date()
+const hh = String(now.getHours()).padStart(2, '0')
+const mm = String(now.getMinutes()).padStart(2, '0')
+
+const timeHHMM = `${hh}:${mm}`
+const timeHHMMSS = `${hh}:${mm}:00`
 
 // 🔹 Assets for items[].asset_id
 const assets = ref([])            // [{ id, label }]
@@ -347,14 +384,15 @@ const assetsLoading = ref(false)
 
 const form = ref({
   issue_no: '',
-  revision_date: '',
+  revision_date: today,
+  asset_transer_no: '',
   form_no: '',
   date: today,
   tag_no: '',
   transferred_from_project_id: null,
   transferred_to_project_id: null,
-  transfer_date: '',
-  transfer_time: '',
+  transfer_date: today,
+  transfer_time: timeHHMMSS,
   prepared_by: null,
   driver_id: null,
   contact_details: '',
@@ -366,16 +404,16 @@ const form = ref({
   project_incharge_status_date: today,
   received_from: null,
   received_by: null,
-  received_date: '',
-  received_time: '',
+  received_date: today,
+  received_time: timeHHMMSS,
   inspected_by: null,
   equipment_status: false,
   items: [],
 })
 
 const ui = ref({
-  transfer_time_hhmm: '',
-  received_time_hhmm: '',
+  transfer_time_hhmm: timeHHMM,
+  received_time_hhmm: timeHHMM,
 })
 
 const refForm = ref()
@@ -391,12 +429,6 @@ const dateNotPastValidator = v => {
   return v >= today || 'Date cannot be older than today'
 }
 
-const getCookie = name => {
-  const value = `; ${document.cookie}`
-  const parts = value.split(`; ${name}=`)
-  if (parts.length === 2) return parts.pop().split(';').shift()
-  return null
-}
 
 // Time helpers
 const ensureSeconds = hhmm => {
@@ -428,7 +460,7 @@ const fetchProjects = async () => {
     const list = Array.isArray(res.data) ? res.data
       : Array.isArray(res.data?.data) ? res.data.data
       : []
-    projects.value = list.map(p => ({ id: p.id, name: p.name }))
+    projects.value = list.map(p => ({ id: p.id, name: `${p.project_code} — ${p.name}`.trim() }))
   } catch (e) {
     console.error('Error fetching projects:', e)
   } finally {
@@ -437,15 +469,29 @@ const fetchProjects = async () => {
 }
 
 // 🔹 Fetch assets for dropdown
-const fetchAssets = async () => {
+const fetchAssets = async (pid) => {
   try {
+    assets.value = []
+
+    form.value.items.forEach(i => {
+      i.asset_id = null
+      i.qty = 1
+      i.maxQty = null
+    })
+
     assetsLoading.value = true
     const accessToken = getCookie('accessToken')
     if (!accessToken) throw new Error('Access token is missing. Please log in.')
     const decodedToken = decodeURIComponent(accessToken)
 
-    const res = await axios.get(`${apiBaseUrl}/assets`, {
-      headers: { Authorization: `Bearer ${decodedToken}`, Accept: 'application/json' },
+   const res = await axios.get(`${apiBaseUrl}/assets`, {
+      headers: {
+        Authorization: `Bearer ${decodedToken}`,
+        Accept: 'application/json',
+      },
+      params: {
+        project_id: pid
+      }
     })
 
     const list = Array.isArray(res.data) ? res.data
@@ -454,15 +500,40 @@ const fetchAssets = async () => {
 
     // map to {id,label}
     assets.value = list.map(a => {
-      const code = a.code || `AST-${a.id}`
-      const cat = a.category_name || ''
-      const sub = a.sub_category ? ` / ${a.sub_category}` : ''
-      return { id: Number(a.id), label: `${code} — ${cat}${sub}`.trim() }
+      const code = a.code;
+      const title = a.title
+      return { id: Number(a.id), label: `${code} — ${title}`.trim(),quantity: Number(a.quantity),remaining_quantity: Number(a.remaining_quantity) }
     })
   } catch (e) {
     console.error('Error fetching assets:', e)
   } finally {
     assetsLoading.value = false
+  }
+}
+
+
+// called when asset select changes; idx is index in form.items, val is selected asset id
+const onAssetChange = (idx, val) => {
+  const item = form.value.items[idx]
+
+  if (!item) return
+
+  if (val === null || val === '' || typeof val === 'undefined') {
+    item.maxQty = null
+    item.qty = 1
+    return
+  }
+
+  const selected = assets.value.find(a => a.id === Number(val))
+  if (selected) {
+    // use remaining_quantity instead of quantity
+
+    item.maxQty = Number(selected.remaining_quantity ?? 0)
+
+    // set qty based on remaining stock (or 1)
+    item.qty = Math.max(1, Math.min(item.maxQty))
+  } else {
+    item.maxQty = null
   }
 }
 
@@ -501,6 +572,8 @@ watch(() => form.value.transferred_from_project_id, async (pid) => {
     id: u.id, name: u.name, user_code: u.user_code
   }))
   usersFromLoading.value = false
+
+  fetchAssets(pid)
 })
 
 watch(() => form.value.transferred_to_project_id, async (pid) => {
@@ -523,9 +596,59 @@ watch(() => form.value.transferred_to_project_id, async (pid) => {
   usersToLoading.value = false
 })
 
+// auth helpers
+const getCookie = name => {
+  const value = `; ${document.cookie}`
+  const parts = value.split(`; ${name}=`)
+  if (parts.length === 2) return parts.pop().split(';').shift()
+  return null
+}
+
+const getAccessToken = () => {
+  const raw = getCookie('accessToken')
+  if (!raw) return null
+  const decoded = decodeURIComponent(raw)
+  return decoded.replace(/^"+|"+$/g, '')
+}
+
+const authHeaders = () => {
+  const token = getAccessToken()
+  if (!token) throw new Error('Access token is missing. Please log in.')
+  return {
+    Authorization: `Bearer ${token}`,
+    Accept: 'application/json',
+  }
+}
+
+const fetchLatestId = async () => {
+  try {
+
+    const accessToken = getCookie('accessToken')
+    if (!accessToken) throw new Error('Access token is missing. Please log in.')
+    const decodedToken = decodeURIComponent(accessToken)
+
+
+    const res = await axios.get(`${apiBaseUrl}/getLatestNumber`, {
+      params: { type: 'AssetTransfer'},
+      headers: authHeaders(),
+    });
+
+
+    const numberId = res.data.value;
+    console.log(numberId);
+    form.value.asset_transer_no = numberId;
+  } catch (e) {
+    console.error(e);
+    form.value.asset_transer_no = '';
+  } finally {
+
+  }
+};
+
+
 onMounted(() => {
-  fetchProjects()
-  fetchAssets()   // ✅ load assets for item dropdowns
+  fetchProjects(),
+  fetchLatestId()
 })
 
 const submitForm = async () => {
@@ -543,22 +666,17 @@ const submitForm = async () => {
     if (!valid) { loading.value = false; return }
     if (!form.value.items.length) { message.value = 'Please add at least one item.'; loading.value = false; return }
 
-    const accessToken = getCookie('accessToken')
-    if (!accessToken) throw new Error('Access token is missing. Please log in.')
-    const decodedToken = decodeURIComponent(accessToken)
-
     const payload = { ...form.value }
 
     const res = await axios.post(`${apiBaseUrl}/asset-transfers`, payload, {
       headers: {
-        'Content-Type': 'application/json',
+        ...authHeaders(),
         Accept: 'application/json',
-        Authorization: `Bearer ${decodedToken}`,
       },
     })
 
     message.value = res.data?.message || 'Asset transfer created successfully!'
-    router.push('/dashboards/assettransfers')
+    //router.push('/dashboards/assettransfers')
   } catch (error) {
     console.error('Error submitting asset transfer:', error)
     if (error.response?.data?.errors) {

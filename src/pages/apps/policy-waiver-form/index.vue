@@ -62,18 +62,18 @@
                 class="d-flex align-center gap-1"
               >
                 Actions
-                <VIcon :icon="isActive ? 'mdi-chevron-up' : 'mdi-chevron-down'" />
+                <VIcon :icon="isActive ? 'tabler-caret-up' : 'tabler-caret-down'" />
               </VBtn>
             </template>
 
             <VList density="compact">
               <VListItem @click="$router.push(`/dashboards/policy-waiver-form/detail/${item.id}`)">
-                <template #prepend><VIcon icon="mdi-file-document" /></template>
+                <template #prepend><VIcon icon="tabler-eye" /></template>
                 <VListItemTitle>Detail</VListItemTitle>
               </VListItem>
 
               <VListItem @click="deleteForm(item.id)">
-                <template #prepend><VIcon icon="mdi-delete" /></template>
+                <template #prepend><VIcon icon="tabler-trash" /></template>
                 <VListItemTitle>Delete</VListItemTitle>
               </VListItem>
             </VList>

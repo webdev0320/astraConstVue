@@ -31,13 +31,40 @@
           :error-messages="errorMessages.code"
           clearable
         />
-
-         <!-- Message shown only when quantity > 1 -->
-          <small v-if="asset.quantity > 1" class="text-caption text-warning">
-            Assets with multiple quantities will have same code.
-          </small>
       </VCol>
 
+      <VCol cols="12" md="4">
+          <VSelect
+            v-model="asset.project_id"
+            :items="projects"
+            item-title="label"
+            item-value="id"
+            label="Project"
+            :loading="loadingProjects"
+            :disabled="loadingProjects"
+            :error-messages="errorMessages.project_id"
+            clearable
+            @update:modelValue="onProjectChange"
+          />
+        </VCol>
+
+
+      <!-- Asset Investment Request (REQUIRED) -->
+      
+      <VCol cols="12" md="4">
+        <VSelect
+          v-model="asset.asset_investment_requests_id"
+          :items="investmentRequests"
+          item-title="label"
+          item-value="id"
+          label="Asset Investment Request"
+          :loading="loadingInvestmentRequests"
+          :disabled="loadingInvestmentRequests || !asset.project_id"
+          :error-messages="errorMessages.asset_investment_requests_id"
+          clearable
+
+        />
+      </VCol>
 
       <!-- Title (REQUIRED) -->
      
@@ -306,14 +333,6 @@
       </VCol>
 
       <VCol cols="12" md="4">
-        <VTextField v-model="asset.unit_price" type="number" label="Unit Price *" :rules="[numberOptionalValidator]" clearable />
-      </VCol>
-
-            <VCol cols="12" md="4">
-        <VTextField v-model="asset.price" type="number" label="Price *" :rules="[numberOptionalValidator]" clearable />
-      </VCol>
-
-      <VCol cols="12" md="4">
         <VTextField
           v-model="asset.depreciation_rate"
           type="number"
@@ -323,7 +342,9 @@
         />
       </VCol>
 
-
+      <VCol cols="12" md="4">
+        <VTextField v-model="asset.price" type="number" label="Price *" :rules="[numberOptionalValidator]" clearable />
+      </VCol>
 
       <VCol cols="12" md="4">
         <VTextField v-model="asset.useful_life" type="number" label="Useful Life *" :rules="[numberOptionalValidator]" clearable />
@@ -394,6 +415,7 @@ const today = new Date().toISOString().split('T')[0]
 
 /* ---------------- State ---------------- */
 const asset = ref({
+  asset_investment_requests_id: null,
   code: '',
   title: '',
   asset_category_id: null,
@@ -426,7 +448,6 @@ const asset = ref({
 
   // price-related (optional)
   depreciation_rate: '',
-  unit_price: '',
   price: '',
   useful_life: '',
   replacement_cost: '',
@@ -448,10 +469,13 @@ const yesNoOptions = [
 
 const categories = ref([])
 const subCategories = ref([])
+const investmentRequests = ref([])
 const projects = ref([])
 const loading = ref(false)
 const loadingCategories = ref(false)
 const loadingSubCategories = ref(false)
+const loadingInvestmentRequests = ref(false)
+const loadingProjects = ref(false)
 
 const refForm = ref()
 const message = ref('')
@@ -519,17 +543,6 @@ const fetchAllCategories = async () => {
   return all
 }
 
-
-watch(
-  () => [asset.value.unit_price, asset.value.quantity],
-  ([unitPrice, quantity]) => {
-    if (unitPrice && quantity) {
-      asset.value.price = Number(unitPrice) * Number(quantity);
-    } else {
-      asset.value.price = null;
-    }
-  }
-);
 
 
 /* Load top-level categories where parent_id is null */
@@ -603,6 +616,64 @@ const fetchLocations = async () => {
   }
 }
 
+/* Investment Requests (for required select) */
+const formatIRLabel = ir => {
+  const air_number = ir?.air_number
+}
+
+const onProjectChange = (projectId) => {
+  if (!projectId) {
+    investmentRequests.value = []
+    asset.asset_investment_requests_id = null
+    return
+  }
+
+  fetchInvestmentRequests(projectId)
+}
+
+
+
+const fetchInvestmentRequests = async (projectId = null) => {
+  try {
+    loadingInvestmentRequests.value = true
+
+    const res = await axios.get(`${apiBaseUrl}/asset-investment-requests`, {
+      params: { project_id: projectId }, // ✅ pass project id
+      headers: { ...authHeader(), Accept: 'application/json' },
+    })
+
+    const list = Array.isArray(res.data?.data) ? res.data.data : Array.isArray(res.data) ? res.data : []
+    investmentRequests.value = list.map(ir => ({
+      id: ir.id,
+      label: ir.air_number,
+    }))
+  } catch (e) {
+    console.error('Failed to load asset investment requests', e)
+    investmentRequests.value = []
+  } finally {
+    loadingInvestmentRequests.value = false
+  }
+}
+
+
+const fetchProjects = async () => {
+  try {
+    loadingProjects.value = true
+    const res = await axios.get(`${apiBaseUrl}/projects`, {
+      headers: { ...authHeader(), Accept: 'application/json' },
+    })
+    const list = Array.isArray(res.data?.data) ? res.data.data : Array.isArray(res.data) ? res.data : []
+    projects.value = list.map(ir => ({
+      id: ir.id,
+      label:ir.name,
+    }))
+  } catch (e) {
+    console.error('Failed to load projects', e)
+    projects.value = []
+  } finally {
+    loadingProjects.value = false
+  }
+}
 
 /* Watchers */
 watch(
@@ -649,6 +720,9 @@ const submitForm = async () => {
     // required + ids
     safeAppend('asset_category_id', Number(asset.value.asset_category_id))
     safeAppend('asset_sub_category_id', Number(asset.value.asset_sub_category_id))
+    if (asset.value.asset_investment_requests_id) {
+      safeAppend('asset_investment_requests_id', Number(asset.value.asset_investment_requests_id))
+    }
 
     safeAppend('code', asset.value.code)
     safeAppend('title', asset.value.title)
@@ -683,20 +757,19 @@ const submitForm = async () => {
     // ⟵ NEW: Location via dropdown
     if (asset.value.location_id) {
       safeAppend('location_id', Number(asset.value.location_id))
-
+      // (Optional backward-compat) — if API abhi 'location' name bhi accept karta ho
       const loc = (locations.value || []).find(l => l.id === asset.value.location_id)
       if (loc?.name) safeAppend('location', loc.name)
     }
 
     // numbers
     const numOrEmpty = v => (v === '' || v === null || v === undefined) ? '' : String(Number(v))
-    
-    safeAppend('unit_price', numOrEmpty(asset.value.unit_price))
     safeAppend('price', numOrEmpty(asset.value.price))
     safeAppend('replacement_cost', numOrEmpty(asset.value.replacement_cost))
     safeAppend('purchase_cost', numOrEmpty(asset.value.purchase_cost))
     safeAppend('book_value', numOrEmpty(asset.value.nbv))
     safeAppend('useful_life', numOrEmpty(asset.value.useful_life))
+    // (optional) agar chahen to depreciation_rate bhi bhej dein:
     safeAppend('depreciation_rate', numOrEmpty(asset.value.depreciation_rate))
 
     // IMAGES
@@ -732,6 +805,7 @@ const submitForm = async () => {
 const resetForm = () => {
   const keepKeys = Object.keys(asset.value)
   for (const k of keepKeys) asset.value[k] = ''
+  asset.value.asset_investment_requests_id = null
   asset.value.asset_category_id = null
   asset.value.asset_sub_category_id = null
   asset.value.is_related_to_it = null
@@ -743,6 +817,7 @@ const resetForm = () => {
 /* Lifecycle */
 onMounted(() => {
   fetchCategories()
+  fetchProjects()
   fetchLocations()
 })
 </script>

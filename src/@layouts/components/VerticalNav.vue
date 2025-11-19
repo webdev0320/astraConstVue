@@ -10,6 +10,7 @@ import { useLayoutConfigStore } from '@layouts/stores/config'
 import { injectionKeyIsVerticalNavHovered } from '@layouts/symbols'
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
 
+
 const props = defineProps({
   tag: {
     type: null,
@@ -32,38 +33,52 @@ const props = defineProps({
 
 const refNav = ref()
 const isHovered = useElementHover(refNav)
-
 provide(injectionKeyIsVerticalNavHovered, isHovered)
 
 const configStore = useLayoutConfigStore()
+const userData = useCookie('userData').value
+const userRoles = useCookie('userAbilityRules').value
+
+// Extract user role safely from cookies
+const userRole = computed(() => {
+  // userData may be JSON or object depending on how it's stored
+  if (userData && typeof userData === 'object' && userData.role)
+    return userData.role
+
+  // If your roles are stored as array in userAbilityRules cookie
+  if (userRoles && Array.isArray(userRoles) && userRoles.length > 0)
+    return userRoles[0] // take first role if multiple
+
+  return 'guest'
+})
+
+// ✅ Filter nav items based on user role
+const filteredNavItems = computed(() =>
+  props.navItems.filter(item => {
+    if (item.roles && Array.isArray(item.roles)) {
+      return item.roles.includes(userRole.value)
+    }
+    return true
+  })
+)
 
 const resolveNavItemComponent = item => {
   if ('heading' in item)
     return VerticalNavSectionTitle
   if ('children' in item)
     return VerticalNavGroup
-
   return VerticalNavLink
 }
 
-/*ℹ️ Close overlay side when route is changed
-Close overlay vertical nav when link is clicked
-*/
+// ℹ️ Close overlay side when route is changed
 const route = useRoute()
-
-watch(() => route.name, () => {
-  props.toggleIsOverlayNavActive(false)
-})
+watch(() => route.name, () => props.toggleIsOverlayNavActive(false))
 
 const isVerticalNavScrolled = ref(false)
-const updateIsVerticalNavScrolled = val => isVerticalNavScrolled.value = val
-
-const handleNavScroll = evt => {
-  isVerticalNavScrolled.value = evt.target.scrollTop > 0
-}
-
+const handleNavScroll = evt => (isVerticalNavScrolled.value = evt.target.scrollTop > 0)
 const hideTitleAndIcon = configStore.isVerticalNavMini(isHovered)
 </script>
+
 
 <template>
   <Component
@@ -149,7 +164,7 @@ const hideTitleAndIcon = configStore.isVerticalNavMini(isHovered)
       >
         <Component
           :is="resolveNavItemComponent(item)"
-          v-for="(item, index) in navItems"
+          v-for="(item, index) in filteredNavItems"
           :key="index"
           :item="item"
         />

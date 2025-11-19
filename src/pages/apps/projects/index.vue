@@ -38,14 +38,14 @@
                             class="d-flex align-center gap-1"
                           >
                             Actions
-                            <VIcon :icon="isActive ? 'mdi-chevron-up' : 'mdi-chevron-down'" />
+                            <VIcon :icon="isActive ? 'tabler-caret-up' : 'tabler-caret-down'" />
                           </VBtn>
                     </template>
 
                     <VList class="py-0">
                       
                       <VListItem @click="openDescriptionDialog(item.raw ?? item)">
-                        <VIcon start>mdi-eye</VIcon>
+                        <VIcon start>tabler-eye</VIcon>
                         Details
                       </VListItem>
 
@@ -53,35 +53,42 @@
                       <VListItem
                         @click="$router.push(`/dashboards/projects/edit/${item.raw?.id ?? item.id}`)"
                       >
-                        <VIcon start>mdi-pencil</VIcon>
+                        <VIcon start>tabler-edit</VIcon>
                         Edit
                       </VListItem>
 
                       <VListItem
                         @click="deleteProject(item.raw?.id ?? item.id)"
                       >
-                        <VIcon start>mdi-delete</VIcon>
+                        <VIcon start>tabler-trash</VIcon>
                         Delete
                       </VListItem>
 
                       <VListItem
                         @click="$router.push(`/dashboards/projects/${item.raw?.id ?? item.id}/assignusers`)"
                       >
-                        <VIcon start>mdi-account-multiple</VIcon>
-                        Users
+                        <VIcon start>tabler-users</VIcon>
+                        Assign Users
+                      </VListItem>
+
+                      <VListItem
+                        @click="$router.push(`/dashboards/projects/${item.raw?.id ?? item.id}/assignAssets`)"
+                      >
+                        <VIcon start>tabler-hammer</VIcon>
+                        Assign Assets
                       </VListItem>
 
                       <VListItem
                         @click="$router.push(`/dashboards/projects/${item.raw?.id ?? item.id}/budgets`)"
                       >
-                        <VIcon start>mdi-cash</VIcon>
-                        Budget
+                        <VIcon start>tabler-brand-cashapp</VIcon>
+                        Add Budget
                       </VListItem>
 
 
                        <VListItem @click="changeProjectStatus(item.raw?.id ?? item.id)">
                           <template #prepend>
-                            <VIcon>mdi-sync</VIcon>
+                            <VIcon>tabler-refresh</VIcon>
                           </template>
 
                           <template v-if="item.status == 1">

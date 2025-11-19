@@ -49,7 +49,7 @@
               class="d-flex align-center gap-1"
             >
               Actions
-              <VIcon :icon="isActive ? 'mdi-chevron-up' : 'mdi-chevron-down'" />
+              <VIcon :icon="isActive ? 'tabler-caret-up' : 'tabler-caret-down'" />
             </VBtn>
           </template>
 
@@ -58,27 +58,27 @@
               <VListItem
                 @click="$router.push(`/dashboards/assettransfers/${item.raw?.id ?? item.id}`)"
               >
-                <template #prepend><VIcon icon="mdi-eye" /></template>
+                <template #prepend><VIcon icon="tabler-eye" /></template>
                 <VListItemTitle>View Details</VListItemTitle>
             </VListItem>
 
             <VListItem @click="$router.push(`/dashboards/assettransfers/edit/${item.raw?.id ?? item.id}`)">
-              <template #prepend><VIcon icon="mdi-pencil" /></template>
+              <template #prepend><VIcon icon="tabler-edit" /></template>
               <VListItemTitle>Edit</VListItemTitle>
             </VListItem>
 
             <VListItem @click="deleteAssetTransfer(item.raw?.id ?? item.id)">
-              <template #prepend><VIcon icon="mdi-delete" /></template>
+              <template #prepend><VIcon icon="tabler-trash" /></template>
               <VListItemTitle>Delete</VListItemTitle>
             </VListItem>
 
-            <VListItem @click="approveAssetTransfer(item.raw?.id ?? item.id)">
-              <template #prepend><VIcon icon="mdi-thumb-up" /></template>
+            <VListItem v-if="item?.myApproval !== null && (item?.myApprovalStatus=='Rejected' || item?.myApprovalStatus=='Pending')" @click="openApproveDialog(item?.id,item?.myApproval?.id,'APPROVED')">
+              <template #prepend><VIcon icon="tabler-check" /></template>
               <VListItemTitle>Approve</VListItemTitle>
             </VListItem>
 
-            <VListItem @click="rejectAssetTransfer(item.raw?.id ?? item.id)">
-              <template #prepend><VIcon icon="mdi-thumb-down" /></template>
+            <VListItem v-if="item?.myApproval !== null && (item?.myApprovalStatus=='Approved' || item?.myApprovalStatus=='Pending')" @click="openApproveDialog(item?.id,item?.myApproval?.id,'REJECTED')">
+              <template #prepend><VIcon icon="tabler-player-stop" /></template>
               <VListItemTitle>Reject</VListItemTitle>
             </VListItem>
           </VList>
@@ -111,6 +111,16 @@
       </VCard>
     </VDialog>
   </div>
+
+
+    <ConfirmDialog
+      v-model="confirmDialog.value"
+      :title="confirmDialog.title"
+      :message="confirmDialog.message"
+      :color="confirmDialog.color"
+      :onConfirm="confirmDialog.onConfirm"
+    />
+
 </template>
 
 <script setup>
@@ -126,21 +136,22 @@ import {
   VDialog,
   VSelect
 } from "vuetify/components";
+import ConfirmDialog from "@core/components/GlobalConfirmDialog.vue";
+
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 
 // Table headers aligned to API fields
 const headers = [
-  { title: "ISSUE NO", key: "issue_no" },
-  { title: "FORM NO", key: "form_no" },
-  { title: "REVISION DATE", key: "revision_date" },
-  { title: "DATE", key: "date" },
-  { title: "FROM PROJECT", key: "transferred_from" },
-  { title: "TO PROJECT", key: "transferred_to" },
-  { title: "TRANSFER DATE", key: "transfer_date" },
-  { title: "TRANSFER TIME", key: "transfer_time" },
-  { title: "PREPARED BY", key: "prepared_by" },
-  { title: "ACTIONS", key: "actions", sortable: false },
+  { title: "Request#", key: "asset_transer_no" },
+  { title: "Date", key: "date" },
+  { title: "From Project", key: "transferred_from" },
+  { title: "To Project", key: "transferred_to" },
+  { title: "Transfer Date", key: "transfer_date" },
+  { title: "Prepared By", key: "prepared_by" },
+  { title: "Last Approved By", key: "lastApprovedByUser" },
+  { title: "My Approval Status", key: "myApprovalStatus" },
+  { title: "Actions", key: "actions", sortable: false },
 ];
 
 const assettransfers = ref([]);
@@ -189,6 +200,47 @@ const getAuthHeaders = () => {
   return { Authorization: `Bearer ${decodedToken}`, Accept: 'application/json' }
 }
 
+const confirmDialog = ref({
+  value: false,
+  title: "",
+  message: "",
+  color: "primary",
+  onConfirm: null,
+});
+
+const openApproveDialog = (assetTransferId, approvalId,status) => {
+
+  confirmDialog.value = {
+    value: true,
+    title: "Approve Request",
+    message: "Are you sure you want to approve this request?",
+    color: "primary",
+    onConfirm: async () => {
+      try {
+        const accessToken = decodeURIComponent(getCookie("accessToken"));
+
+        await axios.get(
+          `${apiBaseUrl}/asset-transfers/changeStatus/${assetTransferId}/${approvalId}/${status}`,
+          {
+            headers: { 
+              Authorization: `Bearer ${accessToken}`,
+              Accept: "application/json",
+            },
+          }
+        );
+
+        console.log(`Request ${assetTransferId} approved by ${approvalId}`);
+        // Optionally reload your table data
+        await fetchAssetTransfers();
+
+      } catch (error) {
+        console.error("Approve action failed:", error);
+        alert(error.response?.data?.message || "Failed to approve request.");
+      }
+    },
+  };
+};
+
 // Fetch Asset Transfers (matches /api/asset-transfers)
 const fetchAssetTransfers = async () => {
   try {
@@ -210,6 +262,7 @@ const fetchAssetTransfers = async () => {
     assettransfers.value = list.map((t) => ({
       id: t.id,
       issue_no: t.issue_no ?? "—",
+      asset_transer_no: t.asset_transer_no ?? "—",
       form_no: t.form_no ?? "—",
       revision_date: fmtDate(t.revision_date),
       date: fmtDate(t.date),
@@ -222,6 +275,10 @@ const fetchAssetTransfers = async () => {
       transfer_date: fmtDate(t.transfer_date),
       transfer_time: fmtTime(t.transfer_time),
       prepared_by: t.prepared_by ?? "—",
+      myApproval: t.myApproval,
+      lastApprovedByUser: t.lastApprovedBy?.user_name,
+      myApprovalStatus: t.myApproval?t.myApproval.status:null,
+
     }));
   } catch (error) {
     console.error("Error fetching asset transfers:", error);

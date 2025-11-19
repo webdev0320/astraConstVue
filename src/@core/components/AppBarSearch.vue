@@ -148,37 +148,10 @@ watch(() => props.isDialogVisible, () => {
         :options="{ wheelPropagation: false, suppressScrollX: true }"
         class="h-100"
       >
-        <!-- 👉 Suggestions -->
-        <div
-          v-show="!!props.searchResults && !searchQueryLocal && $slots.suggestions"
-          class="h-100"
-        >
-          <slot name="suggestions" />
-        </div>
+        
 
         <template v-if="!isLoading">
-          <!-- 👉 Search List -->
-          <VList
-            v-show="searchQueryLocal.length && !!props.searchResults.length"
-            ref="refSearchList"
-            density="compact"
-            class="app-bar-search-list py-0"
-          >
-            <!-- 👉 list Item /List Sub header -->
-            <template
-              v-for="item in props.searchResults"
-              :key="item"
-            >
-              <slot
-                name="searchResult"
-                :item="item"
-              >
-                <VListItem>
-                  {{ item }}
-                </VListItem>
-              </slot>
-            </template>
-          </VList>
+      
 
           <!-- 👉 No Data found -->
           <div

@@ -79,8 +79,6 @@
             <div class="mb-2"><strong>ID:</strong> {{ selectedBudget?.id }}</div>
             <div class="mb-2"><strong>Category:</strong> {{ selectedBudget?.category }}</div>
             <div class="mb-2"><strong>Subcategory:</strong> {{ selectedBudget?.subcategory }}</div>
-            <div class="mb-2"><strong>Asset:</strong> {{ selectedBudget?.asset }}</div>
-            <div class="mb-2"><strong>Quantity:</strong> {{ selectedBudget?.quantity }}</div>
             <div class="mb-2"><strong>Amount (SAR):</strong> {{ formatAmount(selectedBudget?.amount) }}</div>
             <div class="mb-2"><strong>Created At:</strong> {{ selectedBudget?.created_at }}</div>
 
@@ -121,8 +119,6 @@ const headers = [
   { title: "BUDGET ID", key: "id", sortable: true },
   { title: "CATEGORY", key: "category", sortable: true },
   { title: "SUBCATEGORY", key: "subcategory", sortable: true },
-  { title: "ASSET CODE & NAME", key: "asset", sortable: true },
-  { title: "QTY", key: "quantity", sortable: true },
   { title: "AMOUNT (SAR)", key: "amount", sortable: true },
   { title: "CREATED AT", key: "created_at", sortable: true },
   { title: "ACTIONS", key: "actions", sortable: false },
@@ -146,9 +142,7 @@ const mappedBudgets = computed(() =>
     id: b.id,
     category: b.asset_category_name ?? "-",
     subcategory: b.asset_subcategory_name ?? "-",
-    asset: (b?.asset_code ?? "-") + " - " + (b?.asset_name ?? "-"),
     asset_description: b.asset_description ?? "—",
-    quantity: b.quantity != null ? Number(b.quantity) : 1,
     amount: b.amount,
     created_at: b.created_at,
   }))

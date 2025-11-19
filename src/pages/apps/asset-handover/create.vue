@@ -97,110 +97,103 @@
 
       <!-- Items Table -->
       <VCol cols="12">
-        <VCard variant="outlined">
-          <VCardTitle class="px-4 py-3">Items</VCardTitle>
-          <VCardText class="px-0">
-            <VTable density="comfortable" fixed-header>
-              <thead>
-                <tr>
-                  <th style="inline-size: 80px;">S.No</th>
-                  <th>Description</th>
-                  <th style="inline-size: 160px;">Asset Requested</th>
-                   <th style="inline-size: 160px;">Asset Providing</th>
-                  <th style="inline-size: 180px;">Quantity (Requested)</th>
-                  <th style="inline-size: 180px;">Quantity (Handover)</th>
-                  <th>Remarks</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-if="loadingItems">
-                  <td colspan="6" class="text-center py-6">Loading items…</td>
-                </tr>
+  <VCard variant="outlined">
+    <VCardTitle class="px-4 py-3">Items</VCardTitle>
 
-                <tr v-else-if="requestItems.length === 0">
-                  <td colspan="6" class="text-center py-6">No items found for this request.</td>
-                </tr>
+    <VCardText>
+      <!-- Loading and Empty States -->
+      <div v-if="loadingItems" class="text-center py-6">Loading items…</div>
+      <div v-else-if="requestItems.length === 0" class="text-center py-6">No items found for this request.</div>
 
-                <tr v-for="(row, idx) in requestItems" :key="row.item_id">
-                  <td>{{ idx + 1 }}</td>
-                  <td>{{ row.description }}</td>
+      <!-- Items List -->
+      <VRow
+        v-else
+        v-for="(row, idx) in requestItems"
+        :key="row.item_id"
+        class="border-b py-3 mx-2 mb-2 rounded-lg bg-gray-50"
+      >
+        <!-- S.No -->
+        <VCol cols="12" md="1" class="d-flex align-center">
+          <strong>{{ idx + 1 }}.</strong>
+        </VCol>
 
-                  <!-- Asset ID (readonly, optional) -->
-                  <td>
-                    <VTextField
-                      v-model="row.asset_code"
-                      hide-details="auto"
-                      variant="outlined"
-                      density="compact"
-                      placeholder="(optional)"
-                      readonly
-                    />
-                  </td>
-
-                  <!-- Asset Code (dropdown, optional) -->
-                 <!-- Asset (dropdown, optional) -->
-                  <td>
-                    <VSelect
-                      v-model="row.asset_id"
-                      :items="assetOptions"
-                      item-title="title"
-                      item-value="value"
-                      variant="outlined"
-                      density="compact"
-                      hide-details="auto"
-                      placeholder="Select Asset (optional)"
-                      clearable
-                      :loading="loadingAssets"
-                    />
-                  </td>
+        <!-- Description -->
 
 
+        <!-- Asset Providing (Dropdown) -->
+        <VCol cols="12" md="3">
+          <VSelect
+            v-model="row.asset_id"
+            :items="assetOptions"
+            item-title="title"
+            item-value="value"
+            label="Asset Providing"
+            variant="outlined"
+            
+            hide-details="auto"
+            clearable
+            :loading="loadingAssets"
+          />
+        </VCol>
 
-                  <!-- Quantity (Requested) readonly -->
-                  <td>
-                    <VTextField
-                      v-model.number="row.request_qty"
-                      type="number"
-                      min="0"
-                      hide-details="auto"
-                      variant="outlined"
-                      density="compact"
-                      readonly
-                    />
-                  </td>
+        <!-- Quantity (Requested) -->
+        <VCol cols="12" md="3">
+          <VTextField
+            v-model.number="row.request_qty"
+            label="Qty (Requested)"
+            type="number"
+            variant="outlined"
+            
+            hide-details="auto"
+            readonly
+          />
+        </VCol>
 
-                  <!-- Quantity (Handover) -->
-                    <VTextField
-                      v-model.number="row.handover_qty"
-                      type="number"
-                      min="1"
-                      :max="row.request_qty"
-                      hide-details="auto"
-                      variant="outlined"
-                      density="compact"
-                      :error-messages="rowErrors[idx]?.handover_qty"
-                      placeholder="Enter qty"
-                      @input="validateQty(row, idx)"
-                    />
+        <!-- Quantity (Handover) -->
+        <VCol cols="12" md="2">
+            <VTextField
+              v-model.number="row.handover_qty"
+              label="Qty (Handover)"
+              type="text"
+              min="1"
+              :max="getMaxQty(row)"
+              variant="outlined"
+              
+              hide-details="auto"
+              :error-messages="rowErrors[idx]?.handover_qty"
+              placeholder="Enter qty"
+              @input="validateQty(row, idx)"
+            />
+        </VCol>
 
-                  <!-- Remarks -->
-                  <td>
-                    <VTextarea
-                      v-model="row.remarks"
-                      :rows="1"
-                      hide-details="auto"
-                      variant="outlined"
-                      density="compact"
-                      placeholder="Remarks"
-                      auto-grow
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </VTable>
-          </VCardText>
-        </VCard>
-      </VCol>
+        <VCol cols="12" md="12">
+          <VTextField
+            v-model="row.description"
+            label="Description"
+            variant="outlined"
+            
+            hide-details="auto"
+            readonly
+          />
+        </VCol>
+
+        <!-- Remarks -->
+        <VCol cols="12" md="12">
+          <VTextarea
+            v-model="row.remarks"
+            label="Remarks"
+            :rows="1"
+            auto-grow
+            hide-details="auto"
+            variant="outlined"
+            
+          />
+        </VCol>
+      </VRow>
+    </VCardText>
+  </VCard>
+</VCol>
+
 
       <!-- Authorized Signatory Section -->
       <!-- <VCol cols="12">
@@ -292,6 +285,7 @@ const form = ref({
   employee_name: '',           // shown (readonly)
   employee_code: '',           // shown (readonly)
   asset_investment_requests_id: null,
+  project_id: null,
   user_id: null,
   department_id: null,
   handover_date: today,
@@ -316,6 +310,36 @@ watch(
     }
   }
 );
+
+const getMaxQty = (row) => {
+  const options = Array.isArray(assetOptions) ? assetOptions : assetOptions.value || []
+  const selectedAsset = options.find(a => a.value === row.asset_id)
+  return selectedAsset ? Number(selectedAsset.remaining_quantity || 0) : Number(row.request_qty || 0)
+}
+
+const validateQty = (row, idx) => {
+  const options = Array.isArray(assetOptions) ? assetOptions : assetOptions.value || []
+  const selectedAsset = options.find(a => a.value === row.asset_id)
+
+  if (!selectedAsset) return
+
+  const maxQty = Number(selectedAsset.remaining_quantity || 0)
+
+  if (row.handover_qty > maxQty) {
+    row.handover_qty = maxQty
+    rowErrors.value[idx] = {
+      ...rowErrors.value[idx],
+      handover_qty: [`Cannot exceed remaining quantity (${maxQty})`],
+    }
+  } else if (row.handover_qty < 1) {
+    
+  } else {
+    if (rowErrors.value[idx]) {
+      rowErrors.value[idx].handover_qty = null
+    }
+  }
+}
+
 
 /* ========= VALIDATORS ========= */
 const requiredValidator = v => (!!v || v === 0) || 'This field is required'
@@ -343,15 +367,6 @@ const getAuthHeaders = () => {
 /* ========= CURRENT USER (fill Name/Code) ========= */
 const currentUser = ref(null)
 
-const validateQty = (row, index) => {
-  if (row.handover_qty > row.request_qty) {
-    rowErrors.value[index] = {
-      handover_qty: "Handover quantity cannot exceed requested quantity"
-    }
-  } else {
-    rowErrors.value[index] = {}
-  }
-}
 
 /**
  * Tries common "who am I" endpoints. If you already have a dedicated endpoint,
@@ -404,7 +419,7 @@ const requestOptions = computed(() =>
 const usersOptions = computed(() =>
   allUsers.value.map(u => ({
     value: u.id,
-    title: `${u.name ?? '(no name)'} — ${u.user_code ?? u.id}`,
+    title: `${u.user_code ?? u.id} - ${u.name ?? '(no name)'}`,
   })),
 )
 const departmentsOptions = computed(() =>
@@ -487,9 +502,8 @@ const fetchInvestmentRequestDetail = async (id) => {
     requestItems.value = items.map(it => ({
       item_id: it.id,
       description: it.description,
-      request_qty: Number(it.pending_quantity) || 1,      // readonly
+      request_qty: Number(it.quantity),      // readonly
       handover_qty: 1,     // editable default
-      asset_code: it.asset_code != null ? String(it.asset_code) : null,
       remarks: '',
       asset_type: it.request_type || 'NEW',
     }))
@@ -544,14 +558,19 @@ const loadingProjects = ref(false)
 const assetOptions = computed(() =>
   assets.value.map(a => ({
     value: a.id,
-    title: `${a.asset_code ?? a.id} — ${a.title ?? a.title ?? 'Unnamed Asset'}`,
+    title: `${a.code ?? a.id} — ${a.title ?? a.title ?? 'Unnamed Asset'}`,
+    remaining_quantity: a.remaining_quantity,
   }))
 )
 
-const fetchAssets = async () => {
+const fetchAssets = async (projectId = null) => {
   loadingAssets.value = true
+  console.log(projectId);
   try {
-    const res = await axios.get(`${apiBaseUrl}/assets`, { headers: getAuthHeaders() })
+  const res = await axios.get(`${apiBaseUrl}/assets`, {
+    params: { project_id: projectId },
+    headers: getAuthHeaders(),
+  });
     assets.value = Array.isArray(res.data)
       ? res.data
       : Array.isArray(res.data?.data)
@@ -594,10 +613,10 @@ const submitForm = async () => {
       department_id: form.value.department_id,
       user_id: form.value.user_id || undefined,
       asset_investment_requests_id : form.value.asset_investment_requests_id,
+      project_id : form.value.project_id,
       data: requestItems.value.map(r => ({
         item_id: r.item_id,
         asset_id : r.asset_id,
-        asset_code: (r.asset_code === null || r.asset_code === '') ? null : Number(r.asset_code),
         quantity: Number(r.handover_qty),
         remarks: r.remarks || '',
         asset_type: r.asset_type,
@@ -617,7 +636,7 @@ const submitForm = async () => {
     console.error('Error submitting handover:', error)
     if (error.response?.data?.errors) {
       errorMessages.value = error.response.data.errors
-      message.value = 'Please fix the highlighted errors.'
+      message.value = errorMessages.value
     } else {
       message.value = error.response?.data?.message || 'Failed to create asset handover.'
       alert(error.response?.data?.message);
@@ -629,12 +648,12 @@ const submitForm = async () => {
 
 const onProjectChange = (projectId) => {
   if (!projectId) {
-    investmentRequests.value = []
     asset.asset_investment_requests_id = null
     return
   }
 
   fetchAssetRequests(projectId)
+  fetchAssets(projectId)
 }
 
 const fetchProjects = async () => {
@@ -683,7 +702,6 @@ onMounted(async () => {
     fetchProjects(),
     fetchDepartments(),
     fetchUsers(),
-    fetchAssets(), // ✅ load all assets for dropdown
     fetchLatestId()
   ])
 })

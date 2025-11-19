@@ -17,7 +17,7 @@ const router = useRouter()
 </script>
 
 <template>
-  <IconBtn>
+  <!-- <IconBtn>
     <VIcon :icon="props.togglerIcon" />
 
     <VMenu
@@ -82,7 +82,7 @@ const router = useRouter()
         </PerfectScrollbar>
       </VCard>
     </VMenu>
-  </IconBtn>
+  </IconBtn> -->
 </template>
 
 <style lang="scss">

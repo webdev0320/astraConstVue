@@ -64,7 +64,7 @@
               class="d-flex align-center gap-1"
             >
               Actions
-              <VIcon :icon="isActive ? 'mdi-chevron-up' : 'mdi-chevron-down'" />
+              <VIcon :icon="isActive ? 'tabler-caret-up' : 'tabler-caret-down'" />
             </VBtn>
           </template>
 
@@ -73,23 +73,23 @@
             <VListItem
                 @click="$router.push(`/dashboards/vehiclehandovers/${item.raw?.id ?? item.id}`)"
               >
-                <template #prepend><VIcon icon="mdi-eye" /></template>
+                <template #prepend><VIcon icon="tabler-eye" /></template>
                 <VListItemTitle>View Details</VListItemTitle>
             </VListItem>
 
             <!-- Delete -->
             <VListItem @click="deleteHandover(item.raw.id)">
-              <template #prepend><VIcon icon="mdi-delete" /></template>
+              <template #prepend><VIcon icon="tabler-trash" /></template>
               <VListItemTitle>Delete</VListItemTitle>
             </VListItem>
 
-            <VListItem @click="approveVehicleHandover(item.raw.id)">
-              <template #prepend><VIcon icon="mdi-thumb-up" /></template>
+            <VListItem v-if="item?.myApproval !== null && (item?.myApprovalStatus=='Rejected' || item?.myApprovalStatus=='Pending')" @click="openApproveDialog(item?.id,item?.myApproval?.id,'APPROVED')">
+              <template #prepend><VIcon icon="tabler-check" /></template>
               <VListItemTitle>Approve</VListItemTitle>
             </VListItem>
 
-            <VListItem @click="rejectVehicleHandover(item.raw.id)">
-              <template #prepend><VIcon icon="mdi-thumb-down" /></template>
+            <VListItem v-if="item?.myApproval !== null && (item?.myApprovalStatus=='Approved' || item?.myApprovalStatus=='Pending')" @click="openApproveDialog(item?.id,item?.myApproval?.id,'REJECTED')">
+              <template #prepend><VIcon icon="tabler-player-stop" /></template>
               <VListItemTitle>Reject</VListItemTitle>
             </VListItem>
           </VList>
@@ -129,6 +129,15 @@
       </VCard>
     </VDialog>
   </div>
+
+    <ConfirmDialog
+      v-model="confirmDialog.value"
+      :title="confirmDialog.title"
+      :message="confirmDialog.message"
+      :color="confirmDialog.color"
+      :onConfirm="confirmDialog.onConfirm"
+    />
+
 </template>
 
 <script setup>
@@ -144,6 +153,7 @@ import {
   VDialog,
   VImg,
 } from 'vuetify/components'
+import ConfirmDialog from "@core/components/GlobalConfirmDialog.vue";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL // should end with /api
 
@@ -151,15 +161,13 @@ const API_ORIGIN = new URL(apiBaseUrl).origin
 
 // Table headers mapped to your API fields
 const headers = [
-  { title: 'ID', key: 'id', width: 80 },
+  { title: 'ID', key: 'vehicle_handover_id'},
   { title: 'Plate No', key: 'plate_no' },
   { title: 'Vehicle', key: 'vehicle_type' },
   { title: 'Handover DateTime', key: 'handover_dt_display' },
   { title: 'Receiving DateTime', key: 'receiving_dt_display' },
-  { title: 'Releasing By', key: 'releasingName' },
-  { title: 'Receiving By', key: 'receiverName' },
-  { title: 'Driver', key: 'driverName' },
-  { title: 'Images', key: 'images', sortable: false },
+  { title: "Last Approved By", key: "lastApprovedByUser" },
+  { title: "My Approval Status", key: "myApprovalStatus" },
   { title: 'Actions', key: 'actions', sortable: false },
 ]
 
@@ -235,6 +243,47 @@ const openImages = (urls = []) => {
   imagesDialog.value.open = true
 }
 
+const confirmDialog = ref({
+  value: false,
+  title: "",
+  message: "",
+  color: "primary",
+  onConfirm: null,
+});
+
+const openApproveDialog = (vehicleHandOver, approvalId,status) => {
+
+  confirmDialog.value = {
+    value: true,
+    title: "Approve Request",
+    message: "Are you sure you want to approve this request?",
+    color: "primary",
+    onConfirm: async () => {
+      try {
+        const accessToken = decodeURIComponent(getCookie("accessToken"));
+
+        await axios.get(
+          `${apiBaseUrl}/vehicle-handover/changeStatus/${vehicleHandOver}/${approvalId}/${status}`,
+          {
+            headers: { 
+              Authorization: `Bearer ${accessToken}`,
+              Accept: "application/json",
+            },
+          }
+        );
+
+        console.log(`Request ${vehicleHandOver} approved by ${approvalId}`);
+        // Optionally reload your table data
+        await fetchHandovers();
+
+      } catch (error) {
+        console.error("Approve action failed:", error);
+        alert(error.response?.data?.message || "Failed to approve request.");
+      }
+    },
+  };
+};
+
 // --- fetch list ---
 const fetchHandovers = async () => {
   try {
@@ -257,6 +306,7 @@ const fetchHandovers = async () => {
 
     handovers.value = list.map(h => ({
       id: h.id,
+      vehicle_handover_id : h.vehicle_handover_id,
       investment_req_id: h.investment_req_id ?? '—',
       report_date: h.report_date ?? '—',
       plate_no: h.plate_no ?? '—',
@@ -269,6 +319,9 @@ const fetchHandovers = async () => {
       receiverName: h.receiverName ?? '—',
       driverName: h.driverName ?? '—',
       images: normalizeImageArray(h.images),
+      myApproval: h.myApproval,
+      lastApprovedByUser: h.lastApprovedBy?.user_name,
+      myApprovalStatus: h.myApproval?h.myApproval.status:null,
     }))
   } catch (error) {
     console.error('Error fetching vehicle handovers:', error)

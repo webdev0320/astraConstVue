@@ -1,185 +1,115 @@
 export default [
-  {
-    title: 'Dashboards',
-    icon: { icon: 'tabler-smart-home' },
-    children: [
-      // {
-      //   title: 'Analytics',
-      //   to: 'dashboards-analytics',
-      // },
-      // {
-      //   title: 'CRM',
-      //   to: 'dashboards-crm',
-      // },
-      // {
-      //   title: 'Ecommerce',
-      //   to: 'dashboards-ecommerce',
-      // },
-      // {
-      //   title: 'Academy',
-      //   to: 'dashboards-academy',
-      // },
-      // {
-      //   title: 'Logistics',
-      //   to: 'dashboards-logistics',
-      // },
-      // {
-      //   title: 'Assets',
-      //   to: 'dashboards-assets',
-      // },
-      // {
-      //   title: 'Assets Categories',
-      //   to: 'dashboards-assetcategories',
-      // },
-      // {
-      //   title: 'Projects',
-      //   to: 'dashboards-projects',
-      // },
-      // {
-      //   title: 'Asset Investment Request',
-      //   to: 'dashboards-asset-investment-requests',
-      // },
-      // {
-      //   title: 'Asset HandOver',
-      //   to: 'dashboards-assethandovers',
-      // },
-      // {
-      //   title: 'Users',
-      //   to: 'dashboards-users',
-      // },
-      // {
-      //   title: 'Departments',
-      //   to: 'dashboards-departments',
-      // },
-      // {
-      //   title: 'Permissions',
-      //   to: 'apps-permissions',
-      // },
-      // {
-      //   title: 'Faqs',
-      //   to: 'dashboards-faqs',
-      // },
-      // {
-      //   title: 'Settings',
-      //   to: 'dashboards-settings',
-      // },
-      // {
-      //   title: 'Supports',
-      //   to: 'dashboards-supports',
-      // },
-    ],
-    badgeContent: '5',
-    badgeClass: 'bg-error',
-  },
-        {
+      {
         title: 'Dashboard',
         to: 'dashboards-crm',
+        icon: 'tabler-dashboard',
       },
       {
         title: 'Projects',
         to: 'dashboards-projects',
+        icon: 'tabler-home',        
       },
       {
         title: 'Asset Investment Request',
         to: 'dashboards-asset-investment-requests',
+        icon: 'tabler-device-gamepad-3',    
       },
         {
         title: 'Assets',
         to: 'dashboards-assets',
+         roles: ['Admin'], // 👈 Only Admins can see this
+         icon: 'tabler-hammer',  
       },
       {
         title: 'Asset HandOver',
         to: 'dashboards-assethandovers',
+        icon: 'tabler-table-row',  
       },
       {
         title: 'Asset Transfer',
         to: 'dashboards-assettransfers',
+        icon: 'tabler-transfer', 
       },
       {
         title: 'Vehicle Handover',
         to: 'dashboards-vehiclehandovers',
+        icon: 'tabler-camper', 
       },
       {
         title: 'Rental Equipment',
         to: 'dashboards-rental-required',
+        icon: 'tabler-badge-ar', 
       },
       {
         title: 'Asset Damage Report',
         to: 'dashboards-asset-damage-report',
+         icon: 'tabler-car-crash', 
       },
       {
         title: 'Asset Missing Report',
         to: 'dashboards-asset-missing-report',
+         icon: 'tabler-zoom-out-area', 
+       
       },
       {
         title: 'Asset Scrap Report',
         to: 'dashboards-asset-scrap-report',
+        icon: 'tabler-trash', 
       },
       {
         title: 'Policy Waiver Form',
         to: 'dashboards-policy-waiver-form',
+         icon: 'tabler-file-info', 
+      },
+      {
+        title: 'Asset Demobilization',
+        to: 'dashboards-asset-demobilizations',
+         icon: 'tabler-device-desktop-check', 
+      },
+      {
+        title: 'Daily Asset Reporting',
+        to: 'dashboards-daily-asset-reportings',
+         icon: 'tabler-report-analytics', 
       },
       {
         title: 'Assets Categories',
         to: 'dashboards-assetcategories',
+         icon: 'tabler-category', 
       },
       {
         title: 'Departments',
         to: 'dashboards-departments',
+         icon: 'tabler-window', 
       },
       {
         title: 'Location',
         to: 'dashboards-locations',
+         icon: 'tabler-map-2', 
       },
       {
         title: 'Users',
         to: 'dashboards-users',
+         icon: 'tabler-users', 
       },
       {
         title: 'Permissions',
         to: 'apps-permissions',
+         icon: 'tabler-versions', 
       },
       {
         title: 'Faqs',
         to: 'dashboards-faqs',
+         icon: 'tabler-bubble-text', 
       },
       {
         title: 'Settings',
         to: 'dashboards-settings',
+         icon: 'tabler-settings', 
       },
       {
         title: 'Supports',
         to: 'dashboards-supports',
+        icon: 'tabler-bubble',         
       },
-  // {
-  //   title: 'Front Pages',
-  //   icon: { icon: 'tabler-files' },
-  //   children: [
-  //     {
-  //       title: 'Landing',
-  //       to: 'front-pages-landing-page',
-  //       target: '_blank',
-  //     },
-  //     {
-  //       title: 'Pricing',
-  //       to: 'front-pages-pricing',
-  //       target: '_blank',
-  //     },
-  //     {
-  //       title: 'Payment',
-  //       to: 'front-pages-payment',
-  //       target: '_blank',
-  //     },
-  //     {
-  //       title: 'Checkout',
-  //       to: 'front-pages-checkout',
-  //       target: '_blank',
-  //     },
-  //     {
-  //       title: 'Help Center',
-  //       to: 'front-pages-help-center',
-  //       target: '_blank',
-  //     },
-  //   ],
-  // },
+
 ]

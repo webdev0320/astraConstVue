@@ -66,24 +66,29 @@
               class="d-flex align-center gap-1"
             >
               Actions
-              <VIcon :icon="isActive ? 'mdi-chevron-up' : 'mdi-chevron-down'" />
+              <VIcon :icon="isActive ? 'tabler-caret-up' : 'tabler-caret-down'" />
             </VBtn>
           </template>
 
           <VList density="compact">
             <!-- Delete -->
-            <VListItem @click="deleteRentalRequest(item.raw.id)">
-              <template #prepend><VIcon icon="mdi-delete" /></template>
+            <VListItem @click="$router.push(`/dashboards/rental-required/details/${item.id}`)">
+              <template #prepend><VIcon icon="tabler-eye" /></template>
+              <VListItemTitle>Details</VListItemTitle>
+            </VListItem>
+
+            <VListItem @click="deleteRentalRequest(item.id)">
+              <template #prepend><VIcon icon="tabler-trash" /></template>
               <VListItemTitle>Delete</VListItemTitle>
             </VListItem>
 
-            <VListItem @click="approveRentalRequest(item.raw.id)">
-              <template #prepend><VIcon icon="mdi-thumb-up" /></template>
+            <VListItem  v-if="item.myApproval !== null && (item.myApprovalStatus=='Rejected' || item.myApprovalStatus=='Pending')" @click="openApproveDialog(item.id,item.myApproval,'APPROVED')">
+              <template #prepend><VIcon icon="tabler-check" /></template>
               <VListItemTitle>Approve</VListItemTitle>
             </VListItem>
 
-            <VListItem @click="rejectRentalRequest(item.raw.id)">
-              <template #prepend><VIcon icon="mdi-thumb-down" /></template>
+            <VListItem v-if="item.myApproval !== null && (item.myApprovalStatus=='Approved' || item.myApprovalStatus=='Pending')" @click="openApproveDialog(item.id,item.myApproval,'REJECTED')">
+              <template #prepend><VIcon icon="tabler-player-stop" /></template>
               <VListItemTitle>Reject</VListItemTitle>
             </VListItem>
           </VList>
@@ -99,6 +104,15 @@
     <p v-if="errorMessage" class="mt-3">{{ errorMessage }}</p>
     <p v-else-if="loading" class="mt-3">Loading...</p>
   </div>
+
+ <ConfirmDialog
+      v-model="confirmDialog.value"
+      :title="confirmDialog.title"
+      :message="confirmDialog.message"
+      :color="confirmDialog.color"
+      :onConfirm="confirmDialog.onConfirm"
+    />
+
 </template>
 
 <script setup>
@@ -114,6 +128,7 @@ import {
   VMenu,
   VTextField
 } from 'vuetify/components'
+import ConfirmDialog from "@core/components/GlobalConfirmDialog.vue";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL // should end with /api
 
@@ -121,11 +136,11 @@ const API_ORIGIN = new URL(apiBaseUrl).origin
 
 // Table headers mapped to your API fields
 const headers = [
+  { title: 'Request ID', key: 'rental_equipment_id' },
   { title: 'Project Name', key: 'project_name' },
-  { title: 'Activity', key: 'activity' },
-  { title: 'Requested No Days (Asset Request)', key: 'requested_no_days' },
-  { title: 'Rental Equipment Activity', key: 'rental_activity' },
-  { title: 'Requested No Days (Rental Equipment)', key: 'rental_requested_no_days' },
+  { title: 'Date', key: 'date' },
+  { title: "Last Approved By", key: "lastApprovedByUser" },
+  { title: "My Approval Status", key: "myApprovalStatus" },
   { title: 'Actions', key: 'actions', sortable: false },
 ]
 
@@ -133,6 +148,48 @@ const rentals = ref([])
 const errorMessage = ref('')
 const loading = ref(false)
 const searchQuery = ref('')
+
+
+const confirmDialog = ref({
+  value: false,
+  title: "",
+  message: "",
+  color: "primary",
+  onConfirm: null,
+});
+
+const openApproveDialog = (rentalRequestId, approvalId,status) => {
+  confirmDialog.value = {
+    value: true,
+    title: "Approve Request",
+    message: "Are you sure you want to approve this request?",
+    color: "primary",
+    onConfirm: async () => {
+      try {
+        const accessToken = decodeURIComponent(getCookie("accessToken"));
+
+        await axios.get(
+          `${apiBaseUrl}/rental-required/changeStatus/${rentalRequestId}/${approvalId}/${status}`,
+          {
+            headers: { 
+              Authorization: `Bearer ${accessToken}`,
+              Accept: "application/json",
+            },
+          }
+        );
+
+        console.log(`Request ${rentalRequestId} approved by ${approvalId}`);
+        // Optionally reload your table data
+        await fetchRentalRequired();
+
+      } catch (error) {
+        console.error("Approve action failed:", error);
+        alert(error.response?.data?.message || "Failed to approve request.");
+      }
+    },
+  };
+};
+
 
 // --- fetch rental required list ---
 const fetchRentalRequired = async () => {
@@ -156,7 +213,12 @@ const fetchRentalRequired = async () => {
 
     rentals.value = list.map(r => ({
       id: r.id,
+      rental_equipment_id : r.rental_equipment_id,
       project_name: r.project_name ?? '—',
+      date: r.date ?? '—',
+      lastApprovedByUser: r.lastApprovedBy?r.lastApprovedBy.user_name:null,
+      myApprovalStatus: r.myApproval?r.myApproval.status:null,
+      myApproval: r.myApproval?r.myApproval.id:null,
       asset_requests: r.asset_requests.map(req => ({
         activity: req.activity ?? '—',
         requested_no_days: req.requested_no_days ?? '—',

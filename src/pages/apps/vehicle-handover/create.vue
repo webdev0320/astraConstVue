@@ -6,6 +6,14 @@
   <VForm ref="refForm" @submit.prevent="submitForm">
     <VRow>
       <!-- Investment Request -->
+      <VCol cols="12" md="4">
+              <VTextField
+                v-model="form.vehicle_handover_id"
+                label="Vehicle Handover Request #"
+                :error-messages="errorMessages.vehicle_handover_id"
+                clearable
+              />
+          </VCol>
        <VCol cols="12" md="4">
           <VSelect
             v-model="form.project_id"
@@ -286,6 +294,8 @@ const loadingInvestments = ref(false)
 const projectUsers = ref([])
 const loadingProjectUsers = ref(false)
 
+const vehicle_handover_id = null;
+
 const locationOptions = ref([])
 const loadingLocations = ref(false)
 
@@ -299,7 +309,9 @@ const loadingusers = ref(false)
 
 // form model
 const form = ref({
+  project_id: null,
   investment_req_id: null,
+  vehicle_handover_id : null,
   report_date: '',
   asset_id: null,
   plate_no: '',
@@ -332,10 +344,11 @@ const form = ref({
 const assetOptions = ref([])
 const loadingAssets = ref(false)
 
-const loadAssets = async () => {
+const loadAssets = async (project_id = null) => {
   loadingAssets.value = true
   try {
      const res = await axios.get(`${apiBaseUrl}/assets`, {
+      params: { project_id : project_id },
       headers: authHeaders(),
     })
     assetOptions.value = res.data.data.map(asset => ({
@@ -383,7 +396,7 @@ const checkList = [
 ]
 
 // Prefer "Drivers" role for driver dropdown, else show all
-const driverOptions = ref([]);
+let driverOptions = ref([]);
 
 
 // ---- utils ----
@@ -420,6 +433,7 @@ const onProjectChange = (projectId) => {
   }
 
   fetchAssetRequests(projectId)
+  loadAssets(projectId)
 }
 
 // ---- data loaders ----
@@ -550,8 +564,10 @@ const submitForm = async () => {
       if (v !== null && v !== undefined && v !== '') fd.append(k, v)
     }
 
+    appendIf('project_id', form.value.project_id)
     appendIf('investment_req_id', form.value.investment_req_id)
     appendIf('asset_id', form.value.asset_id)
+    appendIf('vehicle_handover_id', form.value.vehicle_handover_id)
     appendIf('report_date', form.value.report_date)
     appendIf('plate_no', form.value.plate_no)
     appendIf('driver_id', form.value.driver_id)
@@ -622,13 +638,38 @@ const fetchProjects = async () => {
   }
 }
 
+const fetchLatestId = async () => {
+  try {
+
+    const accessToken = getCookie('accessToken')
+    if (!accessToken) throw new Error('Access token is missing. Please log in.')
+    const decodedToken = decodeURIComponent(accessToken)
+
+
+    const res = await axios.get(`${apiBaseUrl}/getLatestNumber`, {
+      params: { type: 'VehicleHandover'},
+      headers: authHeaders(),
+    });
+
+
+    const numberId = res.data.value;
+    console.log(numberId);
+    form.value.vehicle_handover_id = numberId;
+  } catch (e) {
+    console.error(e);
+    form.value.vehicle_handover_id = '';
+  } finally {
+
+  }
+};
+
 
 
 onMounted(async () => {
   await Promise.all([
     loadLocations(),
     fetchProjects(),
-    loadAssets(),
+    fetchLatestId()
   ])
 })
 

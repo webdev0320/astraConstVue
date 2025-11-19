@@ -8,7 +8,7 @@
           :loading="printing"
           :disabled="printing || !handover"
           variant="tonal"
-          prepend-icon="mdi-printer"
+          prepend-icon="tabler-printer"
           @click="printDoc"
         >
           Print
@@ -161,9 +161,6 @@
         <div class="vh-mid">
           <div class="vh-cars">
             <div class="img-box"><img :src="carTop"   alt="car top" /></div>
-            <div class="img-box"><img :src="carFront" alt="car front" /></div>
-            <div class="img-box"><img :src="carSide"  alt="car side" /></div>
-            <div class="img-box"><img :src="carRear"  alt="car rear" /></div>
           </div>
 
           <div class="vh-checks">
@@ -247,11 +244,10 @@ const apiOrigin = RAW_BASE ? new URL(RAW_BASE).origin : window.location.origin
  *    import logoPng from '@/assets/logo.png'
  *    const logoUrl = logoPng
  */
-const logoUrl  = 'https://your-domain.example/logo.png'
-const carTop   = 'https://your-domain.example/car-top.png'
-const carFront = 'https://your-domain.example/car-front.png'
-const carSide  = 'https://your-domain.example/car-side.png'
-const carRear  = 'https://your-domain.example/car-rear.png'
+
+const logoUrl = "/src/assets/images/logos/astra-logo.png";
+const carTop   = '/src/assets/images/carImage.png'
+
 
 /** Helpers */
 const joinUrl = (base, path) => {
@@ -399,10 +395,14 @@ onMounted(fetchHandover)
 
 /** Inject the same print CSS string we use in <style> so iframe has it */
 const printCss = `
-.vh-print{box-sizing:border-box;inline-size:794px;padding:8mm;background:#fff;color:#111;font-family:Arial,Helvetica,sans-serif;font-size:12px;border:1px solid #222}
+.vh-print{box-sizing:border-box;inline-size:794px;padding:8mm;background:#fff;color:#111;font-family:Arial,Helvetica,sans-serif;font-size:14px;border:1px solid #222}
 .vh-head{display:flex;justify-content:space-between;align-items:flex-start;border:2px solid #222;padding:6px 10px;margin-bottom:6px}
 .vh-head-left{display:flex;align-items:center;gap:10px}
-.vh-logo{width:42px;height:42px;object-fit:contain}
+.vh-logo {
+  block-size: 80px;   /* height */
+  inline-size: 80px;  /* width */
+  object-fit: contain;
+}
 .vh-org .en{font-weight:700}
 .vh-org .sub{font-weight:600;font-size:11px}
 .vh-head-right{text-align:right;font-weight:700}
@@ -414,7 +414,7 @@ const printCss = `
 .vh-top-grid .cell:last-child{border-right:0}
 .vh-top-grid .cell.l{background:#efefef;font-weight:700}
 .vh-mid{display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:8px}
-.vh-cars{display:grid;grid-template-columns:1fr 1fr;gap:6px;border:2px solid #222;padding:6px}
+.vh-cars{display:grid;grid-template-columns:1fr;gap:6px;border:2px solid #222;padding:6px}
 .vh-cars .img-box{border:1px solid #999;background:#f9f9f9;display:flex;align-items:center;justify-content:center;min-height:110px}
 .vh-cars img{max-width:100%;max-height:100%}
 .vh-checks{border:2px solid #222;padding:6px 8px}

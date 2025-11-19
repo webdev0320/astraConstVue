@@ -1,28 +1,32 @@
 <template>
   <div class="rental-form-container">
-    <div class="d-flex justify-between align-center mb-4">
-      <VBtn variant="text" @click="$router.back()">← Back</VBtn>
-      <h3>Create Rental Request</h3>
-    </div>
-
     <VCard class="pa-4">
       <VForm ref="refForm" @submit.prevent="saveRentalRequest">
         <VRow>
+
+          <VCol cols="12" md="4">
+              <VTextField
+                v-model="form.ren_number"
+                label="Rental Equipment Number"
+                :error-messages="errorMessages.ren_number"
+                clearable
+              />
+            </VCol>
+
           <!-- Project -->
-          <VCol cols="12" md="8">
+          <VCol cols="12" md="4">
             <VSelect
               v-model="form.project_id"
               :items="projectOptions"
               item-title="label"
               item-value="id"
               label="Select Project"
-              :rules="[requiredValidator]"
+             
               :error-messages="errorMessages.project_id"
               :loading="loading.projects"
               :disabled="loading.projects"
               hide-details="auto"
               clearable
-              prepend-inner-icon="mdi-briefcase"
             />
 
           </VCol>
@@ -33,11 +37,10 @@
               v-model="form.date"
               type="date"
               label="Date"
-              :rules="[requiredValidator]"
+             
               :error-messages="errorMessages.date"
               hide-details="auto"
               clearable
-              prepend-inner-icon="mdi-calendar"
             />
           </VCol>
         </VRow>
@@ -53,12 +56,11 @@
                 item-title="name"
                 item-value="id"
                 label="Select Asset Category"
-                :rules="[requiredValidator]"
+               
                 :loading="loading.categories"
                 :disabled="loading.categories"
                 hide-details="auto"
                 clearable
-                prepend-inner-icon="mdi-category"
               />
 
             </VCol>
@@ -69,28 +71,65 @@
                 item-title="name"
                 item-value="id"
                 label="Select Subcategory"
-                :rules="[requiredValidator]"
+               
                 :disabled="!assetRequest.asset_category_id || loading.subCategories"
                 :loading="loading.subCategories"
                 hide-details="auto"
                 clearable
-                prepend-inner-icon="mdi-subdirectory-arrow-right"
               />
 
             </VCol>
-            <VCol cols="12" md="4">
-              <VSelect
-                v-model="assetRequest.asset_id"
-                :items="assets"
-                item-title="code"
-                item-value="id"
-                label="Select Asset"
-                :rules="[requiredValidator]"
-                :loading="loading.assets"
-                :disabled="!assetRequest.asset_sub_category_id || loading.assets"
+                <VCol cols="12" md="4">
+                  <VSelect
+                    v-model="assetRequest.asset_id"
+                    :items="assets"
+                    item-title="label"
+                    item-value="id"
+                    label="Asset"
+                    :loading="loading.assets"
+                    :disabled="!assetRequest.asset_sub_category_id || loading.assets"
+                    clearable
+                    @update:modelValue="onAssetChange"
+                  />
+                </VCol>
+
+                <VCol cols="12" md="3">
+                  <VTextField
+                    v-model.number="assetRequest.quantity"
+                    type="number"
+                    min="1"
+                    :max="assetRequest.maxQty"
+                    label="Quantity"
+                    :rules="[
+                      v => !assetRequest.maxQty || v <= assetRequest.maxQty || `Max allowed: ${assetRequest.maxQty}`
+                    ]"
+                    hide-details="auto"
+                  />
+                </VCol>
+
+            <VCol cols="12" md="3">
+              <VTextField
+                v-model="assetRequest.start_date"
+                type="date"
+                label="Date of Need"
+               
+                :error-messages="errorMessages.asset_request?.start_date"
                 hide-details="auto"
                 clearable
-                prepend-inner-icon="mdi-cube"
+
+              />
+
+            </VCol>
+            <VCol cols="12" md="3">
+              <VTextField
+                v-model="assetRequest.end_date"
+                type="date"
+                label="End Date"
+               
+                :error-messages="errorMessages.asset_request?.end_date"
+                hide-details="auto"
+                clearable
+
               />
 
             </VCol>
@@ -98,50 +137,10 @@
               <VTextField
                 v-model="assetRequest.activity"
                 label="Activity"
-                :rules="[requiredValidator]"
+               
                 :error-messages="errorMessages.asset_request?.activity"
                 hide-details="auto"
-                prepend-inner-icon="mdi-format-list-bulleted"
-              />
 
-            </VCol>
-            <VCol cols="12" md="3">
-              <VTextField
-                v-model.number="assetRequest.quantity"
-                type="number"
-                label="Quantity"
-                min="1"
-                step="1"
-                :rules="[requiredValidator]"
-                :error-messages="errorMessages.asset_request?.quantity"
-                hide-details="auto"
-                prepend-inner-icon="mdi-numeric"
-              />
-
-            </VCol>
-            <VCol cols="12" md="3">
-              <VTextField
-                v-model="assetRequest.date_of_need"
-                type="date"
-                label="Date of Need"
-                :rules="[requiredValidator]"
-                :error-messages="errorMessages.asset_request?.date_of_need"
-                hide-details="auto"
-                clearable
-                prepend-inner-icon="mdi-calendar"
-              />
-
-            </VCol>
-            <VCol cols="12" md="3">
-              <VTextField
-                v-model="assetRequest.requested_no_days"
-                type="date"
-                label="Requested End Date"
-                :rules="[requiredValidator]"
-                :error-messages="errorMessages.asset_request?.requested_no_days"
-                hide-details="auto"
-                clearable
-                prepend-inner-icon="mdi-calendar"
               />
 
             </VCol>
@@ -165,7 +164,7 @@
               closable
               @click:close="removeAssetRequest(idx)"
             >
-              {{ asset.activity }} — {{ assetNameById(asset.asset_id) }} — Qty: {{ asset.quantity }} — {{ formatDate(asset.date_of_need) }} to {{ formatDate(asset.requested_no_days) }}
+              {{ asset.activity }} — {{ assetNameById(asset.asset_id) }} — Qty: {{ asset.quantity }} — {{ formatDate(asset.start_date) }} to {{ formatDate(asset.end_date) }}
             </VChip>
           </div>
 
@@ -180,11 +179,11 @@
             <template #item.asset_id="{ item }">
               {{ assetNameById(item.asset_id) }}
             </template>
-            <template #item.date_of_need="{ item }">
-              {{ formatDate(item.date_of_need) }}
+            <template #item.start_date="{ item }">
+              {{ formatDate(item.start_date) }}
             </template>
-            <template #item.requested_no_days="{ item }">
-              {{ formatDate(item.requested_no_days) }}
+            <template #item.end_date="{ item }">
+              {{ formatDate(item.end_date) }}
             </template>
             <template #item.actions="{ item }">
               <VBtn color="error" size="small" @click="removeAssetRequest(form.asset_requests.indexOf(item))">
@@ -198,144 +197,127 @@
         <div class="mt-6">
           <div class="font-weight-medium mb-2">LIST OF EQUIPMENT ALREADY WORKING ON THE PROJECT</div>
           <VRow>
-            <VCol cols="12" md="2">
-              <VTextField
-                v-model.number="rentalEquipment.rental_equipment_id"
-                type="number"
-                label="Rental Equipment ID"
-                min="1"
-                step="1"
-                :rules="[requiredValidator]"
-                :error-messages="errorMessages.rental_equipment?.rental_equipment_id"
-                hide-details="auto"
-                prepend-inner-icon="mdi-pound"
-              />
-              <small class="text-medium-emphasis">Unique equipment ID</small>
-            </VCol>
-            <VCol cols="12" md="2">
+            
+            <VCol cols="12" md="3">
               <VSelect
                 v-model="rentalEquipment.asset_category_id"
                 :items="categories"
                 item-title="name"
                 item-value="id"
                 label="Select Asset Category"
-                :rules="[requiredValidator]"
+               
                 :loading="loading.categories"
                 :disabled="loading.categories"
                 hide-details="auto"
                 clearable
-                prepend-inner-icon="mdi-category"
+
               />
-              <small class="text-medium-emphasis">Choose category to load subcategories</small>
+
             </VCol>
-            <VCol cols="12" md="2">
+            <VCol cols="12" md="3">
               <VSelect
                 v-model="rentalEquipment.asset_sub_category_id"
                 :items="subCategoriesForRental"
                 item-title="name"
                 item-value="id"
                 label="Select Subcategory"
-                :rules="[requiredValidator]"
+               
                 :disabled="!rentalEquipment.asset_category_id || loading.subCategories"
                 :loading="loading.subCategories"
                 hide-details="auto"
                 clearable
-                prepend-inner-icon="mdi-subdirectory-arrow-right"
+
               />
-              <small class="text-medium-emphasis">Subcategories for selected category</small>
+
             </VCol>
-            <VCol cols="12" md="2">
+            
+              
+
+            <VCol cols="12" md="3">
               <VSelect
                 v-model="rentalEquipment.asset_id"
                 :items="assets"
-                item-title="code"
+                item-title="label"
                 item-value="id"
-                label="Select Asset"
-                :rules="[requiredValidator]"
+                label="Asset"
+               
                 :loading="loading.assets"
                 :disabled="!rentalEquipment.asset_sub_category_id || loading.assets"
                 hide-details="auto"
                 clearable
-                prepend-inner-icon="mdi-cube"
+                @update:modelValue="onAssetChangeRental"
+
               />
-              <small class="text-medium-emphasis">Select an asset</small>
+
             </VCol>
+
+              <VCol cols="12" md="3">
+                  <VTextField
+                    v-model.number="rentalEquipment.quantity_at_site"
+                    type="number"
+                    min="1"
+                    :max="assetRequest.maxQty"
+                    label="Quantity at Site"
+                    :rules="[
+                      v => !assetRequest.maxQty || v <= assetRequest.maxQty || `Max allowed: ${assetRequest.maxQty}`
+                    ]"
+                    hide-details="auto"
+                    readonly
+                    variant="outlined"
+                  />
+                </VCol>
+
+           
+          
             <VCol cols="12" md="3">
-              <VTextField
-                v-model="rentalEquipment.activity"
-                label="Activity"
-                :rules="[requiredValidator]"
-                :error-messages="errorMessages.rental_equipment?.activity"
-                hide-details="auto"
-                prepend-inner-icon="mdi-format-list-bulleted"
-              />
-              <small class="text-medium-emphasis">Describe the equipment activity</small>
-            </VCol>
-            <VCol cols="12" md="2">
-              <VTextField
-                v-model.number="rentalEquipment.quantity_at_site"
-                type="number"
-                label="Quantity at Site"
-                min="1"
-                step="1"
-                :rules="[requiredValidator]"
-                :error-messages="errorMessages.rental_equipment?.quantity_at_site"
-                hide-details="auto"
-                prepend-inner-icon="mdi-numeric"
-              />
-              <small class="text-medium-emphasis">Number of equipment at site</small>
-            </VCol>
-            <VCol cols="12" md="2">
               <VTextField
                 v-model="rentalEquipment.start_date"
                 type="date"
                 label="Start Date"
-                :rules="[requiredValidator]"
+               
                 :error-messages="errorMessages.rental_equipment?.start_date"
                 hide-details="auto"
                 clearable
-                prepend-inner-icon="mdi-calendar"
+
               />
-              <small class="text-medium-emphasis">Equipment rental start date</small>
+
             </VCol>
-            <VCol cols="12" md="2">
+            <VCol cols="12" md="3">
               <VTextField
                 v-model="rentalEquipment.end_date"
                 type="date"
                 label="End Date"
-                :rules="[requiredValidator]"
+               
                 :error-messages="errorMessages.rental_equipment?.end_date"
                 hide-details="auto"
                 clearable
-                prepend-inner-icon="mdi-calendar"
+
               />
-              <small class="text-medium-emphasis">Equipment rental end date</small>
+
             </VCol>
-            <VCol cols="12" md="2">
-              <VTextField
-                v-model="rentalEquipment.requested_no_days"
-                type="date"
-                label="Requested End Date"
-                :rules="[requiredValidator]"
-                :error-messages="errorMessages.rental_equipment?.requested_no_days"
-                hide-details="auto"
-                clearable
-                prepend-inner-icon="mdi-calendar"
-              />
-              <small class="text-medium-emphasis">End date of rental</small>
-            </VCol>
-            <VCol cols="12" md="2">
+            <VCol cols="12" md="3">
               <VTextField
                 v-model="rentalEquipment.spo_number"
                 label="SPO Number"
-                :rules="[requiredValidator]"
+               
                 :error-messages="errorMessages.rental_equipment?.spo_number"
                 hide-details="auto"
-                prepend-inner-icon="mdi-pound"
+
               />
               <small class="text-medium-emphasis">Unique SPO number</small>
             </VCol>
-            <VCol cols="12" md="2" class="d-flex align-end">
+             <VCol cols="12" md="12">
+              <VTextField
+                v-model="rentalEquipment.activity"
+                label="Activity"
+               
+                :error-messages="errorMessages.rental_equipment?.activity"
+                hide-details="auto"
+
+              />
+
+            </VCol>
+            <VCol cols="12" md="4" class="d-flex align-end">
               <VBtn
                 color="primary"
                 @click="addRentalEquipment"
@@ -376,9 +358,7 @@
             <template #item.end_date="{ item }">
               {{ formatDate(item.end_date) }}
             </template>
-            <template #item.requested_no_days="{ item }">
-              {{ formatDate(item.requested_no_days) }}
-            </template>
+
             <template #item.actions="{ item }">
               <VBtn color="error" size="small" @click="removeRentalEquipment(form.rental_equipments.indexOf(item))">
                 Delete
@@ -429,7 +409,7 @@ import { VAlert, VBtn, VCard, VChip, VCol, VDataTable, VForm, VIcon, VRow, VSele
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL // should end with /api
 
 const router = useRouter()
-
+const today = new Date().toISOString().split('T')[0]
 // ---- state ----
 const refForm = ref()
 const loading = ref({
@@ -442,6 +422,8 @@ const loading = ref({
 const message = ref('')
 const errorMessages = ref({})
 
+const ren_number = ref(null);
+
 // dropdown data
 const projectOptions = ref([])
 const categories = ref([])
@@ -452,7 +434,8 @@ const assets = ref([])
 // form models
 const form = ref({
   project_id: null,
-  date: '',
+  ren_number: null,
+  date: today,
   asset_requests: [],
   rental_equipments: [],
 })
@@ -463,20 +446,17 @@ const assetRequest = ref({
   asset_id: null,
   activity: '',
   quantity: null,
-  date_of_need: '',
-  requested_no_days: '',
+  start_date: today,
 })
 
 const rentalEquipment = ref({
-  rental_equipment_id: null,
   asset_category_id: null,
   asset_sub_category_id: null,
   asset_id: null,
   activity: '',
   quantity_at_site: null,
-  start_date: '',
+  start_date: today,
   end_date: '',
-  requested_no_days: '',
   spo_number: '',
 })
 
@@ -485,19 +465,17 @@ const assetHeaders = [
   { title: 'Activity', key: 'activity' },
   { title: 'Asset', key: 'asset_id' },
   { title: 'Quantity', key: 'quantity' },
-  { title: 'Date of Need', key: 'date_of_need' },
-  { title: 'Requested End Date', key: 'requested_no_days' },
+  { title: 'Date of Need', key: 'start_date' },
+  { title: 'Request End Date', key: 'end_date' },
   { title: 'Actions', key: 'actions', sortable: false },
 ]
 
 const rentalHeaders = [
-  { title: 'Rental Equipment ID', key: 'rental_equipment_id' },
   { title: 'Activity', key: 'activity' },
   { title: 'Asset', key: 'asset_id' },
   { title: 'Quantity at Site', key: 'quantity_at_site' },
   { title: 'Start Date', key: 'start_date' },
   { title: 'End Date', key: 'end_date' },
-  { title: 'Requested End Date', key: 'requested_no_days' },
   { title: 'SPO Number', key: 'spo_number' },
   { title: 'Actions', key: 'actions', sortable: false },
 ]
@@ -527,14 +505,13 @@ const isAssetRequestValid = computed(() =>
     assetRequest.value.asset_id &&
     assetRequest.value.activity &&
     assetRequest.value.quantity > 0 &&
-    assetRequest.value.date_of_need &&
-    assetRequest.value.requested_no_days
+    assetRequest.value.start_date &&
+    assetRequest.value.end_date
   )
 )
 
 const isRentalEquipmentValid = computed(() =>
   !!(
-    rentalEquipment.value.rental_equipment_id &&
     rentalEquipment.value.asset_category_id &&
     rentalEquipment.value.asset_sub_category_id &&
     rentalEquipment.value.asset_id &&
@@ -542,7 +519,6 @@ const isRentalEquipmentValid = computed(() =>
     rentalEquipment.value.quantity_at_site > 0 &&
     rentalEquipment.value.start_date &&
     rentalEquipment.value.end_date &&
-    rentalEquipment.value.requested_no_days &&
     rentalEquipment.value.spo_number
   )
 )
@@ -555,11 +531,182 @@ const totalEquipmentQuantity = computed(() =>
   form.value.rental_equipments.reduce((sum, r) => sum + Number(r.quantity_at_site || 0), 0)
 )
 
-const assetNameById = id => {
-  const asset = assets.value.find(a => Number(a.id) === Number(id))
+const assetNameById = (val) => {
+  if (!val) return '—'
 
-  return asset?.code ?? 'Unknown Asset'
+  if (!Array.isArray(assets.value) || assets.value.length === 0) {
+    console.warn("⚠️ assets list not ready yet")
+    return '...'
+  }
+
+  const selected = assets.value.find(a => Number(a.id) === Number(val))
+
+  console.log(
+    "Find asset",
+    val,
+    "| available IDs:",
+    assets.value.map(a => a.id),
+    "| matched asset:",
+    selected
+  )
+
+  return selected?.label ?? 'Unknown Asset'
 }
+
+const isPastDate = (date) => {
+  if (!date) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const d = new Date(date);
+  return d < today;
+}
+
+
+const onAssetChange = (val) => {
+  // if cleared
+  if (!val) {
+    assetRequest.value.asset_id = null
+    assetRequest.value.maxQty = null
+    assetRequest.value.quantity = 1
+    return
+  }
+
+  const selected = assets.value.find(a => a.id === Number(val))
+
+  if (selected) {
+    assetRequest.value.maxQty = Number(selected.quantity ?? 0)
+
+    // Auto-set quantity to available qty or 1 (if 0 stock)
+    assetRequest.value.quantity = assetRequest.value.maxQty > 0 ? assetRequest.value.maxQty : 1
+  } else {
+    assetRequest.value.maxQty = null
+    assetRequest.value.quantity = 1
+  }
+}
+
+
+const onAssetChangeRental = async (val) => {
+  // Reset if asset is cleared
+  if (!val) {
+    rentalEquipment.value.asset_id = null
+    rentalEquipment.value.maxQty = null
+    rentalEquipment.value.quantity_at_site = 1
+    return
+  }
+
+  try {
+    // Set selected asset ID
+    rentalEquipment.value.asset_id = val
+
+    // Call API to fetch latest quantity
+    const res = await axios.get(
+      `${apiBaseUrl}/project/asset/${val}?project_id=${form.value.project_id}`,
+      { headers: authHeaders() }
+    )
+
+    // Extract data from API response (adjust based on actual response structure)
+    const quantity = res.data.data || res.data
+    console.log(quantity);
+    // Example: if your API returns { id, name, quantity, remaining_quantity }
+    const availableQty = Number(quantity??1)
+
+    // Update reactive state
+    rentalEquipment.value.maxQty = availableQty
+    rentalEquipment.value.quantity_at_site = availableQty > 0 ? availableQty : 1
+
+  } catch (error) {
+    console.error('Error fetching asset data:', error)
+    // Reset to safe defaults on error
+    rentalEquipment.value.maxQty = null
+    rentalEquipment.value.quantity_at_site = 1
+  }
+}
+
+
+
+
+const isEndBeforeStart = (start, end) => {
+  if (!start || !end) return false;
+  return new Date(end) < new Date(start);
+}
+
+watch(
+  () => rentalEquipment.value.start_date,
+  (newStart) => {
+    if (isPastDate(newStart)) {
+      errorMessages.value.rental_equipment = {
+        ...errorMessages.value.rental_equipment,
+        start_date: 'Start date cannot be older than today',
+      };
+    } else {
+      if (errorMessages.value.rental_equipment) errorMessages.value.rental_equipment.start_date = '';
+    }
+
+    // Also validate end_date
+    if (rentalEquipment.value.end_date && isEndBeforeStart(newStart, rentalEquipment.value.end_date)) {
+      errorMessages.value.rental_equipment = {
+        ...errorMessages.value.rental_equipment,
+        end_date: 'End date cannot be before start date',
+      };
+    } else {
+      if (errorMessages.value.rental_equipment) errorMessages.value.rental_equipment.end_date = '';
+    }
+  }
+)
+
+watch(
+  () => rentalEquipment.value.end_date,
+  (newEnd) => {
+    if (isPastDate(newEnd)) {
+      errorMessages.value.rental_equipment = {
+        ...errorMessages.value.rental_equipment,
+        end_date: 'End date cannot be older than today',
+      };
+    } else if (rentalEquipment.value.start_date && isEndBeforeStart(rentalEquipment.value.start_date, newEnd)) {
+      errorMessages.value.rental_equipment = {
+        ...errorMessages.value.rental_equipment,
+        end_date: 'End date cannot be before start date',
+      };
+    } else {
+      if (errorMessages.value.rental_equipment) errorMessages.value.rental_equipment.end_date = '';
+    }
+  }
+)
+
+
+watch(
+  () => assetRequest.value.start_date,
+  (newDate) => {
+    if (isPastDate(newDate)) {
+      errorMessages.value.asset_request = {
+        ...errorMessages.value.asset_request,
+        start_date: 'Date of need cannot be older than today',
+      };
+    } else {
+      if (errorMessages.value.asset_request) errorMessages.value.asset_request.start_date = '';
+    }
+  }
+)
+
+watch(
+  () => assetRequest.value.end_date,
+  (newEnd) => {
+    if (isPastDate(newEnd)) {
+      errorMessages.value.asset_request = {
+        ...errorMessages.value.asset_request,
+        end_date: 'Requested end date cannot be older than today',
+      };
+    } else if (assetRequest.value.start_date && isEndBeforeStart(assetRequest.value.start_date, newEnd)) {
+      errorMessages.value.asset_request = {
+        ...errorMessages.value.asset_request,
+        end_date: 'End date cannot be before date of need',
+      };
+    } else {
+      if (errorMessages.value.asset_request) errorMessages.value.asset_request.end_date = '';
+    }
+  }
+)
+
 
 // auth helpers
 const getCookie = name => {
@@ -683,17 +830,24 @@ const fetchSubCategories = async (parentId, target) => {
 
 const fetchAssets = async (subCategoryId) => {
   if (!subCategoryId) {
-    assets.value = []
+    //assets.value = []
     return
   }
   loading.value.assets = true
   try {
     const res = await axios.get(`${apiBaseUrl}/assets`, {
-      params: { asset_sub_category_id: subCategoryId },
+      params: { asset_sub_category_id: subCategoryId, project_id : form.value.project_id },
       headers: authHeaders(),
     })
     const list = res.data?.data?.data ?? res.data?.data ?? res.data ?? []
-    assets.value = Array.isArray(list) ? list : []
+
+    assets.value = list.map(a => {
+      const code = a.code;
+      const title = a.title
+      return { id: Number(a.id), label: `${code} — ${title}`.trim(),quantity: Number(a.quantity) }
+    })
+
+
   } catch (error) {
     console.error('Error fetching Assets:', error)
     message.value = 'Failed to load assets.'
@@ -708,7 +862,7 @@ watch(
   async newVal => {
     assetRequest.value.asset_sub_category_id = null
     assetRequest.value.asset_id = null
-    assets.value = []
+/*    assets.value = []*/
     await fetchSubCategories(newVal, 'asset')
   }
 )
@@ -718,7 +872,7 @@ watch(
   async newVal => {
     rentalEquipment.value.asset_sub_category_id = null
     rentalEquipment.value.asset_id = null
-    assets.value = []
+/*    assets.value = []*/
     await fetchSubCategories(newVal, 'rental')
   }
 )
@@ -741,20 +895,62 @@ watch(
 
 // actions
 const addAssetRequest = () => {
-  if (!isAssetRequestValid.value) return
+  // validate manually
+  if (
+    !assetRequest.value.asset_category_id ||
+    !assetRequest.value.asset_sub_category_id ||
+    !assetRequest.value.asset_id ||
+    !assetRequest.value.activity ||
+    !assetRequest.value.quantity ||
+    !assetRequest.value.start_date ||
+    !assetRequest.value.end_date
+  ) {
+    message.value = "Please fill all asset request fields before adding."
+    return
+  }
+
   form.value.asset_requests.push({ ...assetRequest.value })
-  resetAssetRequest()
+
+  // Reset
+  assetRequest.value = {
+    asset_category_id: null,
+    asset_sub_category_id: null,
+    asset_id: null,
+    activity: '',
+    quantity: null,
+    start_date: '',
+    end_date: '',
+  }
 }
+
+
 
 const removeAssetRequest = index => {
   form.value.asset_requests.splice(index, 1)
 }
 
 const addRentalEquipment = () => {
-  if (!isRentalEquipmentValid.value) return
-  form.value.rental_equipments.push({ ...rentalEquipment.value })
-  resetRentalEquipment()
-}
+  if (!isRentalEquipmentValid.value) return;
+
+  form.value.rental_equipments.push({ ...rentalEquipment.value });
+
+  // reset inline fields
+  rentalEquipment.value = {
+    asset_category_id: null,
+    asset_sub_category_id: null,
+    asset_id: null,
+    activity: '',
+    quantity_at_site: null,
+    start_date: '',
+    end_date: '',
+    end_date: '',
+    spo_number: '',
+  };
+
+  // reset errors & validation
+  errorMessages.value.rental_equipment = {};
+  refForm.value?.resetValidation();
+};
 
 const removeRentalEquipment = index => {
   form.value.rental_equipments.splice(index, 1)
@@ -776,14 +972,13 @@ const resetAssetRequest = () => {
     asset_id: null,
     activity: '',
     quantity: null,
-    date_of_need: '',
-    requested_no_days: '',
+    start_date: '',
+    end_date: '',
   }
 }
 
 const resetRentalEquipment = () => {
   rentalEquipment.value = {
-    rental_equipment_id: null,
     asset_category_id: null,
     asset_sub_category_id: null,
     asset_id: null,
@@ -791,7 +986,6 @@ const resetRentalEquipment = () => {
     quantity_at_site: null,
     start_date: '',
     end_date: '',
-    requested_no_days: '',
     spo_number: '',
   }
 }
@@ -800,6 +994,12 @@ const saveRentalRequest = async () => {
   try {
     loading.value.submit = true
     errorMessages.value = {}
+
+    if (!form.value.asset_requests.length && !form.value.rental_equipments.length) {
+      message.value = "Please add at least one request."
+      return
+    }
+
 
     // Validate form
     const { valid, errors } = await refForm.value.validate()
@@ -824,17 +1024,18 @@ const saveRentalRequest = async () => {
     const payload = {
       project_id: Number(form.value.project_id),
       date: form.value.date,
+      ren_number: form.value.ren_number,
       asset_requests: form.value.asset_requests.map(r => ({
         asset_category_id: Number(r.asset_category_id),
         asset_sub_category_id: Number(r.asset_sub_category_id),
         asset_id: Number(r.asset_id),
         activity: r.activity,
         quantity: Number(r.quantity),
-        date_of_need: r.date_of_need,
-        requested_no_days: r.requested_no_days,
+        start_date: r.start_date,
+        end_date: r.end_date,
       })),
       rental_equipments: form.value.rental_equipments.map(r => ({
-        rental_equipment_id: Number(r.rental_equipment_id),
+
         asset_category_id: Number(r.asset_category_id),
         asset_sub_category_id: Number(r.asset_sub_category_id),
         asset_id: Number(r.asset_id),
@@ -842,7 +1043,6 @@ const saveRentalRequest = async () => {
         quantity_at_site: Number(r.quantity_at_site),
         start_date: r.start_date,
         end_date: r.end_date,
-        requested_no_days: r.requested_no_days,
         spo_number: r.spo_number,
       })),
     }
@@ -868,9 +1068,34 @@ const saveRentalRequest = async () => {
   }
 }
 
-// init
-fetchProjects()
-fetchCategories()
+const fetchLatestId = async () => {
+  try {
+    const res = await axios.get(`${apiBaseUrl}/getLatestNumber`, {
+      params: { type: 'RentalEquipment'},
+      headers: authHeaders(),
+    });
+
+
+    const numberId = res.data.value;
+    console.log(numberId);
+    form.value.ren_number = numberId;
+  } catch (e) {
+    console.error(e);
+    form.value.ren_number = '';
+  } finally {
+
+  }
+};
+
+onMounted(async () => {
+  await Promise.all([
+    fetchProjects(),
+    fetchCategories(),
+    fetchLatestId()
+  ])
+})
+
+
 </script>
 
 <style scoped>

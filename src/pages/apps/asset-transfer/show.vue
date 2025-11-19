@@ -3,14 +3,12 @@
     <!-- app chrome: visible on screen, auto-hidden in print -->
     <div class="topbar">
       <div class="left">
-        <VBtn variant="text" prepend-icon="mdi-arrow-left" @click="$router.back()">Back</VBtn>
-        <h3 class="page-title">Asset Transfer — #{{ id }}</h3>
       </div>
       <div class="right">
-        <VBtn color="primary" @click="$router.push(`/dashboards/assettransfers/edit/${id}`)">Edit</VBtn>
+<!--         <VBtn color="primary" @click="$router.push(`/dashboards/assettransfers/edit/${id}`)">Edit</VBtn>
         <VBtn color="error" @click="onDelete">Delete</VBtn>
         <VBtn color="success" @click="onApprove">Approve</VBtn>
-        <VBtn color="warning" @click="onReject">Reject</VBtn>
+        <VBtn color="warning" @click="onReject">Reject</VBtn> -->
         <VBtn color="secondary" @click="printPage">Print</VBtn>
       </div>
     </div>
@@ -186,8 +184,7 @@ import { VAlert, VBtn, VSkeletonLoader } from 'vuetify/components'
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL // should end with /api
 
-const defaultProject = '10006 BISHA PROJECT'
-const logoSrc = '/astra-logo.png'
+const logoSrc = "/src/assets/images/logos/astra-logo.png";
 
 const route = useRoute()
 const router = useRouter()

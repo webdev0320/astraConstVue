@@ -375,23 +375,61 @@ export const routes = [
 },
 
   
-  {
-    path: '/dashboards/rental-required',
-    name: 'dashboards-rental-required',
-    component: () => import('@/pages/apps/rental-required/index.vue'),
+ {
+  path: '/dashboards/rental-required',
+  name: 'dashboards-rental-required',
+  component: () => import('@/pages/apps/rental-required/index.vue'),
+  meta: {
+    breadcrumb: [
+      { title: 'Dashboard', to: '/' },
+      { title: 'Rental Required', active: true },
+    ],
   },
-  {
-    path: '/dashboards/rental-required/create',
-    name: 'dashboards-rental-required-create',
-    component: () => import('@/pages/apps/rental-required/create.vue'),
-    meta: { layout: 'default', navActiveLink: 'dashboards-rental-required' },
+},
+{
+  path: '/dashboards/rental-required/create',
+  name: 'dashboards-rental-required-create',
+  component: () => import('@/pages/apps/rental-required/create.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-rental-required',
+    breadcrumb: [
+      { title: 'Dashboard', to: '/' },
+      { title: 'Rental Required', to: '/dashboards/rental-required' },
+      { title: 'Create', active: true },
+    ],
   },
-  {
-    path: '/dashboards/rental-required/edit/:id',
-    name: 'dashboards-rental-required-edit',
-    component: () => import('@/pages/apps/rental-required/edit.vue'),
-    meta: { layout: 'default', navActiveLink: 'dashboards-rental-required' },
+},
+{
+  path: '/dashboards/rental-required/edit/:id',
+  name: 'dashboards-rental-required-edit',
+  component: () => import('@/pages/apps/rental-required/edit.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-rental-required',
+    breadcrumb: [
+      { title: 'Dashboard', to: '/' },
+      { title: 'Rental Required', to: '/dashboards/rental-required' },
+      { title: 'Edit', active: true },
+    ],
   },
+},
+
+{
+  path: '/dashboards/rental-required/details/:id',
+  name: 'dashboards-rental-required-details',
+  component: () => import('@/pages/apps/rental-required/details.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-rental-required',
+    breadcrumb: [
+      { title: 'Dashboard', to: '/' },
+      { title: 'Rental Required', to: '/dashboards/rental-required' },
+      { title: 'Edit', active: true },
+    ],
+  },
+},
+
 
   {
     path: '/dashboards/locations',
@@ -470,6 +508,39 @@ export const routes = [
     ],
   },
 },
+
+// Assign assets Routes
+{
+  path: '/dashboards/projects/:id/assignAssets',
+  name: 'dashboards-project-assignAssets',
+  component: () => import('@/pages/apps/projects/assignAssets/index.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-projects',
+    breadcrumb: route => [
+      { title: 'Dashboard', to: '/dashboards/projects' },
+      { title: 'Projects', to: '/dashboards/projects' },
+      { title: 'Assign Assets' }
+    ],
+  },
+},
+
+{
+  path: '/dashboards/projects/:id/assignAssets/create',
+  name: 'dashboards-project-assignAssets/create',
+  component: () => import('@/pages/apps/projects/assignAssets/create.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-projects',
+    breadcrumb: route => [
+      { title: 'Dashboard', to: '/dashboards/projects' },
+      { title: 'Projects', to: '/dashboards/projects' },
+      { title: `Project #${route.params.id}`, to: `/dashboards/projects/edit/${route.params.id}` },
+      { title: 'Assign Assets' }
+    ],
+  },
+},
+
 
 {
   path: '/dashboards/projects/:id/assignusers/create',
@@ -704,10 +775,96 @@ export const routes = [
     component: () => import('@/pages/apps/policy-waiver-form/create.vue'),
   },  
 
-    {
+  {
     path: '/dashboards/policy-waiver-form/detail/:id',
     name: 'dashboards-policy-waiver-form-detail',
     component: () => import('@/pages/apps/policy-waiver-form/detail.vue'),
-  }  
+  },  
+
+  {
+  path: '/dashboards/asset-demobilizations',
+  name: 'dashboards-asset-demobilizations',
+  component: () => import('@/pages/apps/asset-demobilizations/index.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-asset-demobilizations',
+    breadcrumb: route => [
+      { title: 'Dashboard', to: '/dashboards' },
+      { title: 'Asset Demobilizations' }
+    ],
+  },
+},
+{
+  path: '/dashboards/asset-demobilizations/create',
+  name: 'dashboards-asset-demobilizations-create',
+  component: () => import('@/pages/apps/asset-demobilizations/create.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-asset-demobilizations',
+    breadcrumb: route => [
+      { title: 'Dashboard', to: '/dashboards' },
+      { title: 'Asset Demobilizations', to: '/dashboards/asset-demobilizations' },
+      { title: 'Create' }
+    ],
+  },
+},
+{
+  path: '/dashboards/asset-demobilizations/detail/:id',
+  name: 'dashboards-asset-demobilizations-detail',
+  component: () => import('@/pages/apps/asset-demobilizations/show.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-asset-demobilizations',
+    breadcrumb: route => [
+      { title: 'Dashboard', to: '/dashboards' },
+      { title: 'Asset Demobilizations', to: '/dashboards/asset-demobilizations' },
+      { title: `Detail #${route.params.id}` }
+    ],
+  },
+},
+{
+  path: '/dashboards/asset-demobilizations/edit/:id',
+  name: 'dashboards-asset-demobilizations-edit',
+  component: () => import('@/pages/apps/asset-demobilizations/edit.vue'),
+  meta: {
+    layout: 'default',
+    navActiveLink: 'dashboards-asset-demobilizations',
+    breadcrumb: route => [
+      { title: 'Dashboard', to: '/dashboards' },
+      { title: 'Asset Demobilizations', to: '/dashboards/asset-demobilizations' },
+      { title: `Edit #${route.params.id}` }
+    ],
+  },
+},
+
+ {
+    path: '/dashboards/daily-asset-reportings',
+    name: 'dashboards-daily-asset-reportings',
+    component: () => import('@/pages/apps/daily-asset-reportings/index.vue'),
+    meta: {
+      layout: 'default',
+      navActiveLink: 'dashboards-daily-asset-reportings',
+      breadcrumb: [
+        { title: 'Dashboard', to: '/dashboards' },
+        { title: 'Daily Asset Reportings' }
+      ],
+    },
+  },
+  {
+    path: '/dashboards/daily-asset-reportings/create',
+    name: 'dashboards-daily-asset-reportings-create',
+    component: () => import('@/pages/apps/daily-asset-reportings/create.vue'),
+    meta: {
+      layout: 'default',
+      navActiveLink: 'dashboards-daily-asset-reportings',
+      breadcrumb: [
+        { title: 'Dashboard', to: '/dashboards' },
+        { title: 'Daily Asset Reportings', to: '/dashboards/daily-asset-reportings' },
+        { title: 'Create' }
+      ],
+    },
+  },
+
+
 
 ]

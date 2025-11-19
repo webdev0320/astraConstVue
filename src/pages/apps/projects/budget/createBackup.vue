@@ -41,6 +41,38 @@
             />
 
           </VCol>
+
+          <!-- Asset (optional) -->
+          <VCol cols="12" md="3">
+            <VSelect
+              v-model="selectedAsset"
+              :items="assets"
+              :item-title="asset => `${asset.code} - ${asset.title}`"
+              item-value="id"
+              label="Select Asset (Optional)"
+              :loading="loading.assets"
+              :disabled="!selectedSubCategoryId || loading.assets"
+              return-object
+              hide-details="auto"
+              variant="outlined"
+              clearable
+            />
+
+          </VCol>
+
+          <!-- Quantity (optional UI; defaults to 1) -->
+          <VCol cols="12" md="1">
+            <VTextField
+              v-model.number="budget.quantity"
+              label="Qty"
+              type="number"
+              min="1"
+              step="1"
+              variant="outlined"
+              hide-details="auto"
+            />
+          </VCol>
+
           <!-- Amount -->
           <VCol cols="12" md="2">
             <VTextField
@@ -142,10 +174,13 @@ const loading = ref({ categories: false, assets: false });
 
 const selectedCategoryId = ref(null);     // id only
 const selectedSubCategoryId = ref(null);  // id only
+const selectedAsset = ref(null);          // full object or null
+const assets = ref([]);
 
 // form bits (quantity default 1; asset_description optional)
 const budget = ref({
   amount: 0,
+  quantity: 1,
   asset_description: "",
 });
 
@@ -154,9 +189,12 @@ const saving = ref(false);
 
 // ------------- Headers (use names, not IDs) -------------
 const headers = [
+  { title: "Asset Code", key: "asset_code" },
   { title: "Category", key: "category_name" },
   { title: "Subcategory", key: "subcategory_name" },
-  { title: "Amount (SAR)", key: "amount" },
+  { title: "Other Asset Request", key: "asset_description" },
+  { title: "Qty", key: "quantity" },
+  { title: "Amount", key: "amount" },
   { title: "Actions", key: "actions", sortable: false },
 ];
 
@@ -227,6 +265,32 @@ const subcategoryNameById = (id) => {
 // ------------- Events -------------
 const onCategoryChange = async () => {
   selectedSubCategoryId.value = null;
+  selectedAsset.value = null;
+  assets.value = [];
+};
+const onSubCategoryChange = async (val) => {
+  selectedAsset.value = null;
+  assets.value = [];
+  if (!val) return;
+  await fetchAssetsBySubCategory(val);
+};
+
+// ------------- Fetch Assets by Subcategory -------------
+const fetchAssetsBySubCategory = async (subId) => {
+  loading.value.assets = true;
+  try {
+    const res = await axios.get(`${apiBaseUrl}/assets`, {
+      params: { asset_sub_category_id: subId, asset_subcategory_id: subId },
+      headers: getAuthHeaders(),
+    });
+    const list = res.data?.data?.data ?? res.data?.data ?? res.data ?? [];
+    assets.value = Array.isArray(list) ? list : [];
+  } catch (e) {
+    console.error(e);
+    assets.value = [];
+  } finally {
+    loading.value.assets = false;
+  }
 };
 
 // ------------- Auth helpers -------------
@@ -246,12 +310,15 @@ const getCookie = (name) => {
 const addBudgetRecord = () => {
   if (!selectedCategoryId.value || !selectedSubCategoryId.value || !budget.value.amount) return;
 
+  const a = selectedAsset.value || null;
+  const qty = Number(budget.value.quantity || 1);
   const desc = (budget.value.asset_description || "").trim();
 
   // unique merge key so different descriptions don't merge
   const recordKey = [
     selectedCategoryId.value,
     selectedSubCategoryId.value,
+    a?.id ?? 'none',
     desc.toLowerCase()
   ].join("|");
 
@@ -265,12 +332,16 @@ const addBudgetRecord = () => {
       __key: recordKey,
 
       project_id: Number(projectId.value),
+      asset_id: a?.id ?? null, // optional
       asset_category_id: Number(selectedCategoryId.value),
       asset_subcategory_id: Number(selectedSubCategoryId.value),
       asset_sub_category_id: Number(selectedSubCategoryId.value), // backend safety
       amount: Number(budget.value.amount),
+      quantity: qty,
       asset_description: desc || null,
 
+      // UI-only
+      asset_code: a?.title+'-'+a?.code ?? '—',
       category_name: categoryNameById(selectedCategoryId.value),
       subcategory_name: subcategoryNameById(selectedSubCategoryId.value),
     });
@@ -279,7 +350,10 @@ const addBudgetRecord = () => {
   // reset form fields
   selectedCategoryId.value    = null;
   selectedSubCategoryId.value = null;
+  selectedAsset.value         = null;
+  assets.value                = [];
   budget.value.amount         = null;
+  budget.value.quantity       = 1;
   budget.value.asset_description = "";
 };
 
@@ -298,7 +372,9 @@ const saveAllBudgets = async () => {
       project_id: Number(r.project_id ?? pid),
       asset_category_id: Number(r.asset_category_id),
       asset_subcategory_id: Number(r.asset_subcategory_id),
+      asset_id: r.asset_id ?? null,                       // optional
       asset_description: r.asset_description ?? null,     // optional
+      quantity: Number(r.quantity || 1),                  // send number; defaults to 1
       amount: Number(r.amount),
     }));
 
@@ -334,11 +410,12 @@ const isFormValid = computed(() => {
   const hasCategory = !!selectedCategoryId.value;
   const hasSubCategory = !!selectedSubCategoryId.value;
   const hasAmount = Number(budget.value.amount) > 0;
+  const hasQty = Number(budget.value.quantity || 1) > 0;
 
   // ✅ At least asset OR description must be filled
-  const hasAssetOrDescription = !!budget.value.asset_description?.trim();
+  const hasAssetOrDescription = !!selectedAsset.value || !!budget.value.asset_description?.trim();
 
-  return hasCategory && hasSubCategory && hasAmount && hasAssetOrDescription;
+  return hasCategory && hasSubCategory && hasAmount && hasQty && hasAssetOrDescription;
 });
 
 const totalAmount = computed(() =>

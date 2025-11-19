@@ -60,40 +60,40 @@
               class="d-flex align-center gap-1"
             >
               Actions
-              <VIcon :icon="isActive ? 'mdi-chevron-up' : 'mdi-chevron-down'" />
+              <VIcon :icon="isActive ? 'tabler-caret-up' : 'tabler-caret-down'" />
             </VBtn>
           </template>
 
           <VList density="compact">
             <VListItem @click="$router.push(`/dashboards/assets/detail/${item.raw?.id ?? item.id}`)">
-              <template #prepend><VIcon icon="mdi-file-document" /></template>
+              <template #prepend><VIcon icon="tabler-eye" /></template>
               <VListItemTitle>Detail</VListItemTitle>
             </VListItem>
 
 
             <VListItem @click="openDepartmentModal(item.raw?.id ?? item.id)">
-              <template #prepend><VIcon icon="mdi-office-building" /></template>
+              <template #prepend><VIcon icon="tabler-building" /></template>
               <VListItemTitle>Add Department</VListItemTitle>
             </VListItem>
 
             <VListItem @click="$router.push(`/dashboards/assets/edit/${item.raw?.id ?? item.id}`)">
-              <template #prepend><VIcon icon="mdi-pencil" /></template>
+              <template #prepend><VIcon icon="tabler-edit" /></template>
               <VListItemTitle>Edit</VListItemTitle>
             </VListItem>
 
             <!-- ✅ NEW BUTTONS -->
             <VListItem @click="approveAsset(item.raw?.id ?? item.id)">
-              <template #prepend><VIcon icon="mdi-thumb-up" /></template>
+              <template #prepend><VIcon icon="tabler-check" /></template>
               <VListItemTitle>Approve</VListItemTitle>
             </VListItem>
 
             <VListItem @click="rejectAsset(item.raw?.id ?? item.id)">
-              <template #prepend><VIcon icon="mdi-thumb-down" /></template>
+              <template #prepend><VIcon icon="tabler-player-stop" /></template>
               <VListItemTitle>Reject</VListItemTitle>
             </VListItem>
 
             <VListItem @click="deleteAsset(item.raw?.id ?? item.id)">
-              <template #prepend><VIcon icon="mdi-delete" /></template>
+              <template #prepend><VIcon icon="tabler-trash" /></template>
               <VListItemTitle>Delete</VListItemTitle>
             </VListItem>
 
@@ -159,7 +159,8 @@ const headers = [
   { title: "Title", key: "title" },
   { title: "Category Name", key: "category_name" },
   { title: "SUB CATEGORY", key: "sub_category" },
-  { title: "PURCHASE COST (SAR)", key: "purchase_cost" },
+  { title: "UNIT PRICE (SAR)", key: "unit_price" },
+  { title: "QUANTITY", key: "quantity" },  
   { title: "ACTIONS", key: "actions", sortable: false },
 ];
 

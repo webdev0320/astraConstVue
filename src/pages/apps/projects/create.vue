@@ -50,16 +50,15 @@
 
       <!-- Description -->
       <VCol cols="12">
-        <VTextarea
-          v-model="project.description"
-          label="Description"
-          variant="outlined"
-          rows="5"
-          :error-messages="errorMessages.description"
-          hide-details="auto"
-          clearable
-        />
-      </VCol>
+      <VTextarea
+  v-model="project.description"
+  label="Description"
+  rows="5"
+  :rules="[wordLimitRule]"
+  counter
+  :counter-value="`${wordCount.value}/1000 words`"
+/>
+  </VCol>
 
       <VCol cols="12">
         <VBtn type="submit" color="primary" :loading="loading" :disabled="loading">
@@ -78,7 +77,8 @@ import axios from 'axios'
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { VBtn, VCol, VForm, VRow, VTextField, VTextarea } from 'vuetify/components'
-
+import { useWordLimit } from '@/utils/descValidator'
+import { toRef } from 'vue'
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 const router = useRouter()
@@ -92,6 +92,11 @@ const project = ref({
   end_date: '',
   description: '',
 })
+
+const { wordCount, wordLimitRule } = useWordLimit(
+  computed(() => project.value.description),
+  1000
+)
 
 const refForm = ref()
 const loading = ref(false)

@@ -136,32 +136,194 @@ const fetchDetail = async () => {
     isLoading.value = false;
   }
 };
-
+const logoPath = "/src/assets/images/logos/astra-logo.png";
 const printPage = () => {
-  const printContent = document.getElementById("printArea").innerHTML;
+  const h = handover.value;
+
   const printWindow = window.open("", "", "width=1000,height=700");
+
   printWindow.document.write(`
     <html>
       <head>
-        <title>Print Asset Handover</title>
+        <title>Asset Handover Form</title>
         <style>
-          body { font-family: Arial, sans-serif; padding: 30px; }
-          h2, h3 { margin: 0 0 10px; }
-          .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 25px; margin-bottom: 20px; }
-          .kv { display: grid; grid-template-columns: 180px 1fr; gap: 6px; }
-          .k { font-weight: bold; color: #333; }
-          .handover-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-          .handover-table th, .handover-table td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-          .handover-table th { background: #f8f8f8; font-weight: 600; }
-          .text-center { text-align: center; }
+          body { font-family: Arial, sans-serif; padding: 20px; }
+
+          .header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              border: 1px solid #000;
+              padding: 10px 20px;
+              margin-bottom: 20px;
+            }
+
+          .header img {
+            height: 70px;
+          }
+
+          .title {
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 20px;
+          }
+
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 14px;
+          }
+
+          table th, table td {
+            border: 1px solid #000;
+            padding: 6px;
+          }
+
+          .grid-table td {
+            padding: 3px 0;
+          }
+
+          .sign-row {
+            margin-top: 50px;
+          }
+
+          .sign-col {
+            width: 50%;
+            text-align: center;
+            font-weight: bold;
+          }
+
+          .footer {
+            margin-top: 30px;
+            font-size: 12px;
+          }
+
+        .left-text, .right-text {
+            width: 30%;
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 18px;
+            text-align: center;
+          }
+
+          .logo img {
+            height: 70px;
+          }
+
+          .grid-table {
+              width: 100%;
+              border-collapse: collapse;
+              font-size: 14px;
+              margin-bottom: 15px;
+            }
+
+            .grid-table td {
+              border: 1px solid #000 !important;
+              padding: 6px 10px;
+              width: 50%;
+              vertical-align: top;
+            }
         </style>
       </head>
-      <body>${printContent}</body>
+
+      <body>
+
+        <!-- Logo & Header -->
+         <div class="header">
+            <div class="left-text">
+              Arab Supply & Trading Co.<br>
+              Construction Branch
+            </div>
+
+            <div class="logo">
+              <img src="` + logoPath + `" />
+            </div>
+
+            <div class="right-text">
+              الشركة العربية للتوريد والتجارة<br>
+              فرع الإنشاءات
+            </div>
+          </div>
+
+
+        <div class="title">ASSET HANDOVER FORM</div>
+
+        <!-- Employee Info -->
+         <table class="grid-table">
+            <tr>
+              <td><strong>Name of Employee:</strong> ${show(h.user?.name)}</td>
+              <td><strong>Asset Transfer No.:</strong> ${show(h.handover_id)}</td>
+            </tr>
+
+            <tr>
+              <td><strong>Employee Code:</strong> ${show(h.user?.user_code)}</td>
+              <td><strong>Handover Date:</strong> ${show(h.handover_date)}</td>
+            </tr>
+
+            <tr>
+              <td><strong>Department:</strong> —</td>
+              <td><strong>Handover By:</strong> ${show(h.handover_by?.name)}</td>
+            </tr>
+          </table>
+
+        <p>Dear Sir / Madam,<br>
+        Please find below the assets handed over to you. Please sign also the attached picture.</p>
+
+        <!-- Table -->
+        <table>
+          <thead>
+            <tr>
+              <th>Sr. No.</th>
+              <th>Particulars</th>
+              <th>Asset Code</th>
+              <th>Qty</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              h.items.map((item, i) => `
+                <tr>
+                  <td>${i + 1}</td>
+                  <td>${show(item.asset_name)}</td>
+                  <td>${show(item.asset_code)}</td>
+                  <td>${show(item.quantity)}</td>
+                  <td>${show(item.remarks)}</td>
+                </tr>
+              `).join("")
+            }
+          </tbody>
+        </table>
+
+        <!-- Signatures -->
+        <table class="sign-row">
+          <tr>
+            <td class="sign-col">Authorized Signatory<br>(Person Requesting)</td>
+            <td class="sign-col">Authorized Signatory<br>(Approver)</td>
+          </tr>
+        </table>
+
+        <p><strong>ACKNOWLEDGEMENT AND DECLARATION BY EMPLOYEE:</strong></p>
+        <p>
+              I, Mr. <strong>${show(h.user?.name)}</strong>   acknowledge that I have Received the above mentioned assets. I understand that this asset belongs to ASTRA CONSTRUCTION and is under my possession for carrying out my work. I hereby assure that I will take care of the assets of the company to the best possible extend and will handover/Transfer or Return back to the company before my vacation or end of contract clearance (termination/Resignation).
+
+        </p>
+
+        <p><strong>Employee Signature:</strong> ___________________________</p>
+
+        <div class="footer">
+          ISSUE 01 &nbsp;&nbsp;|&nbsp;&nbsp; REV 01 &nbsp;&nbsp;|&nbsp;&nbsp; F-12-08 &nbsp;&nbsp;|&nbsp;&nbsp; 16-08-2020
+        </div>
+
+      </body>
     </html>
   `);
+
   printWindow.document.close();
   printWindow.print();
-  printWindow.close();
 };
 
 onMounted(fetchDetail);

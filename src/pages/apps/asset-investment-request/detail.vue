@@ -1,36 +1,43 @@
 <template>
   <div>
-    <!-- Top Toolbar (screen only) -->
+
+    <!-- ========================  
+        TOP TOOLBAR (SCREEN ONLY)
+    ========================== -->
     <div class="d-flex justify-space-between align-center mb-4 no-print">
-      <!-- Left side -->
       <div class="d-flex align-center gap-2">
         <h3 class="page-title">Asset Investment Request</h3>
       </div>
-
-      <!-- Right side -->
       <div class="d-flex align-center gap-2">
-        <VBtn variant="tonal" prepend-icon="mdi-printer" @click="printPage">Print</VBtn>
+        <VBtn variant="tonal" prepend-icon="tabler-printer" @click="printPage">
+          Print
+        </VBtn>
       </div>
     </div>
 
-    <!-- Error (screen only) -->
+    <!-- Error -->
     <VAlert v-if="error" type="error" class="mb-4 no-print" variant="tonal">
       {{ error }}
     </VAlert>
 
-    <!-- Skeleton while loading (screen only) -->
+    <!-- Loading Skeleton -->
     <template v-if="loading">
       <VSkeletonLoader type="card, list-item-two-line, table" class="mb-4 no-print" />
       <VSkeletonLoader type="table" class="no-print" />
     </template>
 
-    <!-- Content (screen only) -->
+    <!-- ========================  
+        MAIN CONTENT (SCREEN)
+    ========================== -->
     <template v-else-if="request">
-      <!-- Summary -->
-      <VRow class="d-flex flex-row flex-nowrap mb-4 no-print" dense>
-        <VCol cols="12" md="12">
+
+      <VRow class="mb-4 no-print">
+        <VCol cols="12">
+
+          <!-- SUMMARY CARD -->
           <VCard class="summary-card" variant="elevated">
             <VCardText>
+
               <div class="d-flex justify-between align-start mb-3">
                 <div>
                   <div class="eyebrow">Project</div>
@@ -56,11 +63,10 @@
                   <div class="k">Created At</div>
                   <div class="v">{{ formatDateTime(request.created_at) }}</div>
                 </div>
-                
               </div>
 
-
             </VCardText>
+
             <VCardText class="pt-2">
               <ul class="bullets">
                 <li><strong>Status:</strong> {{ request.status ?? '—' }}</li>
@@ -68,229 +74,238 @@
               </ul>
             </VCardText>
           </VCard>
-        </VCol>
 
-      </VRow>
+          <!-- REQUESTED ITEMS CARD -->
+          <!-- REQUESTED ITEMS CARD -->
+<VCard variant="elevated" class="no-print summary-card mt-4">
+  <VCardTitle class="text-h6 font-weight-bold">Requested Items</VCardTitle>
 
-      <!-- Items Table (screen only) -->
-      <VCard variant="elevated" class="no-print">
-        <VCardTitle class="text-h6 font-weight-bold">Requested Items</VCardTitle>
+  <VCardText>
+    <VRow>
+      <VCol
+        v-for="item in itemsNormalized"
+        :key="item.id"
+        cols="12"
+      >
+        <VCard class="pa-3 rounded-lg" elevation="2">
 
-        <VCardText>
-          <VRow dense>
-            <VCol v-for="item in itemsNormalized" :key="item.id" cols="12" md="12" lg="12">
-              <VCard class="pa-3 rounded-lg" elevation="2">
+          <!-- 🔹 FIRST ROW (Category, Subcategory, Asset Code) -->
+          <VRow class="item-row">
+            <VCol cols="4">
+              <div class="label">Category</div>
+              <div class="value">{{ item.category_name }}</div>
+            </VCol>
 
-                <!-- Top fields -->
-                <VRow dense class="text-caption">
-                  <VCol cols="4">
-                    <div class="text-medium-emphasis">Category</div>
-                    <div class="font-weight-medium">{{ item.category_name }}</div>
-                  </VCol>
+            <VCol cols="4">
+              <div class="label">Subcategory</div>
+              <div class="value">{{ item.sub_category }}</div>
+            </VCol>
 
-                  <VCol cols="4">
-                    <div class="text-medium-emphasis">Subcategory</div>
-                    <div class="font-weight-medium">{{ item.sub_category }}</div>
-                  </VCol>
-
-                  <VCol cols="4">
-                    <div class="text-medium-emphasis">Asset Code</div>
-                    <div class="font-weight-medium">{{ item.asset_name || '—' }}</div>
-                  </VCol>
-
-                  <VCol cols="3">
-                    <div class="text-medium-emphasis">Type</div>
-                    <div class="font-weight-medium">{{ item.request_type }}</div>
-                  </VCol>
-
-                  <VCol cols="3">
-                    <div class="text-medium-emphasis">Qty</div>
-                    <div class="font-weight-medium">{{ item.quantity }}</div>
-                  </VCol>
-
-                  <VCol cols="3">
-                    <div class="text-medium-emphasis">Unit Cost</div>
-                    <div class="font-weight-medium">{{ formatCurrency(item.unit_cost) }}</div>
-                  </VCol>
-
-                  <VCol cols="3">
-                    <div class="text-medium-emphasis">Planned Cost</div>
-                    <div class="font-weight-bold">{{ formatCurrency(item.planned_cost) }}</div>
-                  </VCol>
-                </VRow>
-
-                <VDivider class="my-2" />
-
-                <!-- Description & Reason (full width) -->
-                <div class="mb-2">
-                  <div class="text-medium-emphasis text-caption">Description</div>
-                  <div class="text-body-2">{{ item.description }}</div>
-                </div>
-
-                <div>
-                  <div class="text-medium-emphasis text-caption">Reason</div>
-                  <div class="text-body-2">{{ item.reason }}</div>
-                </div>
-
-              </VCard>
+            <VCol cols="4">
+              <div class="label">Asset Code</div>
+              <div class="value">{{ item.asset_name || '—' }}</div>
             </VCol>
           </VRow>
 
-          <!-- Subtotal Bottom -->
-          <div class="d-flex justify-end mt-4 font-weight-bold text-body-1">
-            Subtotal: {{ formatCurrency(itemsTotal) }}
+          <VDivider class="my-2" />
+
+          <!-- 🔹 SECOND ROW (Type, Qty, Unit Cost, Planned Cost) -->
+          <VRow class="item-row">
+            <VCol cols="3">
+              <div class="label">Type</div>
+              <div class="value">{{ item.request_type }}</div>
+            </VCol>
+
+            <VCol cols="3">
+              <div class="label">Qty</div>
+              <div class="value">{{ item.quantity }}</div>
+            </VCol>
+
+            <VCol cols="3">
+              <div class="label">Unit Cost</div>
+              <div class="value">{{ formatCurrency(item.unit_cost) }}</div>
+            </VCol>
+
+            <VCol cols="3">
+              <div class="label">Planned Cost</div>
+              <div class="value font-weight-bold">{{ formatCurrency(item.planned_cost) }}</div>
+            </VCol>
+          </VRow>
+
+          <VDivider class="my-2" />
+
+          <!-- 🔹 Description -->
+          <div class="item-row">
+            <div class="label">Description</div>
+            <div class="value">{{ item.description }}</div>
           </div>
-        </VCardText>
-      </VCard>
 
-
-      <VCard variant="elevated" class="no-print mt-4">
-        <VCardTitle>Approvals</VCardTitle>
-        <VCardText>
-          <VAlert
-            v-if="approvalsError"
-            type="error"
-            class="mb-4"
-            variant="tonal"
-          >
-            {{ approvalsError }}
-          </VAlert>
-
-          <VDataTable
-            v-if="approvals.length"
-            :headers="approvalHeaders"
-            :items="approvals"
-            :items-per-page="5"
-            class="elev-1"
-          />
-
-          <div v-else class="text-center py-4 text-medium-emphasis">
-            No approvals found.
+          <!-- 🔹 Reason -->
+          <div class="item-row mt-2">
+            <div class="label">Reason</div>
+            <div class="value">{{ item.reason }}</div>
           </div>
-        </VCardText>
-      </VCard>
+
+        </VCard>
+      </VCol>
+    </VRow>
+
+    <!-- Subtotal -->
+    <div class="d-flex justify-end mt-4 font-weight-bold text-body-1">
+      Subtotal: {{ formatCurrency(itemsTotal) }}
+    </div>
+  </VCardText>
+</VCard>
 
 
+          <!-- APPROVALS TABLE -->
+          <VCard variant="elevated" class="no-print mt-4">
+            <VCardTitle>Approvals</VCardTitle>
+            <VCardText>
+
+              <VAlert
+                v-if="approvalsError"
+                type="error"
+                class="mb-4"
+                variant="tonal"
+              >
+                {{ approvalsError }}
+              </VAlert>
+
+              <VDataTable
+                v-if="approvals.length"
+                :headers="approvalHeaders"
+                :items="approvals"
+                :items-per-page="5"
+                class="elev-1"
+              />
+
+              <div v-else class="text-center py-4 text-medium-emphasis">
+                No approvals found.
+              </div>
+
+            </VCardText>
+          </VCard>
+
+        </VCol>
+      </VRow>
     </template>
 
-    <!-- Empty (screen only) -->
+    <!-- No Data -->
     <VCard v-else class="pa-8 text-center no-print" variant="tonal">
       <VCardTitle>No data</VCardTitle>
       <VCardText>Could not find this asset investment request.</VCardText>
     </VCard>
 
-    <!-- =========================
-         PRINT-ONLY DOCUMENT
-         ========================= -->
+    <!-- ========================  
+        PRINT VERSION ONLY
+    ========================== -->
     <div id="print-area" class="print-root" v-show="showPrintSection">
       <div class="print-body">
-      <!-- EXACT header: left EN, center logo, right AR -->
-      <div class="print-header-3">
-        <div class="hdr-left">
-          <div class="en-1">Arab Supply &amp; Trading Co.</div>
-          <div class="en-2">Construction Branch</div>
-        </div>
-        <div class="hdr-logo">
-          <img :src="printLogo" alt="Logo" />
-        </div>
-        <div class="hdr-right">
-          <div class="ar">الشركة العربية للتموين والتجارة</div>
-          <div class="ar">فرع الإنشاءات</div>
-        </div>
-      </div>
 
-      <!-- Centered grey title with two spaces between words -->
-      <div class="print-title">Asset Investment&nbsp;&nbsp;Request</div>
-
-      <!-- PROJECT / NUMBER / DATE -->
-      <table class="box-table">
-        <tr>
-          <td class="lbl w35">PROJECT NAME:</td>
-          <td class="val w65">{{ request?.project_name || '—' }}</td>
-        </tr>
-        <tr>
-          <td class="lbl">INVESTMENT REQUEST NUMBER:</td>
-          <td class="val">{{ request?.request_no || request?.code || request?.reference || ('#' + (request?.air_number ?? '—')) }}</td>
-        </tr>
-        <tr>
-          <td class="lbl">DATE:</td>
-          <td class="val">{{ formatDate(request?.date) }}</td>
-        </tr>
-      </table>
-
-      <!-- Requested Items (from API) -->
-      <div class="section-heading textBlack">Requested Items</div>
-      <div class="table-wrapper">
-  <table class="box-table items-table print-table">
-    <thead>
-      <tr>
-        <th class="textBlack">Category</th>
-        <th class="textBlack">SubCategory</th>
-        <th class="textBlack">Asset</th>
-        <th class="textBlack">Description</th>
-        <th class="textBlack">Reason</th>
-        <th class="textBlack">Unit Cost</th>
-        <th class="textBlack">Qty</th>
-        <th class="textBlack">Planned Cost</th>
-        <th class="textBlack">Type</th>
-        <th class="textBlack">Asset Life Period</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr v-for="it in items" :key="it.id">
-        <td class="textBlack td-desc">{{ it.category_name }}</td>
-        <td class="textBlack td-desc">{{ it.sub_category }}</td>
-        <td class="textBlack td-desc">{{ it.asset_name }} {{ it.asset_code }}</td>
-        <td class="textBlack td-desc">{{ it.description }}</td>
-        <td class="textBlack td-reason">{{ it.reason }}</td>
-        <td class="textBlack td-num">{{ formatCurrency(it.unit_cost) }}</td>
-        <td class="textBlack td-center">{{ it.quantity }}</td>
-        <td class="textBlack td-num">{{ formatCurrency(it.planned_cost) }}</td>
-        <td class="textBlack td-center">{{ it.request_type }}</td>
-        <td class="textBlack td-center">{{ it.asset_life_period }}</td>
-      </tr>
-      <tr v-if="!items || items.length === 0">
-        <td colspan="10" class="textBlack td-center">—</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-
-      <!-- Planned cost + Asset type -->
-      <div class="section-heading textBlack">PLANNED COST (in SAR):</div>
-      <div class="box row-2col">
-        <div class="cell">
-          <span class="value-strong textBlack">{{ formatCurrency(request?.planned_cost) }}</span>
-        </div>
-<!--         <div class="cell">
-          <div class="checks textBlack">
-            <span class="check textBlack" :class="{on: isType('NEW')}"></span> NEW ASSET
-            <span class="check textBlack" :class="{on: isType('LEASED')}"></span> LEASED ASSET
-            <span class="check textBlack" :class="{on: isType('USED')}"></span> USED ASSET
+        <!-- Header -->
+        <div class="print-header-3">
+          <div class="hdr-left">
+            <div class="en-1">Arab Supply & Trading Co.</div>
+            <div class="en-2">Construction Branch</div>
           </div>
-        </div> -->
-      </div>
-
-      <!-- Dept head + Checked by finance -->
-      <div class="box row-2col">
-        <div class="cell">
-          <div class="mini-header textBlack">Requesting Department Head :</div>
-          <div class="name-line textBlack">{{ request?.department_head || '—' }}</div>
-          <div class="mini-row">
-            <div class="mini-col"><span class="mini-label textBlack">Date:</span> {{ formatDate(request?.department_head_date) }}</div>
+          <div class="hdr-logo">
+            <img :src="printLogo" alt="Logo" />
+          </div>
+          <div class="hdr-right">
+            <div class="ar">الشركة العربية للتموين والتجارة</div>
+            <div class="ar">فرع الإنشاءات</div>
           </div>
         </div>
-        <div class="cell">
-          <div class="mini-header textBlack">Checked by Financial Department:</div>
-          <div class="name-line textBlack">{{ request?.finance_checker || '—' }}</div>
-          <div class="mini-row">
-            <div class="mini-col"><span class="mini-label textBlack">Date:</span> {{ formatDate(request?.finance_checked_date) }}</div>
+
+        <!-- Printed title -->
+        <div class="print-title">Asset Investment&nbsp;&nbsp;Request</div>
+
+        <!-- Project info table -->
+        <table class="box-table">
+          <tr>
+            <td class="lbl w35">PROJECT NAME:</td>
+            <td class="val w65">{{ request?.project_name || '—' }}</td>
+          </tr>
+          <tr>
+            <td class="lbl">INVESTMENT REQUEST NUMBER:</td>
+            <td class="val">{{ request?.request_no || request?.code || request?.reference || ('#' + (request?.air_number ?? '—')) }}</td>
+          </tr>
+          <tr>
+            <td class="lbl">DATE:</td>
+            <td class="val">{{ formatDate(request?.date) }}</td>
+          </tr>
+        </table>
+
+        <!-- Requested items -->
+        <div class="section-heading textBlack">Requested Items</div>
+
+        <div class="table-wrapper">
+          <table class="box-table items-table print-table">
+            <thead>
+              <tr>
+                <th class="textBlack">Category</th>
+                <th class="textBlack">SubCategory</th>
+                <th class="textBlack">Asset</th>
+                <th class="textBlack">Description</th>
+                <th class="textBlack">Reason</th>
+                <th class="textBlack">Unit Cost</th>
+                <th class="textBlack">Qty</th>
+                <th class="textBlack">Planned Cost</th>
+                <th class="textBlack">Type</th>
+                <th class="textBlack">Asset Life Period</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="it in items" :key="it.id">
+                <td class="textBlack td-desc">{{ it.category_name }}</td>
+                <td class="textBlack td-desc">{{ it.sub_category }}</td>
+                <td class="textBlack td-desc">{{ it.asset_name }} {{ it.asset_code }}</td>
+                <td class="textBlack td-desc">{{ it.description }}</td>
+                <td class="textBlack td-reason">{{ it.reason }}</td>
+                <td class="textBlack td-num">{{ formatCurrency(it.unit_cost) }}</td>
+                <td class="textBlack td-center">{{ it.quantity }}</td>
+                <td class="textBlack td-num">{{ formatCurrency(it.planned_cost) }}</td>
+                <td class="textBlack td-center">{{ it.request_type }}</td>
+                <td class="textBlack td-center">{{ it.asset_life_period }}</td>
+              </tr>
+
+              <tr v-if="!items || items.length === 0">
+                <td colspan="10" class="textBlack td-center">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Planned cost -->
+        <div class="section-heading textBlack">PLANNED COST (in SAR):</div>
+        <div class="box row-2col">
+          <div class="cell">
+            <span class="value-strong textBlack">{{ formatCurrency(request?.planned_cost) }}</span>
           </div>
         </div>
-          
-      </div>
-      <div class="box row-2col">
+
+        <!-- Department head -->
+        <div class="box row-2col">
+          <div class="cell">
+            <div class="mini-header textBlack">Requesting Department Head :</div>
+            <div class="name-line textBlack">{{ request?.department_head || '—' }}</div>
+            <div class="mini-row">
+              <div class="mini-col"><span class="mini-label textBlack">Date:</span> {{ formatDate(request?.department_head_date) }}</div>
+            </div>
+          </div>
+
+          <div class="cell">
+            <div class="mini-header textBlack">Checked by Financial Department:</div>
+            <div class="name-line textBlack">{{ request?.finance_checker || '—' }}</div>
+            <div class="mini-row">
+              <div class="mini-col"><span class="mini-label textBlack">Date:</span> {{ formatDate(request?.finance_checked_date) }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Accordance with budget -->
+        <div class="box row-2col">
           <div class="cell">
             <div class="mini-header textBlack">In accordance with budget:</div>
             <div class="checks mb8 textBlack">
@@ -300,50 +315,51 @@
               <span class="check" :class="{ on: isAccordance('NO') }"></span> No
             </div>
           </div>
-      </div>
+        </div>
 
-      <!-- Signatures & Accordance -->
-      <div class="box approval-section">
-  <!-- Approvals (8 columns) -->
-        <div class="cell col-12">
-        <div class="mini-header textBlack">Approvals:</div>
+        <!-- Approvals section -->
+        <div class="box approval-section">
+          <div class="cell col-12">
+            <div class="mini-header textBlack">Approvals:</div>
 
-        <!-- If approvals exist -->
-        <table v-if="approvals && approvals.length" class="approval-table" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-          <thead>
-            <tr style="border-bottom: 1px solid #ccc;">
-              <th class="textBlack" style="text-align: left; padding: 8px;">Name / Code</th>
-              <th class="textBlack" style="text-align: left; padding: 8px;">Status</th>
-              <th class="textBlack" style="text-align: left; padding: 8px;">Signature</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="(approval, index) in approvals"
-              :key="approval.id || index"
-              style="border-bottom: 1px solid #eee;"
+            <table
+              v-if="approvals && approvals.length"
+              class="approval-table"
+              style="width: 100%; border-collapse: collapse; margin-top: 10px;"
             >
-              <td class="textBlack" style="padding: 8px;">{{ approval.name }} - {{ approval.user_code }}</td>
-              <td class="textBlack" style="padding: 8px;">{{ approval.status || '—' }}</td>
-              <td class="textBlack" style="padding: 8px;">_____________________</td>
-            </tr>
-          </tbody>
-        </table>
+              <thead>
+                <tr style="border-bottom: 1px solid #ccc;">
+                  <th class="textBlack" style="text-align: left; padding: 8px;">Name / Code</th>
+                  <th class="textBlack" style="text-align: left; padding: 8px;">Status</th>
+                  <th class="textBlack" style="text-align: left; padding: 8px;">Signature</th>
+                </tr>
+              </thead>
 
-        <!-- If no approvals -->
-        <div v-else class="top-gap textBlack">No approvals found.</div>
+              <tbody>
+                <tr
+                  v-for="(approval, index) in approvals"
+                  :key="approval.id || index"
+                  style="border-bottom: 1px solid #eee;"
+                >
+                  <td class="textBlack" style="padding: 8px;">{{ approval.name }} - {{ approval.user_code }}</td>
+                  <td class="textBlack" style="padding: 8px;">{{ approval.status || '—' }}</td>
+                  <td class="textBlack" style="padding: 8px;">_____________________</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div v-else class="top-gap textBlack">
+              No approvals found.
+            </div>
+
+          </div>
+        </div>
+
       </div>
-
-
-  <!-- In accordance with budget (4 columns) -->
-  
-</div>
-
     </div>
-    </div>
-    <!-- /PRINT -->
   </div>
 </template>
+
 
 <script setup>
 import axios from "axios";
@@ -736,4 +752,38 @@ onMounted(async () => {
   }
 }
 }
+
+.item-row {
+  padding: 4px 8px !important;
+}
+
+.item-row .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  opacity: 0.75;
+  margin-bottom: 2px;
+}
+
+.item-row .value {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Ensure all VCol spacing matches */
+.item-row .v-col {
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}
+
+/* Prevent Vuetify auto-padding issues */
+.v-card .v-card-text {
+  padding: 16px !important;
+}
+.v-row {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
 </style>

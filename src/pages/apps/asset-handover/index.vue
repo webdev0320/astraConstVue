@@ -77,34 +77,34 @@
               class="d-flex align-center gap-1"
             >
               Actions
-              <VIcon :icon="isActive ? 'mdi-chevron-up' : 'mdi-chevron-down'" />
+              <VIcon :icon="isActive ? 'tabler-caret-up' : 'tabler-caret-down'" />
             </VBtn>
           </template>
 
           <VList density="compact">
 
             <VListItem @click="$router.push(`/dashboards/assethandovers/detail/${item.raw?.id ?? item.id}`)">
-              <template #prepend><VIcon icon="mdi-file-document" /></template>
+              <template #prepend><VIcon icon="tabler-eye" /></template>
               <VListItemTitle>Detail</VListItemTitle>
             </VListItem>            
 
             <VListItem @click="$router.push(`/dashboards/assethandovers/edit/${item.raw?.id ?? item.id}`)">
-              <template #prepend><VIcon icon="mdi-pencil" /></template>
+              <template #prepend><VIcon icon="tabler-edit" /></template>
               <VListItemTitle>Edit</VListItemTitle>
             </VListItem>
 
             <VListItem @click="deleteHandover(item.raw?.id ?? item.id)">
-              <template #prepend><VIcon icon="mdi-delete" /></template>
+              <template #prepend><VIcon icon="tabler-trash" /></template>
               <VListItemTitle>Delete</VListItemTitle>
             </VListItem>
 
-            <VListItem @click="approveHandover(item.raw?.id ?? item.id)">
-              <template #prepend><VIcon icon="mdi-thumb-up" /></template>
+            <VListItem v-if="item?.myApproval !== null && (item?.myApprovalStatus=='Rejected' || item?.myApprovalStatus=='Pending')" @click="openApproveDialog(item?.id,item?.myApproval?.id,'APPROVED')">
+              <template #prepend><VIcon icon="tabler-check" /></template>
               <VListItemTitle>Approve</VListItemTitle>
             </VListItem>
 
-            <VListItem @click="rejectHandover(item.raw?.id ?? item.id)">
-              <template #prepend><VIcon icon="mdi-thumb-down" /></template>
+            <VListItem v-if="item?.myApproval !== null && (item?.myApprovalStatus=='Approved' || item?.myApprovalStatus=='Pending')" @click="openApproveDialog(item?.id,item?.myApproval?.id,'REJECTED')">
+              <template #prepend><VIcon icon="tabler-player-stop" /></template>
               <VListItemTitle>Reject</VListItemTitle>
             </VListItem>
           </VList>
@@ -117,13 +117,23 @@
     <p v-else-if="errorMessage" class="text-danger">{{ errorMessage }}</p>
     <p v-else>Loading...</p>
   </div>
+
+  <ConfirmDialog
+      v-model="confirmDialog.value"
+      :title="confirmDialog.title"
+      :message="confirmDialog.message"
+      :color="confirmDialog.color"
+      :onConfirm="confirmDialog.onConfirm"
+    />
+
+
 </template>
 
 <script setup>
 import axios from "axios";
 import { onMounted, ref } from "vue";
 import { VBtn, VDataTable } from "vuetify/components";
-
+import ConfirmDialog from "@core/components/GlobalConfirmDialog.vue";
 /* ========= CONFIG ========= */
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL; // ends with /api
 const apiListUrl   = `${apiBaseUrl}/asset-handovers`;
@@ -144,7 +154,8 @@ const headers = [
   { title: "Handover By", key: "handover_by_name" },
   { title: "Handover To", key: "user_name" },
   { title: "Remarks", key: "remarks" },
-  { title: "Status", key: "status" },
+  { title: "Last Approved By", key: "lastApprovedByUser" },
+  { title: "My Approval Status", key: "myApprovalStatus" },
   { title: "Actions", key: "actions", sortable: false, width: 160 },
 ];
 
@@ -176,6 +187,49 @@ const truncateSmart = (text, wordLimit = 20, charFallback = 120) => {
   }
   return str.length > charFallback ? str.slice(0, charFallback) + "..." : str;
 };
+
+
+const confirmDialog = ref({
+  value: false,
+  title: "",
+  message: "",
+  color: "primary",
+  onConfirm: null,
+});
+
+const openApproveDialog = (assetHandOverId, approvalId,status) => {
+
+  confirmDialog.value = {
+    value: true,
+    title: "Approve Request",
+    message: "Are you sure you want to approve this request?",
+    color: "primary",
+    onConfirm: async () => {
+      try {
+        const accessToken = decodeURIComponent(getCookie("accessToken"));
+
+        await axios.get(
+          `${apiBaseUrl}/asset-handovers/changeStatus/${assetHandOverId}/${approvalId}/${status}`,
+          {
+            headers: { 
+              Authorization: `Bearer ${accessToken}`,
+              Accept: "application/json",
+            },
+          }
+        );
+
+        console.log(`Request ${assetHandOverId} approved by ${approvalId}`);
+        // Optionally reload your table data
+        await fetchHandovers();
+
+      } catch (error) {
+        console.error("Approve action failed:", error);
+        alert(error.response?.data?.message || "Failed to approve request.");
+      }
+    },
+  };
+};
+
 
 const formatDate = (d) => {
   if (!d) return "—";
@@ -223,7 +277,13 @@ const fetchHandovers = async () => {
       user_name: p.user?.name ?? "—",
       remarks: p.remarks ?? "—",
       status: p.status ?? "—",
+      myApproval: p.myApproval,
+      lastApprovedByUser: p.lastApprovedBy?.user_name,
+      myApprovalStatus: p.myApproval?p.myApproval.status:null,
     }));
+
+
+
   } catch (err) {
     console.error("Error fetching asset handovers:", err);
     errorMessage.value =

@@ -360,6 +360,11 @@
     "onWatcherCleanup": true,
     "useId": true,
     "useModel": true,
-    "useTemplateRef": true
+    "useTemplateRef": true,
+    "useWordLimit": true,
+    "cancel": true,
+    "confirm": true,
+    "openConfirmDialog": true,
+    "useConfirmDialogState": true
   }
 }
