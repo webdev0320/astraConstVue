@@ -1,15 +1,8 @@
 <script setup>
-import { useGenerateImageVariant } from '@core/composable/useGenerateImageVariant'
 import { VNodeRenderer } from '@layouts/components/VNodeRenderer'
 import { themeConfig } from '@themeConfig'
-import authV2ForgotPasswordIllustrationDark from '@images/pages/auth-v2-forgot-password-illustration-dark.png'
-import authV2ForgotPasswordIllustrationLight from '@images/pages/auth-v2-forgot-password-illustration-light.png'
-import authV2MaskDark from '@images/pages/misc-mask-dark.png'
-import authV2MaskLight from '@images/pages/misc-mask-light.png'
 
 const email = ref('')
-const authThemeImg = useGenerateImageVariant(authV2ForgotPasswordIllustrationLight, authV2ForgotPasswordIllustrationDark)
-const authThemeMask = useGenerateImageVariant(authV2MaskLight, authV2MaskDark)
 
 definePage({
   meta: {
@@ -33,6 +26,7 @@ definePage({
     class="auth-wrapper bg-surface"
     no-gutters
   >
+    <!-- Left Column removed images, keep it empty or add placeholder -->
     <VCol
       md="8"
       class="d-none d-md-flex"
@@ -42,20 +36,8 @@ definePage({
           class="d-flex align-center justify-center w-100 h-100"
           style="padding-inline: 150px;"
         >
-          <VImg
-            max-width="468"
-            :src="authThemeImg"
-            class="auth-illustration mt-16 mb-2"
-          />
+          <!-- Image removed -->
         </div>
-
-        <img
-          class="auth-footer-mask"
-          :src="authThemeMask"
-          alt="auth-footer-mask"
-          height="280"
-          width="100"
-        >
       </div>
     </VCol>
 

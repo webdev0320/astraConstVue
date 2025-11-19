@@ -1,0 +1,1 @@
+import{V as o}from"./VRow-BniSpTs4.js";import{f as r,o as t}from"./index-DYNE-ExV.js";/* empty css              */const _={__name:"crm",setup(a){return(c,e)=>(t(),r(o,{class:"match-height"}))}};export{_ as default};

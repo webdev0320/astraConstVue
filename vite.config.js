@@ -17,15 +17,12 @@ export default defineConfig({
   plugins: [
     // Docs: https://github.com/posva/unplugin-vue-router
     // ℹ️ This plugin should be placed before vue plugin
-    VueRouter({
-      importMode: 'async',           // <-- ensure route-level code splitting
+   VueRouter({
+      pages: './src/pages/apps', // only scan this folder
+      importMode: 'async',
       getRouteName: routeNode => getPascalCaseRouteName(routeNode)
         .replace(/([a-z\d])([A-Z])/g, '$1-$2')
         .toLowerCase(),
-      beforeWriteFiles: root => {
-        root.insert('/apps/email/:filter', '/src/pages/apps/email/index.vue')
-        root.insert('/apps/email/:label', '/src/pages/apps/email/index.vue')
-      },
     }),
 
     vue({
