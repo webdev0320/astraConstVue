@@ -132,12 +132,7 @@ const onSubmit = () => {
                     />
                   </VCol>
 
-                  <VCol cols="12" class="d-flex align-center justify-space-between">
-                    <VCheckbox v-model="rememberMe" density="comfortable" label="Remember me" />
-                    <RouterLink class="text-primary ms-2" :to="{ name: 'forgot-password' }">
-                      Forgot Password?
-                    </RouterLink>
-                  </VCol>
+                  
 
                   <VCol cols="12" class="pt-1">
                     <VBtn
@@ -151,12 +146,7 @@ const onSubmit = () => {
                     </VBtn>
                   </VCol>
 
-                  <VCol cols="12" class="text-center pt-1">
-                    <small>New on our platform?</small>
-                    <RouterLink class="text-primary ms-1" :to="{ name: 'register' }">
-                      Create an account
-                    </RouterLink>
-                  </VCol>
+                  
                 </VRow>
               </VForm>
             </VCardText>

@@ -99,6 +99,7 @@ declare module 'vue-router/auto-routes' {
     'apps-vehicle-handover-create': RouteRecordInfo<'apps-vehicle-handover-create', '/apps/vehicle-handover/create', Record<never, never>, Record<never, never>>,
     'apps-vehicle-handover-edit': RouteRecordInfo<'apps-vehicle-handover-edit', '/apps/vehicle-handover/edit', Record<never, never>, Record<never, never>>,
     'apps-vehicle-handover-show': RouteRecordInfo<'apps-vehicle-handover-show', '/apps/vehicle-handover/show', Record<never, never>, Record<never, never>>,
+    'dashboards-crm': RouteRecordInfo<'dashboards-crm', '/dashboards/crm', Record<never, never>, Record<never, never>>,
     'login': RouteRecordInfo<'login', '/login', Record<never, never>, Record<never, never>>,
     'not-authorized': RouteRecordInfo<'not-authorized', '/not-authorized', Record<never, never>, Record<never, never>>,
     'pages-dialog-examples': RouteRecordInfo<'pages-dialog-examples', '/pages/dialog-examples', Record<never, never>, Record<never, never>>,
