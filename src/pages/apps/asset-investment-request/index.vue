@@ -1,0 +1,636 @@
+<template>
+  <div>
+    <div class="d-flex justify-between align-center mb-4">
+      <h3>Asset Investment Request List</h3>
+      <VBtn
+        color="primary"
+        class="ms-auto"
+        @click="$router.push('/dashboards/asset-investment-requests/create')"
+      >
+        Create Asset Investment Request
+      </VBtn>
+    </div>
+
+    <!-- Loading -->
+    <p v-if="isLoading">Loading...</p>
+
+    <!-- Error -->
+    <p v-else-if="errorMessage" class="text-error">{{ errorMessage }}</p>
+
+    <!-- Table -->
+    <VDataTable
+      v-else-if="assetInvestmentRequests.length > 0"
+      :headers="headers"
+      :items="assetInvestmentRequests"
+      item-value="id"
+      :items-per-page="10"
+      class="mb-6"
+    >
+      <!-- DATE -->
+      <template #item.date="{ item }">
+        {{ formatDate(item.raw.date) }}
+      </template>
+
+      <!-- PLANNED TOTAL -->
+      <template #item.planned_cost="{ item }">
+        {{ item.raw.planned_cost ?? '—' }}
+      </template>
+
+      <!-- PROJECT -->
+      <template #item.project_name="{ item }">
+        {{ item.raw.project_name || '—' }}
+      </template>
+
+      <!-- USER -->
+      <template #item.user_display="{ item }">
+        <div>
+          <div>{{ item.raw.user_name || '—' }}</div>
+          <small class="muted">{{ item.raw.user_email || '' }}</small>
+        </div>
+      </template>
+
+      <!-- ACTIONS: dropdown -->
+      <template #item.actions="{ item }">
+        <VMenu :close-on-content-click="true">
+          <!-- use isActive from slot -->
+          <template #activator="{ props, isActive }">
+            <VBtn
+              v-bind="props"
+              size="small"
+              color="primary"
+              variant="elevated"
+              class="d-flex align-center gap-1"
+            >
+              Actions
+              <VIcon :icon="isActive ? 'tabler-caret-up' : 'tabler-caret-down'" />
+            </VBtn>
+          </template>
+
+          <VList density="compact">
+            <VListItem @click="$router.push(`/dashboards/asset-investment-requests/detail/${item.raw.id}`)">
+              <template #prepend><VIcon icon="tabler-eye" /></template>
+              <VListItemTitle>Detail</VListItemTitle>
+            </VListItem>
+
+            <VListItem @click="$router.push(`/dashboards/asset-investment-requests/edit/${item.raw.id}`)">
+              <template #prepend><VIcon icon="tabler-edit" /></template>
+              <VListItemTitle>Edit</VListItemTitle>
+            </VListItem>
+
+         <!--    <VListItem @click="openStatusModal(item.raw.id)">
+              <template #prepend><VIcon icon="mdi-flag" /></template>
+              <VListItemTitle>Status</VListItemTitle>
+            </VListItem> -->
+
+              <VListItem
+                v-if="roles.includes('Accountant')"
+                @click="openAccordanceModal(item.raw.id)"
+              >
+                <template #prepend>
+                  <VIcon icon="tabler-checks" />
+                </template>
+                <VListItemTitle>
+                  Mark As Accordance With Budget
+                  <span v-if="user.name">({{ user.name }})</span> <!-- optional: show username -->
+                </VListItemTitle>
+              </VListItem>
+
+
+            <!-- ✅ New Buttons -->
+             <VListItem v-if="item.raw.myApproval !== null && (item.myApprovalStatus=='Rejected' || item.myApprovalStatus=='Pending')" @click="openApproveDialog(item.raw.id,item.raw.myApproval,'APPROVED')">
+                <template #prepend><VIcon icon="tabler-check" /></template>
+                <VListItemTitle>Approve</VListItemTitle>
+              </VListItem>
+
+            <VListItem v-if="item.raw.myApproval !== null && (item.myApprovalStatus=='Approved' || item.myApprovalStatus=='Pending')" @click="openApproveDialog(item.raw.id,item.raw.myApproval,'REJECTED')">
+              <template #prepend><VIcon icon="tabler-player-stop" /></template>
+              <VListItemTitle>Reject</VListItemTitle>
+            </VListItem>
+
+            <VListItem @click="openDeleteDialog(item.raw.id)">
+              <template #prepend><VIcon icon="tabler-trash" /></template>
+              <VListItemTitle>Delete</VListItemTitle>
+            </VListItem>
+
+          </VList>
+        </VMenu>
+      </template>
+
+    </VDataTable>
+
+    <!-- Empty State -->
+    <VCard v-else class="mt-6 pa-6 text-center" variant="tonal">
+      <VCardTitle>No asset investment requests found</VCardTitle>
+      <VCardText>
+        You do not have any requests yet. Start by creating your first request.
+      </VCardText>
+      <VBtn
+        color="primary"
+        @click="$router.push('/dashboards/asset-investment-requests/create')"
+      >
+        Create Asset Investment Request
+      </VBtn>
+    </VCard>
+
+     <ConfirmDialog
+      v-model="confirmDialog.value"
+      :title="confirmDialog.title"
+      :message="confirmDialog.message"
+      :color="confirmDialog.color"
+      :onConfirm="confirmDialog.onConfirm"
+    />
+
+    <!-- STATUS MODAL -->
+    <VDialog v-model="statusDialog" max-width="480">
+      <VCard>
+        <VCardTitle>Change Request Status</VCardTitle>
+        <VCardText>
+          <VForm @submit.prevent="submitStatus">
+            <VSelect
+              v-model="statusValue"
+              :items="statusOptions"
+              label="Select status"
+              :disabled="actionLoading"
+              required
+            />
+          </VForm>
+        </VCardText>
+        <VCardActions>
+          <VSpacer />
+          <VBtn variant="text" @click="closeStatusModal" :disabled="actionLoading">Cancel</VBtn>
+          <VBtn color="primary" @click="submitStatus" :loading="actionLoading">Save</VBtn>
+        </VCardActions>
+      </VCard>
+    </VDialog>
+
+    <!-- ACCORDANCE MODAL -->
+    <VDialog v-model="accordanceDialog" max-width="480">
+      <VCard>
+        <VCardTitle>Mark Accordance With Budget</VCardTitle>
+        <VCardText>
+          <VForm @submit.prevent="submitAccordance">
+            <VSelect
+              v-model="accordanceValue"
+              :items="accordanceOptions"
+              label="Select"
+              :disabled="actionLoading"
+              required
+            />
+          </VForm>
+        </VCardText>
+        <VCardActions>
+          <VSpacer />
+          <VBtn variant="text" @click="closeAccordanceModal" :disabled="actionLoading">Cancel</VBtn>
+          <VBtn color="primary" @click="submitAccordance" :loading="actionLoading">Save</VBtn>
+        </VCardActions>
+      </VCard>
+    </VDialog>
+
+        <!-- DELETE CONFIRMATION DIALOG -->
+    <VDialog v-model="deleteDialog" max-width="420">
+      <VCard>
+        <VCardTitle class="text-h6">Confirm Delete</VCardTitle>
+        <VCardText>Are you sure you want to delete this request? This action cannot be undone.</VCardText>
+        <VCardActions>
+          <VSpacer />
+          <VBtn variant="text" @click="closeDeleteDialog" :disabled="actionLoading">No</VBtn>
+          <VBtn color="error" @click="confirmDelete" :loading="actionLoading">Yes, Delete</VBtn>
+        </VCardActions>
+      </VCard>
+    </VDialog>
+
+  </div>
+</template>
+
+<script setup>
+import axios from "axios";
+import { onMounted, ref } from "vue";
+import ConfirmDialog from "@core/components/GlobalConfirmDialog.vue";
+
+import {
+  VBtn, VCard,
+  VCardActions,
+  VCardText, VCardTitle, VDataTable,
+  VDialog,
+  VForm,
+  VIcon,
+  VList, VListItem, VListItemTitle,
+  VMenu,
+  VSelect,
+  VSpacer
+} from "vuetify/components";
+
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+
+const confirmDialog = ref({
+  value: false,
+  title: "",
+  message: "",
+  color: "primary",
+  onConfirm: null,
+});
+
+const openApproveDialog = (assetInvestmentRequestId, approvalId,status) => {
+  confirmDialog.value = {
+    value: true,
+    title: "Approve Request",
+    message: "Are you sure you want to approve this request?",
+    color: "primary",
+    onConfirm: async () => {
+      try {
+        const accessToken = decodeURIComponent(getCookie("accessToken"));
+
+        await axios.get(
+          `${apiBaseUrl}/asset-investment-requests/${assetInvestmentRequestId}/changeStatus/${approvalId}/${status}`,
+          {
+            headers: { 
+              Authorization: `Bearer ${accessToken}`,
+              Accept: "application/json",
+            },
+          }
+        );
+
+        console.log(`Request ${assetInvestmentRequestId} approved by ${approvalId}`);
+        // Optionally reload your table data
+        await fetchAssetInvestmentRequests();
+
+      } catch (error) {
+        console.error("Approve action failed:", error);
+        alert(error.response?.data?.message || "Failed to approve request.");
+      }
+    },
+  };
+};
+
+
+
+/* ------------ Master headers (one row per request) ------------ */
+const headers = [
+  { title: "Req. Date", key: "date" },
+  { title: "Created By", key: "user_display", sortable: true },
+  { title: "#Air Number", key: "air_number", sortable: true },
+  { title: "Project", key: "project_name" },
+  { title: "Planned Cost (SAR)", key: "planned_cost" },
+  { title: "Req. Status", key: "reqStatus" },
+  { title: "Status", key: "myApprovalStatus" },
+  { title: "Actions", key: "actions", sortable: true },
+];
+
+const assetInvestmentRequests = ref([]);
+const expanded = ref([]); // ids of expanded rows
+const linesCache = ref({}); // { [id]: { loading: bool, data: [] } }
+const errorMessage = ref("");
+const isLoading = ref(true);
+const deleteDialog = ref(false);
+const deleteId = ref(null);
+
+const openMenuId = ref(null);
+
+/* ------ action dialog state ------ */
+const actionLoading = ref(false);
+const statusDialog = ref(false);
+const accordanceDialog = ref(false);
+const currentRequestId = ref(null);
+
+const statusValue = ref(null);
+const statusOptions = ["APPROVED", "REJECTED"];
+
+const accordanceValue = ref(null);
+const accordanceOptions = ["APPROVED", "REJECTED"];
+
+/* ---------- helpers ---------- */
+const truncateSmart = (text, wordLimit = 20, charFallback = 160) => {
+  if (!text) return "—";
+  const str = String(text).trim();
+  const words = str.split(/\s+/).filter(Boolean);
+  if (words.length > 1) {
+    return words.length > wordLimit
+      ? words.slice(0, wordLimit).join(" ") + "..."
+      : str;
+  }
+  return str.length > charFallback ? str.slice(0, charFallback) + "..." : str;
+};
+
+const getCookie = (name) => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(";").shift();
+  return null;
+};
+
+const nn = (n) => {
+  const x = Number(n);
+  return Number.isFinite(x) ? x : 0;
+};
+
+const formatDate = (d) => {
+  return d;
+  if (!d) return "—";
+  try {
+    const dt = new Date(d);
+    if (isNaN(dt)) return d;
+    return dt.toLocaleDateString();
+  } catch {
+    return d;
+  }
+};
+
+/* ---------- normalizers ---------- */
+const normalizeLines = (rawLines, reqId) => {
+  return rawLines.map((r, idx) => {
+    const qty  = nn(r.quantity ?? 1);
+    const cost = nn(r.planned_cost ?? r.planned_cost ?? 0);
+    const lineTotal = cost * qty;
+
+    return {
+      __key: `${reqId}|${idx}`,
+      asset_code: r.asset?.code ?? "—",
+      category_name: r.category_name ?? r.category?.title ?? r.asset_category?.title ?? "—",
+      subcategory_name: r.sub_category ?? r.subcategory?.title ?? r.asset_subcategory?.title ?? "—",
+      request_type: r.request_type ?? "NEW",
+      created_at: r.created_at ?? "NEW",
+      description: truncateSmart(r.description ?? "—"),
+      reason: truncateSmart(r.reason ?? "—"),
+      quantity: qty,
+      is_accordance_with_budget: r.is_accordance_with_budget,
+      planned_cost: cost,
+      line_total: lineTotal,
+      reqStatus: r.status,
+      raw: { ...r, planned_cost: cost, line_total: lineTotal, myApproval: r.myApproval,lastApprovedByUser: r.lastApprovedBy },
+    };
+  });
+};
+
+/* ---------- API: master list ---------- */
+const fetchAssetInvestmentRequests = async () => {
+  isLoading.value = true;
+  errorMessage.value = "";
+  try {
+    const accessToken = getCookie("accessToken");
+    if (!accessToken) throw new Error("Access token is missing. Please log in.");
+    const decodedToken = decodeURIComponent(accessToken);
+
+    const res = await axios.get(`${apiBaseUrl}/asset-investment-requests`, {
+      headers: { Authorization: `Bearer ${decodedToken}`, Accept: "application/json" },
+    });
+
+    const list = Array.isArray(res.data)
+      ? res.data
+      : Array.isArray(res.data?.data)
+        ? res.data.data
+        : [];
+
+    assetInvestmentRequests.value = list.map((p) => {
+      const embedded =
+        Array.isArray(p.data)  ? p.data  :
+        Array.isArray(p.lines) ? p.lines :
+        Array.isArray(p.items) ? p.items : null;
+
+      const linesCount =
+        Number(p.lines_count ?? p.items_count ?? p.data_count ?? (embedded ? embedded.length : 0)) || 0;
+
+      const plannedCost = p.planned_cost;
+
+      return {
+        air_number: p.air_number,
+        // id: p.id,
+        project_name: p.project_name ?? "—",
+        user_name: p.user_name ?? "—",
+        user_email: p.user?.email ?? "",
+        user_display: `${p.user?.name ?? p.user_name ?? "—"}${p.user?.email ? " (" + p.user.email + ")" : ""}`,
+        date: p.date ?? "—",
+        created_at: p.created_at ?? "—",
+        lines_count: linesCount,
+        planned_cost: plannedCost || null,
+        reqStatus: p.status || null,
+        is_accordance_with_budget:p.is_accordance_with_budget || 'False',
+        lastApprovedByUser: p.lastApprovedBy?p.lastApprovedBy.user_name:null,
+        myApprovalStatus: p.myApproval?p.myApproval.status:'Pending',
+        raw: {
+          id: p.id,
+          date: p.date ?? "—",
+          project_name: p.project_name ?? "—",
+          user_name: p.user_name ?? "—",
+          user_email: p.user?.email ?? "",
+          planned_cost: plannedCost || null,
+          myApproval: p.myApproval?p.myApproval.id:null,
+          
+        },
+      };
+    });
+  } catch (error) {
+    console.error("Error fetching asset investment requests:", error);
+    errorMessage.value =
+      error.response?.data?.message ||
+      "Failed to fetch asset investment requests.";
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+/* ---------- API: details per row (lazy) ---------- */
+const loadLinesFor = async (reqId) => {
+  if (!reqId) return;
+  if (linesCache.value[reqId]?.data) return; // already loaded
+  linesCache.value[reqId] = { loading: true, data: [] };
+
+  try {
+    const accessToken = getCookie("accessToken");
+    const decodedToken = decodeURIComponent(accessToken);
+
+    const res = await axios.get(`${apiBaseUrl}/asset-investment-requests/${reqId}`, {
+      headers: { Authorization: `Bearer ${decodedToken}`, Accept: "application/json" },
+    });
+
+    const p = res.data?.data ?? res.data ?? {};
+    const rawLines =
+      Array.isArray(p.data)  ? p.data  :
+      Array.isArray(p.lines) ? p.lines :
+      Array.isArray(p.items) ? p.items :
+      Array.isArray(p.details) ? p.details :
+      Array.isArray(p.asset_investment_request_details) ? p.asset_investment_request_details :
+      [];
+
+    const lines = normalizeLines(rawLines, reqId);
+    linesCache.value[reqId] = { loading: false, data: lines };
+
+    // Compute & patch total if missing
+    const row = assetInvestmentRequests.value.find(r => r.id === reqId);
+    if (row && (!row.raw.planned_cost && !row.planned_cost)) {
+      const total = lines.reduce((s, l) => s + nn(l.raw.line_total), 0);
+      row.planned_cost = total;
+      row.raw.planned_cost = total;
+      row.lines_count = lines.length;
+    }
+  } catch (e) {
+    console.error("Error loading lines for request", reqId, e?.response ?? e);
+    linesCache.value[reqId] = { loading: false, data: [] };
+  }
+};
+
+/* ---------- expand handler ---------- */
+const onExpandedChange = async (ids) => {
+  expanded.value = ids;
+  for (const id of ids) {
+    await loadLinesFor(id);
+  }
+};
+
+
+const user = ref({ name: '', email: '', role: '' })
+const roles = ref([])
+
+const fetchUserFromCookie = () => {
+  const userData = useCookie('userData').value
+  const userRoles = useCookie('userAbilityRules').value
+
+  if (userData) {
+    user.value = {
+      name: userData.name ?? '',
+      email: userData.email ?? '',
+      role: userData.role ?? (userRoles?.[0] ?? '') // fallback
+    }
+  }
+
+  if (userRoles) {
+    roles.value = Array.isArray(userRoles) ? userRoles : [userRoles]
+  }
+}
+
+
+
+/* ---------- init ---------- */
+onMounted(() => {
+  fetchUserFromCookie()        // fetch user + roles from cookie
+  fetchAssetInvestmentRequests() // fetch the table data
+})
+
+/* ---------- DELETE HANDLER ---------- */
+const openDeleteDialog = (id) => {
+  deleteId.value = id;
+  deleteDialog.value = true;
+};
+const closeDeleteDialog = () => {
+  deleteDialog.value = false;
+  deleteId.value = null;
+};
+const confirmDelete = async () => {
+  if (!deleteId.value) return;
+  try {
+    actionLoading.value = true;
+    const accessToken = getCookie("accessToken");
+    const decodedToken = decodeURIComponent(accessToken);
+
+    await axios.delete(`${apiBaseUrl}/asset-investment-requests/${deleteId.value}`, {
+      headers: { Authorization: `Bearer ${decodedToken}`, Accept: "application/json" },
+    });
+
+    assetInvestmentRequests.value = assetInvestmentRequests.value.filter((r) => r.id !== deleteId.value);
+    closeDeleteDialog();
+  } catch (error) {
+    console.error("Error deleting request:", error);
+    alert(error.response?.data?.message || "Failed to delete request.");
+  } finally {
+    actionLoading.value = false;
+  }
+};
+
+/* ---------- STATUS actions ---------- */
+const openStatusModal = (id) => {
+  currentRequestId.value = id;
+  statusValue.value = null;
+  statusDialog.value = true;
+};
+const closeStatusModal = () => {
+  statusDialog.value = false;
+  currentRequestId.value = null;
+  statusValue.value = null;
+};
+const submitStatus = async () => {
+  if (!currentRequestId.value || !statusValue.value) return;
+  try {
+    actionLoading.value = true;
+    const accessToken = getCookie("accessToken");
+    const decodedToken = decodeURIComponent(accessToken);
+
+    await axios.get(
+      `${apiBaseUrl}/asset-investment-requests/${currentRequestId.value}/changeStatus/${encodeURIComponent(statusValue.value)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${decodedToken}`,
+          Accept: "application/json",
+          // Optional: avoid caches on some setups
+          "Cache-Control": "no-cache",
+        },
+      }
+    );
+
+    closeStatusModal();
+    await fetchAssetInvestmentRequests();
+  } catch (e) {
+    console.error("Status update failed", e);
+    alert(e?.response?.data?.message || "Failed to update status.");
+  } finally {
+    actionLoading.value = false;
+  }
+};
+
+/* ---------- ACCORDANCE actions ---------- */
+const openAccordanceModal = (id) => {
+  currentRequestId.value = id;
+  accordanceValue.value = null;
+  accordanceDialog.value = true;
+};
+/*************  ✨ Windsurf Command ⭐  *************/
+/**
+ * Resets the accordance modal state after use.
+ *
+ * @function closeAccordanceModal
+ */
+/*******  0d21c5e0-f72f-4236-95b1-3756595eaa7d  *******/
+const closeAccordanceModal = () => {
+  accordanceDialog.value = false;
+  currentRequestId.value = null;
+  accordanceValue.value = null;
+};
+const submitAccordance = async () => {
+  if (!currentRequestId.value || !accordanceValue.value) return;
+  try {
+    actionLoading.value = true;
+    const accessToken = getCookie("accessToken");
+    const decodedToken = decodeURIComponent(accessToken);
+
+    await axios.get(
+      `${apiBaseUrl}/asset-investment-requests/${currentRequestId.value}/markAsAccordance/${encodeURIComponent(accordanceValue.value)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${decodedToken}`,
+          Accept: "application/json",
+          "Cache-Control": "no-cache",
+        },
+      }
+    );
+
+    closeAccordanceModal();
+    await fetchAssetInvestmentRequests();
+  } catch (e) {
+    console.error("Accordance update failed", e);
+    alert(e?.response?.data?.message || "Failed to update accordance status.");
+  } finally {
+    actionLoading.value = false;
+  }
+};
+</script>
+
+<style>
+.v-data-table { margin-block-start: 16px; }
+.d-flex { display: flex; }
+.justify-between { justify-content: space-between; }
+.align-center { align-items: center; }
+.ms-auto { margin-inline-start: auto; }
+.gap-2 { gap: 8px; }
+.mb-4 { margin-block-end: 16px; }
+.text-error { color: #c62828; }
+.muted { opacity: 0.7; }
+.pa-6 { padding: 24px; }
+</style>
