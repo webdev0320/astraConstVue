@@ -9,7 +9,7 @@
           :disabled="printing || !handover"
           variant="tonal"
           prepend-icon="tabler-printer"
-          @click="printDoc"
+          @click="printPage"
         >
           Print
         </VBtn>
@@ -109,111 +109,6 @@
         </VCard>
       </div>
 
-      <!-- PRINT/PDF layout (Image-2 style) -->
-      <div class="vh-print offscreen" ref="printEl">
-        <!-- Header -->
-        <div class="vh-head">
-          <!-- Left: English -->
-          <div class="vh-head-left">
-            <div class="vh-org">
-              <div class="en">Arab Supply &amp; Trading Co.</div>
-              <div class="en sub">Construction Branch</div>
-            </div>
-          </div>
-
-          <!-- Center: Logo -->
-          <div class="vh-head-center">
-            <img :src="logoUrl" alt="Company Logo" class="vh-logo" />
-          </div>
-
-          <!-- Right: Arabic -->
-          <div class="vh-head-right ar">
-            الشركة العربية للتوريد والتجارة<br />
-            فرع الإنشاءات
-          </div>
-        </div>
-        <!-- Title bar -->
-        <div class="vh-titlebar">VEHICLE HANDOVER REPORT</div>
-
-        <!-- Top table -->
-        <div class="vh-top-grid">
-          <div class="row">
-            <div class="cell l">Date</div>
-            <div class="cell v">{{ handover.report_date || '—' }}</div>
-            <div class="cell l">Plate No</div>
-            <div class="cell v">{{ handover.plate_no || '—' }}</div>
-          </div>
-          <div class="row">
-            <div class="cell l">Driver Name</div>
-            <div class="cell v">{{ handover.driverName || '—' }}</div>
-            <div class="cell l">KM Reading</div>
-            <div class="cell v">{{ handover.km_reading ?? '—' }}</div>
-          </div>
-          <div class="row">
-            <div class="cell l">Vehicle Type</div>
-            <div class="cell v">{{ handover.vehicle_type || '—' }}</div>
-            <div class="cell l">Model No</div>
-            <div class="cell v">{{ handover.model_no || '—' }}</div>
-          </div>
-        </div>
-
-        <!-- Middle: car silhouettes + checks -->
-        <div class="vh-mid">
-          <div class="vh-cars">
-            <div class="img-box"><img :src="carTop"   alt="car top" /></div>
-          </div>
-
-          <div class="vh-checks">
-            <div class="checks-title">CHECK MAJOR PARTS</div>
-            <ul class="checks-list">
-              <li><span class="box">{{ mark(handover.checks?.tires) }}</span> TIRES</li>
-              <li><span class="box">{{ mark(handover.checks?.battery) }}</span> BATTERY</li>
-              <li><span class="box">{{ mark(handover.checks?.scratches) }}</span> SCRATCHES</li>
-              <li><span class="box">{{ mark(handover.checks?.mirrors) }}</span> MIRRORS</li>
-            </ul>
-
-            <div class="checks-title mt">HANDING OVER</div>
-            <ul class="checks-list">
-              <li><span class="box">{{ mark(handover.checks?.registration_card) }}</span> REGISTRATION CARD</li>
-              <li><span class="box">{{ mark(handover.checks?.insurance_card) }}</span> INSURANCE CARD</li>
-              <li><span class="box">{{ mark(handover.checks?.spare_time ?? handover.checks?.spare_tire) }}</span> SPARE TIRE</li>
-              <li><span class="box">{{ mark(handover.checks?.jack) }}</span> JACK</li>
-              <li><span class="box">{{ mark(handover.checks?.tool_kit) }}</span> TOOL KIT</li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- Two signature blocks -->
-        <div class="vh-two">
-          <div class="vh-box">
-            <div class="vh-box-title">PERSON RELEASING VEHICLE</div>
-            <div class="kv">
-              <div><span class="l">EMP. No. &amp; NAME</span><span class="v">{{ handover.releasingName || '—' }}</span></div>
-              <div><span class="l">POSITION</span><span class="v">—</span></div>
-              <div><span class="l">HANDOVER LOCATION</span><span class="v">{{ handover.handover_location_id ?? '—' }}</span></div>
-              <div><span class="l">DATE &amp; TIME</span><span class="v">{{ handover.handover_datetime || '—' }}</span></div>
-              <div><span class="l">SIGNATURE</span><span class="sig"></span></div>
-            </div>
-          </div>
-
-          <div class="vh-box">
-            <div class="vh-box-title">PERSON RECEIVING VEHICLE</div>
-            <div class="kv">
-              <div><span class="l">EMP. No. &amp; NAME</span><span class="v">{{ handover.receiverName || '—' }}</span></div>
-              <div><span class="l">POSITION</span><span class="v">—</span></div>
-              <div><span class="l">RECEIVING LOCATION</span><span class="v">{{ handover.receiving_location_id ?? '—' }}</span></div>
-              <div><span class="l">DATE &amp; TIME</span><span class="v">{{ handover.receiving_datetime || '—' }}</span></div>
-              <div><span class="l">SIGNATURE</span><span class="sig"></span></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Note -->
-        <p class="vh-note">
-          Note: This tool is to be used when a vehicle is being handed over from one person to another in order to
-          record any existing damage and avoid any potential disagreements in the future. It should be filled out in as much detail as possible.
-        </p>
-      </div>
     </div>
 
     <div v-else class="py-6 text-center">No data found.</div>
@@ -391,6 +286,364 @@ const downloadPdf = async () => {
   }
 }
 
+const printPage = () => {
+
+
+  const h = handover.value;
+
+  const printWindow = window.open("", "", "width=1000,height=700");
+
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Asset Handover Form</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+
+          .header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              border: 1px solid #000;
+              padding: 10px 20px;
+              margin-bottom: 20px;
+            }
+
+          .header img {
+            height: 70px;
+          }
+
+          .title {
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 20px;
+          }
+
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 14px;
+          }
+
+          table th, table td {
+            border: 1px solid #000;
+          }
+
+          .grid-table td {
+            padding: 3px 0;
+          }
+
+          .sign-row {
+            margin-top: 50px;
+          }
+
+          .sign-col {
+            width: 25%;
+            text-align: center;
+            font-weight: bold;
+            height : 80px;
+          }
+
+          .footer {
+            margin-top: 30px;
+            font-size: 12px;
+          }
+
+        .left-text, .right-text {
+            width: 30%;
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 18px;
+            text-align: center;
+          }
+
+          .logo img {
+            height: 70px;
+          }
+
+          .grid-table {
+              width: 100%;
+              border-collapse: collapse;
+              font-size: 14px;
+              margin-bottom: 15px;
+            }
+
+            .grid-table td {
+              border: 1px solid #000 !important;
+              padding: 6px 10px;
+              width: 50%;
+              vertical-align: top;
+            }
+
+    .vh-mid-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+}
+
+.vh-mid-table td {
+  vertical-align: top;
+  border: 1px solid #000;
+  padding: 10px;
+}
+
+.vh-left {
+  width: 70%;
+  text-align: center;
+}
+
+.vh-left img {
+  width: 100%;
+}
+
+.vh-right {
+  width: 55%;
+}
+
+.checks-title {
+  font-weight: bold;
+  margin: 10px 0 5px;
+}
+
+.checks-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 15px;
+}
+
+.checks-list li {
+  margin: 4px 0;
+  font-size: 14px;
+}
+
+.box {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  border: 1px solid #000;
+  text-align: center;
+  line-height: 15px;
+  margin-right: 8px;
+}
+
+    .vh-sign-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 30px;
+}
+
+.inner-sign-table {
+  width: 100%;
+  border: 1px solid #000;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.inner-sign-table th {
+  text-align: center;
+  font-weight: bold;
+  background: #f0f0f0;
+  padding: 6px;
+  border: 1px solid #000;
+}
+
+.sig-cell {
+  height: 60px; /* space for signature */
+}
+
+
+        </style>
+      </head>
+
+      <body>
+
+        <!-- Logo & Header -->
+         <div class="header">
+            <div class="left-text">
+              Arab Supply & Trading Co.<br>
+              Construction Branch
+            </div>
+
+            <div class="logo">
+              <img src="` + logoUrl + `" />
+            </div>
+
+            <div class="right-text">
+              الشركة العربية للتوريد والتجارة<br>
+              فرع الإنشاءات
+            </div>
+          </div>
+
+
+         <!-- VEHICLE HANDOVER REPORT TITLE -->
+              <div class="vh-titlebar" style="text-align:center;font-size:20px;font-weight:bold;margin-bottom:15px;text-decoration:underline;">
+                VEHICLE HANDOVER REPORT
+              </div>
+
+              <!-- TOP INFORMATION TABLE -->
+              <table class="top-table">
+                <tr>
+                  <th>Date</th>
+                  <td>${handover.report_date || '—' }</td>
+                  <th>Plate No</th>
+                  <td>${handover.plate_no || '—' }</td>
+                </tr>
+
+                <tr>
+                  <th>Driver Name</th>
+                  <td>${handover.driverName || '—' }</td>
+                  <th>KM Reading</th>
+                  <td>${handover.km_reading ?? '—' }</td>
+                </tr>
+
+                <tr>
+                  <th>Vehicle Type</th>
+                  <td>${handover.vehicle_type || '—' }</td>
+                  <th>Model No</th>
+                  <td>${handover.model_no || '—' }</td>
+                </tr>
+              </table>
+
+
+       <!-- Middle: car silhouettes + checks -->
+            <table class="vh-mid-table">
+              <tr>
+                <!-- Left: Car Image -->
+                <td class="vh-left">
+                  <div class="img-box">
+                    <img src="${carTop}" alt="car top">
+                  </div>
+                </td>
+
+                <!-- Right: Checks -->
+                <td class="vh-right">
+                  
+                  <div class="checks-title">CHECK MAJOR PARTS</div>
+                  <ul class="checks-list">
+                    <li><span class="box">${mark(handover.checks?.tires)}</span> TIRES</li>
+                    <li><span class="box">${mark(handover.checks?.battery)}</span> BATTERY</li>
+                    <li><span class="box">${mark(handover.checks?.scratches)}</span> SCRATCHES</li>
+                    <li><span class="box">${mark(handover.checks?.mirrors)}</span> MIRRORS</li>
+                  </ul>
+
+                  <div class="checks-title mt">HANDING OVER</div>
+                  <ul class="checks-list">
+                    <li><span class="box">${mark(handover.checks?.registration_card)}</span> REGISTRATION CARD</li>
+                    <li><span class="box">${mark(handover.checks?.insurance_card)}</span> INSURANCE CARD</li>
+                    <li><span class="box">${mark(handover.checks?.spare_time ?? handover.checks?.spare_tire)}</span> SPARE TIRE</li>
+                    <li><span class="box">${mark(handover.checks?.jack)}</span> JACK</li>
+                    <li><span class="box">${mark(handover.checks?.tool_kit)}</span> TOOL KIT</li>
+                  </ul>
+
+                </td>
+              </tr>
+            </table>
+
+
+       <!-- Two signature blocks as table -->
+<table class="vh-sign-table">
+  <tr>
+    <!-- Left: Person Releasing Vehicle -->
+    <td class="vh-sign-left">
+      <table class="inner-sign-table">
+        <tr>
+          <th colspan="2">PERSON RELEASING VEHICLE</th>
+        </tr>
+        <tr>
+          <td style="width:50%">EMP. No. & NAME</td>
+          <td style="width:50%">${handover.releasingName || '—'}</td>
+        </tr>
+        <tr>
+          <td style="width:50%">POSITION</td>
+          <td style="width:50%">—</td>
+        </tr>
+        <tr>
+          <td style="width:50%">HANDOVER LOCATION</td>
+          <td style="width:50%">${handover.handover_location_id ?? '—'}</td>
+        </tr>
+        <tr>
+          <td style="width:50%">DATE & TIME</td>
+          <td style="width:50%">${handover.handover_datetime || '—'}</td>
+        </tr>
+        <tr>
+          <td style="width:50%">SIGNATURE</td>
+          <td style="width:50%" class="sig-cell"></td>
+        </tr>
+      </table>
+    </td>
+
+    <!-- Right: Person Receiving Vehicle -->
+    <td class="vh-sign-right">
+      <table class="inner-sign-table">
+        <tr>
+          <th colspan="2">PERSON RECEIVING VEHICLE</th>
+        </tr>
+        <tr>
+          <td style="width:50%">EMP. No. & NAME</td>
+          <td style="width:50%">${handover.receiverName || '—'}</td>
+        </tr>
+        <tr>
+          <td style="width:50%">POSITION</td>
+          <td style="width:50%">—</td>
+        </tr>
+        <tr>
+          <td style="width:50%">RECEIVING LOCATION</td>
+          <td style="width:50%">${handover.receiving_location_id ?? '—'}</td>
+        </tr>
+        <tr>
+          <td style="width:50%">DATE & TIME</td>
+          <td style="width:50%">${handover.receiving_datetime || '—'}</td>
+        </tr>
+        <tr>
+          <td style="width:50%">SIGNATURE</td>
+          <td style="width:50%" class="sig-cell"></td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+
+        <!-- Note -->
+        <p class="vh-note">
+          Note: This tool is to be used when a vehicle is being handed over from one person to another in order to
+          record any existing damage and avoid any potential disagreements in the future. It should be filled out in as much detail as possible.
+        </p>
+            
+        
+        
+        
+         <div class="header">
+            <div class="left-text">
+              Arab Supply & Trading Co.<br>
+              Construction Branch
+            </div>
+
+            <div class="logo">
+              <img src="` + logoUrl + `" />
+            </div>
+
+            <div class="right-text">
+              الشركة العربية للتوريد والتجارة<br>
+              فرع الإنشاءات
+            </div>
+          </div>             
+
+      </body>
+    </html>
+  `);
+
+  printWindow.document.close();
+  printWindow.print();
+
+
+}
+
+
+
 onMounted(fetchHandover)
 
 /** Inject the same print CSS string we use in <style> so iframe has it */
@@ -399,9 +652,7 @@ const printCss = `
 .vh-head{display:flex;justify-content:space-between;align-items:flex-start;border:2px solid #222;padding:6px 10px;margin-bottom:6px}
 .vh-head-left{display:flex;align-items:center;gap:10px}
 .vh-logo {
-  block-size: 80px;   /* height */
-  inline-size: 80px;  /* width */
-  object-fit: contain;
+  width:300px
 }
 .vh-org .en{font-weight:700}
 .vh-org .sub{font-weight:600;font-size:11px}
@@ -551,5 +802,23 @@ const printCss = `
   @page { margin: 10mm; size: a4; }
   .vh-page > *:not(.offscreen) { display: none !important; }
   .offscreen { position: static; inset-inline-start: auto; }
+  .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid #000;
+      padding: 10px 20px;
+      margin-bottom: 20px;
+  }
+
+  .left-text, .right-text {
+    width: 30%;
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 18px;
+    text-align: center;
+}
+
+
 }
 </style>

@@ -48,6 +48,7 @@ declare module 'vue-router/auto-routes' {
     'apps-asset-transfer-create': RouteRecordInfo<'apps-asset-transfer-create', '/apps/asset-transfer/create', Record<never, never>, Record<never, never>>,
     'apps-asset-transfer-edit': RouteRecordInfo<'apps-asset-transfer-edit', '/apps/asset-transfer/edit', Record<never, never>, Record<never, never>>,
     'apps-asset-transfer-show': RouteRecordInfo<'apps-asset-transfer-show', '/apps/asset-transfer/show', Record<never, never>, Record<never, never>>,
+    'apps-asset-transfer-show-backup': RouteRecordInfo<'apps-asset-transfer-show-backup', '/apps/asset-transfer/showBackup', Record<never, never>, Record<never, never>>,
     'apps-assets': RouteRecordInfo<'apps-assets', '/apps/assets', Record<never, never>, Record<never, never>>,
     'apps-assets-create': RouteRecordInfo<'apps-assets-create', '/apps/assets/create', Record<never, never>, Record<never, never>>,
     'apps-assets-create-backup': RouteRecordInfo<'apps-assets-create-backup', '/apps/assets/createBackup', Record<never, never>, Record<never, never>>,

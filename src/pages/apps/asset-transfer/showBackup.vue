@@ -21,7 +21,7 @@
 
     <template v-else-if="transfer">
       <!-- ===== A4 PRINT SHEET ===== -->
-      <div class="" id="printArea">
+      <div class="sheet a4 portrait" id="printArea">
         <!-- ===== HEADER ===== -->
         <div class="masthead">
           <!-- Brand strip (English — Logo — Arabic) -->
@@ -288,6 +288,7 @@ const printPage = () => window.print()
 .brandline {
   display: grid;
   border: 2px solid var(--green);
+  background: #f2f2f2;
   border-block-end: none;
   gap: 6mm;
   grid-template-columns: 1fr auto 1fr;      /* left | logo | right */
@@ -296,8 +297,8 @@ const printPage = () => window.print()
   place-items: center center;
 }
 .brand-block { text-align: center; white-space: normal; }
-.brand-en { direction: ltr; font-size: 10pt; line-height: 1.2; }
-.brand-ar { direction: rtl; font-size: 10pt; line-height: 1.2; }
+.brand-en { color: #333; direction: ltr; font-size: 10pt; line-height: 1.2; }
+.brand-ar { color: #333; direction: rtl; font-size: 10pt; line-height: 1.2; }
 .brand-block .line2 { color: #555; font-size: 8.5pt; }
 .brand-logo { block-size: auto; inline-size: 40mm; object-fit: contain; }
 
@@ -312,7 +313,7 @@ const printPage = () => window.print()
 .mast-grid:first-of-type { border-block-start: 2px solid #000; }
 .mast-grid + .mast-grid { border-block-start: 2px solid #000; }
 .mast-grid:last-of-type { border-block-end: 2px solid var(--green); }
-.mast-grid .cell { border: 1px solid #000;border-block-start: none; font-size: 10pt; padding-block: 2.2mm; padding-inline: 2.6mm; }
+.mast-grid .cell { border: 1px solid #000; background: #fff; border-block-start: none; font-size: 10pt; padding-block: 2.2mm; padding-inline: 2.6mm; }
 .mast-grid .cell.small { text-align: center; }
 .mast-grid .cell span { text-transform: uppercase; }
 .mast-grid .cell b { font-weight: 800; }
@@ -379,7 +380,8 @@ const printPage = () => window.print()
 .receiver-grid .row:last-child { grid-template-columns: 1fr 1fr; }
 .receiver-grid .row .half { display: flex; }
 .receiver-grid .row .accept { padding: 2mm; border-inline-start: 1px solid #000; inline-size: 100%; text-align: center; }
-
+.receiver-grid .row .accept.gray { background: #d9d9d9; }
+.receiver-grid .row .accept.grayless { background: #f5f5f5; }
 
 /* PRINT ONLY */
 @media print {
