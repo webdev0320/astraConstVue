@@ -1,31 +1,28 @@
-import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
+import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
-import { fileURLToPath } from 'node:url'
-import AutoImport from 'unplugin-auto-import/vite'
-import Components from 'unplugin-vue-components/vite'
-import { VueRouterAutoImports, getPascalCaseRouteName } from 'unplugin-vue-router'
+import { fileURLToPath, URL } from 'node:url'
 import VueRouter from 'unplugin-vue-router/vite'
-import { defineConfig } from 'vite'
-import VueDevTools from 'vite-plugin-vue-devtools'
+import { VueRouterAutoImports, getPascalCaseRouteName } from 'unplugin-vue-router'
 import Layouts from 'vite-plugin-vue-layouts'
 import vuetify from 'vite-plugin-vuetify'
+import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
+import AutoImport from 'unplugin-auto-import/vite'
+import Components from 'unplugin-vue-components/vite'
 import svgLoader from 'vite-svg-loader'
+import VueDevTools from 'vite-plugin-vue-devtools'
 
-// https://vitejs.dev/config/
 export default defineConfig({
-  base: './', // <-- use './' if deploying in public_html directly
+  base: './', // required if deploying in subfolder like public_html
   plugins: [
-    // Docs: https://github.com/posva/unplugin-vue-router
-    // ℹ️ This plugin should be placed before vue plugin
+    // Vue Router
     VueRouter({
-      importMode: 'async',           // <-- ensure route-level code splitting
-      getRouteName: routeNode => getPascalCaseRouteName(routeNode)
-        .replace(/([a-z\d])([A-Z])/g, '$1-$2')
-        .toLowerCase(),
-      beforeWriteFiles: root => {},
+      importMode: 'async',
+      getRouteName: routeNode =>
+        getPascalCaseRouteName(routeNode).replace(/([a-z\d])([A-Z])/g, '$1-$2').toLowerCase(),
     }),
 
+    // Vue core
     vue({
       template: {
         compilerOptions: {
@@ -33,85 +30,72 @@ export default defineConfig({
         },
       },
     }),
-    VueDevTools(),
+
     vueJsx(),
+    VueDevTools(),
 
-    // Docs: https://github.com/vuetifyjs/vuetify-loader/tree/master/packages/vite-plugin
+    // Vuetify plugin
     vuetify({
-      styles: {
-        configFile: 'src/assets/styles/variables/_vuetify.scss',
-      },
+      styles: { configFile: 'src/assets/styles/variables/_vuetify.scss' },
     }),
 
-    // Docs: https://github.com/johncampionjr/vite-plugin-vue-layouts#vite-plugin-vue-layouts
-    Layouts({
-      layoutsDirs: './src/layouts/',
-    }),
+    // Layouts plugin
+    Layouts({ layoutsDirs: './src/layouts/' }),
 
-    // Docs: https://github.com/antfu/unplugin-vue-components#unplugin-vue-components
+    // Auto components import
     Components({
       dirs: ['src/@core/components', 'src/views/demos', 'src/components'],
       dts: true,
       resolvers: [
-        componentName => {
-          // Auto import `VueApexCharts`
-          if (componentName === 'VueApexCharts')
-            return { name: 'default', from: 'vue3-apexcharts', as: 'VueApexCharts' }
-        },
+        name => (name === 'VueApexCharts' ? { name: 'default', from: 'vue3-apexcharts', as: 'VueApexCharts' } : undefined),
       ],
     }),
 
-    // Docs: https://github.com/antfu/unplugin-auto-import#unplugin-auto-import
+    // Auto imports
     AutoImport({
       imports: ['vue', VueRouterAutoImports, '@vueuse/core', '@vueuse/math', 'vue-i18n', 'pinia'],
       dirs: [
         './src/@core/utils',
-        './src/@core/composable/',
-        './src/composables/',
-        './src/utils/',
+        './src/@core/composable',
+        './src/composables',
+        './src/utils',
         './src/plugins/*/composables/*',
       ],
       vueTemplate: true,
-
-      // ℹ️ Disabled to avoid confusion & accidental usage
       ignore: ['useCookies', 'useStorage'],
-      eslintrc: {
-        enabled: true,
-        filepath: './.eslintrc-auto-import.json',
-      },
+      eslintrc: { enabled: true, filepath: './.eslintrc-auto-import.json' },
     }),
 
-    // Docs: https://github.com/intlify/bundle-tools/tree/main/packages/unplugin-vue-i18n#intlifyunplugin-vue-i18n
+    // i18n plugin
     VueI18nPlugin({
       runtimeOnly: true,
       compositionOnly: true,
-      include: [
-        fileURLToPath(new URL('./src/plugins/i18n/locales/**', import.meta.url)),
-      ],
+      include: [fileURLToPath(new URL('./src/plugins/i18n/locales/**', import.meta.url))],
     }),
+
+    // SVG loader
     svgLoader(),
   ],
-  define: { 'process.env': {} },
+
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
-      '@themeConfig': fileURLToPath(new URL('./themeConfig.js', import.meta.url)),
       '@core': fileURLToPath(new URL('./src/@core', import.meta.url)),
       '@layouts': fileURLToPath(new URL('./src/@layouts', import.meta.url)),
-      '@images': fileURLToPath(new URL('./src/assets/images/', import.meta.url)),
-      '@styles': fileURLToPath(new URL('./src/assets/styles/', import.meta.url)),
+      '@images': fileURLToPath(new URL('./src/assets/images', import.meta.url)),
+      '@styles': fileURLToPath(new URL('./src/assets/styles', import.meta.url)),
+      '@themeConfig': fileURLToPath(new URL('./themeConfig.js', import.meta.url)),
       '@configured-variables': fileURLToPath(new URL('./src/assets/styles/variables/_template.scss', import.meta.url)),
-      '@db': fileURLToPath(new URL('./src/plugins/fake-api/handlers/', import.meta.url)),
-      '@api-utils': fileURLToPath(new URL('./src/plugins/fake-api/utils/', import.meta.url)),
+      '@db': fileURLToPath(new URL('./src/plugins/fake-api/handlers', import.meta.url)),
+      '@api-utils': fileURLToPath(new URL('./src/plugins/fake-api/utils', import.meta.url)),
     },
   },
-  build: {
-    chunkSizeWarningLimit: 5000,
-  },
+
+  define: { 'process.env': {} },
+
+  build: { chunkSizeWarningLimit: 5000 },
+
   optimizeDeps: {
-    exclude: [], 
-    entries: [
-      './src/**/*.vue',
-    ],
+    entries: ['./src/**/*.vue'],
   },
 })
