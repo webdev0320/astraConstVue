@@ -44,7 +44,7 @@
 
                     <VList class="py-0">
                       
-                      <VListItem @click="openDescriptionDialog(item.raw ?? item)">
+                      <VListItem @click="$router.push(`/dashboards/projects/show/${item.raw?.id ?? item.id}`)">
                         <VIcon start>tabler-eye</VIcon>
                         Details
                       </VListItem>
@@ -155,7 +155,8 @@ const headers = [
   { title: "Project Code", key: "project_code" },
   { title: "START DATE", key: "start_date" },
   { title: "END DATE", key: "end_date" },
-  { title: "BUDGET (SAR)", key: "budget" },
+  { title: "INITIAL BUDGET (SAR)", key: "intial_budget" },
+  { title: "BUDGET (SAR) BY CLASS", key: "budget" },
   { title: "STATUS", key: "status" },
   { title: "ACTIONS", key: "actions", sortable: false },
 ];
@@ -176,11 +177,6 @@ const showDescriptionDialog = ref(false);
 const selectedProjectDescription = ref("");
 const selectedProjectName = ref("");
 
-const openDescriptionDialog = (project) => {
-  selectedProjectDescription.value = project.description || "No description available";
-  selectedProjectName.value = project.name;
-  showDescriptionDialog.value = true;
-};
 
 const getCookie = (name) => {
   const value = `; ${document.cookie}`;
@@ -233,6 +229,7 @@ const fetchProjects = async () => {
       end_date: p.end_date ?? "—",
       description: p.description ?? "—",
       budget: p.budget ?? "—",
+      intial_budget: p.intial_budget ?? "—",
       status: p.status ?? "—",
       // created_at: p.created_at ?? "—",
     }));

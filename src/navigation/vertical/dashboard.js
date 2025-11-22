@@ -17,7 +17,7 @@ export default [
         {
         title: 'Assets',
         to: 'dashboards-assets',
-         roles: ['Admin'], // 👈 Only Admins can see this
+         roles: ['Admin','Asset Manager'], // 👈 Only Admins can see this
          icon: 'tabler-hammer',  
       },
       {

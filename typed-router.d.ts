@@ -83,6 +83,7 @@ declare module 'vue-router/auto-routes' {
     'apps-projects-budget-edit': RouteRecordInfo<'apps-projects-budget-edit', '/apps/projects/budget/edit', Record<never, never>, Record<never, never>>,
     'apps-projects-create': RouteRecordInfo<'apps-projects-create', '/apps/projects/create', Record<never, never>, Record<never, never>>,
     'apps-projects-edit': RouteRecordInfo<'apps-projects-edit', '/apps/projects/edit', Record<never, never>, Record<never, never>>,
+    'apps-projects-show': RouteRecordInfo<'apps-projects-show', '/apps/projects/show', Record<never, never>, Record<never, never>>,
     'apps-rental-required': RouteRecordInfo<'apps-rental-required', '/apps/rental-required', Record<never, never>, Record<never, never>>,
     'apps-rental-required-create': RouteRecordInfo<'apps-rental-required-create', '/apps/rental-required/create', Record<never, never>, Record<never, never>>,
     'apps-rental-required-details': RouteRecordInfo<'apps-rental-required-details', '/apps/rental-required/details', Record<never, never>, Record<never, never>>,

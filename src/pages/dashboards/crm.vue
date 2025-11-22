@@ -1,150 +1,55 @@
 <script setup>
+import { ref } from 'vue'
 
-const simpleStatisticsDemoCards = [
-  {
-    icon: 'tabler-credit-card',
-    color: 'error',
-    title: 'Total Profit',
-    subTitle: 'Last week',
-    stat: '1.28k',
-    change: '-12.2%',
-  },
-  {
-    icon: 'tabler-currency-dollar',
-    color: 'success',
-    title: 'Total Sales',
-    subTitle: 'Last week',
-    stat: '$4,673',
-    change: '+25.2%',
-  },
-]
+const dashboardCards = ref([
+  { title: 'Projects', icon: 'tabler-home', stat: `${(Math.random() * 200 + 50).toFixed(0)}`, color: 'success' },
+  { title: 'Asset Investment Request', icon: 'tabler-device-gamepad-3', stat: `${(Math.random() * 100 + 10).toFixed(0)}`, color: 'info' },
+  { title: 'Assets', icon: 'tabler-hammer', stat: `${(Math.random() * 300 + 50).toFixed(0)}`, color: 'warning' },
+  { title: 'Asset HandOver', icon: 'tabler-table-row', stat: `${(Math.random() * 50 + 5).toFixed(0)}`, color: 'purple' },
+  { title: 'Asset Transfer', icon: 'tabler-transfer', stat: `${(Math.random() * 80 + 10).toFixed(0)}`, color: 'teal' },
+  { title: 'Vehicle Handover', icon: 'tabler-camper', stat: `${(Math.random() * 30 + 5).toFixed(0)}`, color: 'cyan' },
+  { title: 'Rental Equipment', icon: 'tabler-badge-ar', stat: `${(Math.random() * 60 + 5).toFixed(0)}`, color: 'orange' },
+  { title: 'Asset Damage Report', icon: 'tabler-car-crash', stat: `${(Math.random() * 10).toFixed(0)}`, color: 'error' },
+  { title: 'Asset Missing Report', icon: 'tabler-zoom-out-area', stat: `${(Math.random() * 5).toFixed(0)}`, color: 'error' },
+  { title: 'Asset Scrap Report', icon: 'tabler-trash', stat: `${(Math.random() * 15).toFixed(0)}`, color: 'warning' },
+  { title: 'Policy Waiver Form', icon: 'tabler-file-info', stat: `${(Math.random() * 25).toFixed(0)}`, color: 'info' },
+  { title: 'Asset Demobilization', icon: 'tabler-device-desktop-check', stat: `${(Math.random() * 20).toFixed(0)}`, color: 'primary' },
+])
 </script>
 
 <template>
-  <VRow class="match-height">
-    <!-- <VCol
-      cols="12"
-      md="4"
-      sm="6"
-      lg="2"
-    >
-      <CrmOrderBarChart />
-    </VCol>
-
+  <VRow class="match-height" dense>
     <VCol
-      cols="12"
-      md="4"
-      sm="6"
-      lg="2"
-    >
-      <CrmSalesAreaCharts />
-    </VCol>
-
-    <VCol
-      v-for="demo in simpleStatisticsDemoCards"
-      :key="demo.title"
+      v-for="card in dashboardCards"
+      :key="card.title"
       cols="12"
       sm="6"
       md="4"
-      lg="2"
+      lg="4"
     >
-      <VCard>
-        <VCardText>
+      <VCard class="pa-4">
+        <VCardText class="text-center">
           <VAvatar
-            :color="demo.color"
+            :color="card.color"
             variant="tonal"
             rounded
             size="44"
+            class="mb-3"
           >
             <VIcon
-              :icon="demo.icon"
+              :icon="card.icon"
               size="28"
             />
           </VAvatar>
 
-          <h5 class="text-h5 mt-3">
-            {{ demo.title }}
+          <h5 class="text-h5">
+            {{ card.title }}
           </h5>
-          <p class="my-1">
-            {{ demo.subTitle }}
+          <p class="text-h6 font-weight-bold mt-2">
+            {{ card.stat }}
           </p>
-          <p class="mb-3 text-high-emphasis">
-            {{ demo.stat }}
-          </p>
-          <VChip
-            :color="demo.color"
-            label
-            size="small"
-          >
-            {{ demo.change }}
-          </VChip>
         </VCardText>
       </VCard>
-    </VCol> -->
-
-    <!-- 👉 Revenue Growth -->
-    <!-- <VCol
-      cols="12"
-      md="8"
-      lg="4"
-    >
-      <CrmRevenueGrowth />
-    </VCol> -->
-
-    <!-- 👉 Earning Reports -->
-    <!-- <VCol
-      cols="12"
-      md="8"
-    >
-      <CrmEarningReportsYearlyOverview />
-    </VCol> -->
-
-    <!-- 👉 Sales -->
-    <!-- <VCol
-      cols="12"
-      md="4"
-    >
-      <CrmAnalyticsSales />
-    </VCol> -->
-
-    <!-- 👉 Browser States -->
-    <!-- <VCol
-      cols="12"
-      md="4"
-    >
-      <CrmSalesByCountries />
-    </VCol> -->
-
-    <!-- 👉 Project Status -->
-    <!-- <VCol
-      cols="12"
-      md="4"
-    >
-      <CrmProjectStatus />
-    </VCol> -->
-
-    <!-- 👉 Active Project -->
-    <!-- <VCol
-      cols="12"
-      md="4"
-    >
-      <CrmActiveProject />
-    </VCol> -->
-
-    <!-- 👉 Recent Transactions -->
-    <!-- <VCol
-      cols="12"
-      md="6"
-    >
-      <CrmRecentTransactions />
-    </VCol> -->
-
-    <!-- 👉 Active timeline -->
-    <!-- <VCol
-      cols="12"
-      md="6"
-    >
-      <CrmActivityTimeline />
-    </VCol> -->
+    </VCol>
   </VRow>
 </template>

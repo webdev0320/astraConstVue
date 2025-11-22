@@ -107,11 +107,44 @@
             </div>
           </VCardText>
         </VCard>
+
+        
+
       </div>
 
     </div>
 
     <div v-else class="py-6 text-center">No data found.</div>
+
+
+    <VCard class="pa-3 rounded-lg no-print mt-4 no-padd" elevation="2">
+            <VCardTitle class="no-padd">Approvals</VCardTitle>
+            <VCardText class="no-padd">
+
+              <VAlert
+                v-if="approvalsError"
+                type="error"
+                class="mb-4"
+                variant="tonal"
+              >
+                {{ approvalsError }}
+              </VAlert>
+
+              <VDataTable
+                v-if="approvals.length"
+                :headers="approvalHeaders"
+                :items="approvals"
+                :items-per-page="5"
+                class="elev-1 no-padd"
+              />
+
+              <div v-else class="text-center py-4 text-medium-emphasis">
+                No approvals found.
+              </div>
+
+            </VCardText>
+          </VCard>
+    
   </div>
 </template>
 
@@ -125,6 +158,9 @@ import { VAlert, VBtn, VCard, VCardText, VCardTitle, VImg, VSkeletonLoader } fro
 /** ROUTE */
 const route = useRoute()
 const id = computed(() => route.params.id)
+
+const approvals = ref([])
+const approvalsError = ref("")
 
 /** BASE URL:
  *  Set in .env: VITE_API_BASE_URL={{baseUrl}}
@@ -151,7 +187,7 @@ const joinUrl = (base, path) => {
   return `${b}/${p}`.replace(/(?<!:)\/{2,}/g, '/')
 }
 const endpointUrl = (handoverId) => joinUrl(RAW_BASE, `/vehicle-handovers/${handoverId}`) // <-- keep /api
-
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 const loading = ref(false)
 const error = ref('')
 const handover = ref(null)
@@ -213,6 +249,34 @@ const fetchHandover = async () => {
     loading.value = false
   }
 }
+
+const fetchApprovals = async () => {
+  approvalsError.value = ""
+  try {
+
+    const accessToken = normalizeToken(getCookie('accessToken'))
+    if (!accessToken) throw new Error('Access token is missing. Please log in.')
+
+    const res = await axios.get(
+      `${apiBaseUrl}/getApprovals/VehicleHandOver/${handover.value.id}`,
+      {
+        headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
+      }
+    )
+
+    const data = res.data?.data ?? []
+    approvals.value = data.map(a => ({
+      id: a.id,
+      status: a.status,
+      name: a.user?.name ?? "—",
+      user_code: a.user?.user_code ?? "—",
+    }))
+  } catch (e) {
+    console.error("Fetch approvals failed", e)
+    approvalsError.value = e?.response?.data?.message || e?.message || "Failed to load approvals."
+  }
+}
+
 
 /** PRINT via hidden iframe */
 const printDoc = async () => {
@@ -487,23 +551,23 @@ const printPage = () => {
               <table class="top-table">
                 <tr>
                   <th>Date</th>
-                  <td>${handover.report_date || '—' }</td>
+                  <td>${handover.report_date || '' }</td>
                   <th>Plate No</th>
-                  <td>${handover.plate_no || '—' }</td>
+                  <td>${handover.plate_no || '' }</td>
                 </tr>
 
                 <tr>
                   <th>Driver Name</th>
-                  <td>${handover.driverName || '—' }</td>
+                  <td>${handover.driverName || '' }</td>
                   <th>KM Reading</th>
                   <td>${handover.km_reading ?? '—' }</td>
                 </tr>
 
                 <tr>
                   <th>Vehicle Type</th>
-                  <td>${handover.vehicle_type || '—' }</td>
+                  <td>${handover.vehicle_type || '' }</td>
                   <th>Model No</th>
-                  <td>${handover.model_no || '—' }</td>
+                  <td>${handover.model_no || '' }</td>
                 </tr>
               </table>
 
@@ -548,7 +612,7 @@ const printPage = () => {
   <tr>
     <!-- Left: Person Releasing Vehicle -->
     <td class="vh-sign-left">
-      <table class="inner-sign-table">
+      <table class="inner-sign-table" style="margin-bottom:0px !important">
         <tr>
           <th colspan="2">PERSON RELEASING VEHICLE</th>
         </tr>
@@ -642,9 +706,10 @@ const printPage = () => {
 
 }
 
-
-
-onMounted(fetchHandover)
+onMounted(async () => {
+  await fetchHandover()
+  await fetchApprovals()
+})  
 
 /** Inject the same print CSS string we use in <style> so iframe has it */
 const printCss = `

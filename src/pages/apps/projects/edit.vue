@@ -57,6 +57,9 @@
           theme="snow"
           toolbar="full"
         />
+         <small>
+            Max Characters Allowed : 120
+        </small>        
         <small v-if="errorMessages.description" class="text-red">
           {{ errorMessages.description[0] }}
         </small>
@@ -222,6 +225,37 @@ const updateProject = async () => {
     loading.value = false
   }
 }
+
+const CHAR_LIMIT = 120
+
+// Helper: remove HTML, normalize text
+const plainText = html => {
+  return html
+    ?.replace(/<[^>]*>/g, '')     // remove HTML tags
+    ?.replace(/\u00A0/g, ' ')     // replace non-breaking spaces
+    ?.trim() || ''
+}
+
+watch(() => project.value.description, (newValue) => {
+  const text = plainText(newValue)
+  const chars = text.length
+
+  if (!text) {
+    errorMessages.value.description = null
+    return
+  }
+
+  if (chars > CHAR_LIMIT) {
+    errorMessages.value.description = [`Maximum ${CHAR_LIMIT} characters allowed.`]
+
+    // Auto-trim characters
+    const trimmed = text.slice(0, CHAR_LIMIT)
+    project.value.description = trimmed // set trimmed plain text
+    return
+  }
+
+  errorMessages.value.description = null
+})
 </script>
 
 <style>

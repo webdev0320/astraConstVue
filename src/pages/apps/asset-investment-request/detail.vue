@@ -78,14 +78,14 @@
           <!-- REQUESTED ITEMS CARD -->
           <!-- REQUESTED ITEMS CARD -->
 <VCard variant="elevated" class="no-print summary-card mt-4">
-  <VCardTitle class="text-h6 font-weight-bold">Requested Items</VCardTitle>
+  <VCardTitle class="text-h6 font-weight-bold no-padd">Requested Items</VCardTitle>
 
-  <VCardText>
-    <VRow>
+  <VRow class="no-padd">
       <VCol
         v-for="item in itemsNormalized"
         :key="item.id"
         cols="12"
+        class="no-padd"
       >
         <VCard class="pa-3 rounded-lg" elevation="2">
 
@@ -154,14 +154,13 @@
     <div class="d-flex justify-end mt-4 font-weight-bold text-body-1">
       Subtotal: {{ formatCurrency(itemsTotal) }}
     </div>
-  </VCardText>
 </VCard>
 
 
           <!-- APPROVALS TABLE -->
-          <VCard variant="elevated" class="no-print mt-4">
-            <VCardTitle>Approvals</VCardTitle>
-            <VCardText>
+          <VCard class="pa-3 rounded-lg no-print mt-4 no-padd" elevation="2">
+            <VCardTitle class="no-padd">Approvals</VCardTitle>
+            <VCardText class="no-padd">
 
               <VAlert
                 v-if="approvalsError"
@@ -177,7 +176,7 @@
                 :headers="approvalHeaders"
                 :items="approvals"
                 :items-per-page="5"
-                class="elev-1"
+                class="elev-1 no-padd"
               />
 
               <div v-else class="text-center py-4 text-medium-emphasis">
@@ -318,42 +317,36 @@
         </div>
 
         <!-- Approvals section -->
-        <div class="box approval-section">
-          <div class="cell col-12">
-            <div class="mini-header textBlack">Approvals:</div>
-
-            <table
-              v-if="approvals && approvals.length"
-              class="approval-table"
-              style="width: 100%; border-collapse: collapse; margin-top: 10px;"
+        <VDataTable
+              :headers="approvalHeaders"
+              :items="approvals"
+              class="mt-4"
+              density="compact"
+              fixed-header
+              :items-per-page="5"
+              style="border: 1px solid #ddd; border-radius: 8px;"
             >
-              <thead>
-                <tr style="border-bottom: 1px solid #ccc;">
-                  <th class="textBlack" style="text-align: left; padding: 8px;">Name / Code</th>
-                  <th class="textBlack" style="text-align: left; padding: 8px;">Status</th>
-                  <th class="textBlack" style="text-align: left; padding: 8px;">Signature</th>
-                </tr>
-              </thead>
+              <!-- Name / Code -->
+              <template #item.name_code="{ item }">
+                {{ item.name }} - {{ item.user_code }}
+              </template>
 
-              <tbody>
-                <tr
-                  v-for="(approval, index) in approvals"
-                  :key="approval.id || index"
-                  style="border-bottom: 1px solid #eee;"
-                >
-                  <td class="textBlack" style="padding: 8px;">{{ approval.name }} - {{ approval.user_code }}</td>
-                  <td class="textBlack" style="padding: 8px;">{{ approval.status || '—' }}</td>
-                  <td class="textBlack" style="padding: 8px;">_____________________</td>
-                </tr>
-              </tbody>
-            </table>
+              <!-- Status -->
+              <template #item.status="{ item }">
+                {{ item.status || '—' }}
+              </template>
 
-            <div v-else class="top-gap textBlack">
-              No approvals found.
-            </div>
+              <!-- Signature -->
+              <template #item.signature="{ item }">
+                _____________________
+              </template>
 
-          </div>
-        </div>
+              <!-- No data -->
+              <template #no-data>
+                <div class="text-center py-4 textBlack">No approvals found.</div>
+              </template>
+            </VDataTable>
+
 
       </div>
     </div>
@@ -779,11 +772,16 @@ onMounted(async () => {
 
 /* Prevent Vuetify auto-padding issues */
 .v-card .v-card-text {
-  padding: 16px !important;
+  padding: 16px;
 }
 .v-row {
   margin-left: 0 !important;
   margin-right: 0 !important;
+}
+
+.no-padd{
+  padding-left: 0 !important;
+  padding-right: 0 !important;
 }
 
 </style>

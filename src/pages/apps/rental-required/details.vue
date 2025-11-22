@@ -10,6 +10,9 @@ const printLogo = "/src/assets/images/logos/astra-logo.png";
 const loading = ref(true)
 const data = ref(null)
 
+const approvals = ref([])
+const approvalsError = ref("")
+
 const getCookie = name => {
   const value = `; ${document.cookie}`
   const parts = value.split(`; ${name}=`)
@@ -40,6 +43,65 @@ const fetchDetails = async () => {
     loading.value = false
   }
 }
+
+const fetchApprovals = async () => {
+  approvalsError.value = ""
+  try {
+
+    const res = await axios.get(
+      `${apiBaseUrl}/getApprovals/RentalEquipment/${data.value.id}`,
+      {
+        headers: getAuthHeaders(),
+      }
+    )
+
+    const approvalData = res.data?.data ?? []
+    approvals.value = approvalData.map(a => ({
+      id: a.id,
+      status: a.status,
+      name: a.user?.name ?? "—",
+      user_code: a.user?.user_code ?? "—",
+    }))
+  } catch (e) {
+    console.error("Fetch approvals failed", e)
+    approvalsError.value = e?.response?.data?.message || e?.message || "Failed to load approvals."
+  }
+}
+
+const approvalHeaders = [
+  { title: "#", key: "id" },
+  { title: "Name", key: "name" },
+  { title: "User Code", key: "user_code" },
+  { title: "Status", key: "status" },
+];
+
+// Table headers
+const assetRequestHeaders = [
+  { title: 'Category', key: 'asset_category_name' },
+  { title: 'Sub Category', key: 'asset_sub_category_name' },
+  { title: 'Asset', key: 'asset_name' },
+  { title: 'Qty at Site', key: 'quantity' },
+  { title: 'Activity', key: 'activity' },
+  { title: 'Start Date', key: 'start_date' },
+  { title: 'End Date', key: 'end_date' },
+];
+
+const rentalEquipmentHeaders = [
+  { title: 'Category', key: 'asset_category_name' },
+  { title: 'Sub Category', key: 'asset_sub_category_name' },
+  { title: 'Asset', key: 'asset_name' },
+  { title: 'Quantity', key: 'quantity_at_site' },
+  { title: 'Activity', key: 'activity' },
+  { title: 'Start Date', key: 'start_date' },
+  { title: 'End Date', key: 'end_date' },
+  { title: 'Requested # Days', key: 'requested_no_days' },
+  { title: 'SPO #', key: 'spo_number' },
+];
+
+
+const show = v => (v === null || v === undefined || v === '' ? '-' : v)
+
+
 
 const printPage = () => {
 
@@ -279,7 +341,11 @@ const printPage = () => {
 
 }
 
-onMounted(fetchDetails)
+onMounted(async () => {
+  await fetchDetails()
+  await fetchApprovals()
+})  
+
 </script>
 
 <style scoped>
@@ -310,68 +376,64 @@ onMounted(fetchDetails)
         <VCol cols="12" md="4"><strong>Date:</strong> {{ data.date }}</VCol>
         <VCol cols="12" md="4"><strong>Created At:</strong> {{ data.created_at }}</VCol>
       </VRow>
-
+    </VCard>
       <!-- Asset Requests Table -->
-      <h4 class="mt-6 mb-2">Asset Requests</h4>
-      <VTable v-if="data.asset_requests?.length">
-        <thead>
-          <tr>
-            <th>Category</th>
-            <th>Sub Category</th>
-            <th>Asset</th>
-            <th>Qty at Site</th>
-            <th>Activity</th>
-            <th>Start Date</th>
-            <th>End Date</th>
-
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(item, i) in data.asset_requests" :key="i">
-            <td>{{ item.asset_category_name }}</td>
-            <td>{{ item.asset_sub_category_name }}</td>
-            <td>{{ item.asset_name }}</td>
-            <td>{{ item.quantity }}</td>
-            <td>{{ item.activity }}</td>
-            <td>{{ item.start_date ?? '-' }}</td>
-            <td>{{ item.end_date }}</td>
-          </tr>
-        </tbody>
-      </VTable>
+      <VCardTitle class="no-padd">Assets Requests</VCardTitle>      
+      <VDataTable
+        v-if="data && data.asset_requests?.length"
+        :headers="assetRequestHeaders"
+        :items="data.asset_requests"
+        item-value="id"
+        density="comfortable"
+        fixed-header
+        :items-per-page="5"
+      >
+        <template #item.start_date="{ item }">{{ show(item.start_date) }}</template>
+        <template #item.end_date="{ item }">{{ show(item.end_date) }}</template>
+        <template #no-data>
+          <div class="text-center py-4">No asset requests found.</div>
+        </template>
+      </VDataTable>
       <p v-else>No asset requests</p>
 
-      <!-- Rental Equipments -->
-      <h4 class="mt-6 mb-2">Rental Equipments</h4>
-      <VTable v-if="data.rental_equipments?.length">
-        <thead>
-          <tr>
-            <th>Category</th>
-            <th>Sub Category</th>
-            <th>Asset</th>
-            <th>Quantity</th>
-            <th>Activity</th>
-            <th>Start Date</th>
-            <th>End Date</th>
-            <th>SPO #</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(item, i) in data.rental_equipments" :key="i">
-            <td>{{ item.asset_category_name }}</td>
-            <td>{{ item.asset_sub_category_name }}</td>
-            <td>{{ item.asset_name }}</td>
-            <td>{{ item.quantity_at_site }}</td>
-            <td>{{ item.activity }}</td>
-            <td>{{ item.start_date ?? '-' }}</td>
-            <td>{{ item.end_date ?? '-' }}</td>
-            <td>{{ item.requested_no_days }}</td>
-            <td>{{ item.spo_number ?? '-' }}</td>
-          </tr>
-        </tbody>
-      </VTable>
+      <!-- Rental Equipments Table -->
+      <VCardTitle class="no-padd">Rental Equipments</VCardTitle>
+      <VDataTable
+          v-if="data && data.rental_equipments?.length"
+          :headers="rentalEquipmentHeaders"
+          :items="data.rental_equipments"
+          item-value="id"
+          density="comfortable"
+          fixed-header
+          :items-per-page="5"
+        >
+          <template #item.start_date="{ item }">{{ show(item.start_date) }}</template>
+          <template #item.end_date="{ item }">{{ show(item.end_date) }}</template>
+          <template #item.spo_number="{ item }">{{ show(item.spo_number) }}</template>
+          <template #no-data>
+            <div class="text-center py-4">No rental equipments found.</div>
+          </template>
+        </VDataTable>
+
       <p v-else>No rental equipments</p>
 
-    </VCard>
 
+ <VCardTitle class="no-padd">Approvals</VCardTitle>
+      <VDataTable
+          v-if="approvals.length"
+          :headers="approvalHeaders"
+          :items="approvals"
+          item-value="id"
+          density="comfortable"
+          fixed-header
+          :items-per-page="5"
+        >
+           <template #item.id="{ item }">{{ item.id }}</template>
+           <template #item.name="{ item }">{{ item.name }}</template>
+           <template #item.user_code="{ item }">{{ item.user_code }}</template>
+           <template #item.status="{ item }">{{ item.status }}</template>
+        </VDataTable>
+
+      <p v-else>No approvals found.</p>
   </div>
 </template>

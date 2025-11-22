@@ -23,152 +23,185 @@
       <!-- ===== A4 PRINT SHEET ===== -->
       <div class="" id="printArea">
         <!-- ===== HEADER ===== -->
-        <div class="masthead">
-          <!-- Brand strip (English — Logo — Arabic) -->
-          <div class="brandline">
-            <div class="brand-block brand-en">
-              <div class="line1">Arab Supply &amp; Trading CO. LTD</div>
-              <div class="line2">C.R:3550005809</div>
-            </div>
+        <VCard class="pa-4 mb-6" outlined>
+  <VCardText>
 
-            <img :src="logoSrc" alt="ASTRA" class="brand-logo" />
+    <!-- Row 1 -->
+    <VRow dense>
+      <VCol cols="6" sm="2">
+        <div class="text-caption">ISSUE</div>
+        <div class="font-weight-bold">{{ transfer.issue_no || '1' }}</div>
+      </VCol>
 
-            <div class="brand-block brand-ar">
-              <div class="line1">الشركة العربية للتموين والتجارة المحدودة</div>
-              <div class="line2">سجل تجاري ٣٥٥٠٠٠٥٨٠٩</div>
-            </div>
-          </div>
+      <VCol cols="6" sm="2">
+        <div class="text-caption">REV</div>
+        <div class="font-weight-bold">{{ transfer.revision_no || '0' }}</div>
+      </VCol>
 
-          <!-- Row 1 -->
-          <div class="mast-grid">
-            <div class="cell small"><span>ISSUE</span><b>{{ transfer.issue_no || '1' }}</b></div>
-            <div class="cell small"><span>REV</span><b>{{ transfer.revision_no || '0' }}</b></div>
-            <div class="cell project"><b>{{ transfer.transferredProjectName || defaultProject }}</b></div>
-            <div class="cell label"><b>DATE</b></div>
-            <div class="cell value"><b>{{ fmtDate(transfer.date) }}</b></div>
-          </div>
-          <!-- Row 2 -->
-          <div class="mast-grid">
-            <div class="cell small"><b>{{ transfer.form_no || 'F-12-05' }}</b></div>
-            <div class="cell small"><b>{{ fmtDate(transfer.revision_date) }}</b></div>
-            <div class="cell atf-title"><b>ASSET TRANSFER FORM (ATF)</b></div>
-            <div class="cell label"><b>TAG No.</b></div>
-            <div class="cell value"><b>{{ transfer.tag_no || '—' }}</b></div>
-          </div>
+      <VCol cols="12" sm="4">
+        <div class="text-caption">PROJECT</div>
+        <div class="font-weight-bold">
+          {{ transfer.transferredProjectName || defaultProject }}
         </div>
+      </VCol>
+
+      <VCol cols="6" sm="2">
+        <div class="text-caption">DATE</div>
+        <div class="font-weight-bold">
+          {{ fmtDate(transfer.date) }}
+        </div>
+      </VCol>
+    </VRow>
+
+    <VDivider class="my-3" />
+
+    <!-- Row 2 -->
+    <VRow dense>
+      <VCol cols="6" sm="2">
+        <div class="font-weight-bold">
+          {{ transfer.form_no || 'F-12-05' }}
+        </div>
+      </VCol>
+
+      <VCol cols="6" sm="2">
+        <div class="font-weight-bold">
+          {{ fmtDate(transfer.revision_date) }}
+        </div>
+      </VCol>
+
+      <VCol cols="12" sm="4">
+        <div class="font-weight-bold text-center">
+          ASSET TRANSFER FORM (ATF)
+        </div>
+      </VCol>
+
+      <VCol cols="6" sm="2">
+        <div class="text-caption font-weight-bold">TAG NO.</div>
+        <div class="font-weight-bold">
+          {{ transfer.tag_no || '—' }}
+        </div>
+      </VCol>
+    </VRow>
+
+  </VCardText>
+</VCard>
+
 
         <!-- ===== SENDER ===== -->
-        <div class="section-title">TO BE FILLED BY THE SENDER</div>
-        <div class="meta sender">
-          <div class="row">
-            <label>Transferred from</label>
-            <b>{{ transfer.transferredProjectName || projectOrId(transfer.transferred_from_project_id) }}</b>
-            <label>Transferred to</label>
-            <b>{{ transfer.transferredToProjectName || projectOrId(transfer.transferred_to_project_id) }}</b>
-          </div>
-          <div class="row">
-            <label>Date Of Transfer</label>
-            <b>{{ fmtDate(transfer.transfer_date) }}</b>
-            <label>Time</label>
-            <b>{{ fmtTime(transfer.transfer_time) }}</b>
-          </div>
-          <div class="row">
-            <label>Prepared and Checked by</label>
-            <b>{{ transfer.preparedByName || transfer.prepared_by || '—' }}</b>
-            <label>Signature</label>
-            <b>&nbsp;</b>
-          </div>
-          <div class="row">
-            <label>Driver Name</label>
-            <b>{{ transfer.driverName || '—' }}</b>
-            <label>Signature</label>
-            <b>&nbsp;</b>
-          </div>
-          <div class="row">
-            <label>Contact details</label>
-            <b>{{ transfer.contact_details || '—' }}</b>
-            <label>Vehicle plate no.</label>
-            <b>{{ transfer.vehicle_plate_no || '—' }}</b>
-          </div>
+       <VCard class="pa-4 mb-6" outlined>
+  <VCardTitle class="text-subtitle-1 font-weight-bold">
+    TO BE FILLED BY THE SENDER
+  </VCardTitle>
+
+  <VCardText>
+
+    <!-- Row: From/To -->
+    <VRow dense>
+      <VCol cols="12" sm="6">
+        <div class="text-caption">Transferred from</div>
+        <div class="font-weight-bold">
+          {{ transfer.transferredProjectName || projectOrId(transfer.transferred_from_project_id) }}
         </div>
+      </VCol>
+
+      <VCol cols="12" sm="6">
+        <div class="text-caption">Transferred to</div>
+        <div class="font-weight-bold">
+          {{ transfer.transferredToProjectName || projectOrId(transfer.transferred_to_project_id) }}
+        </div>
+      </VCol>
+    </VRow>
+
+    <!-- Row: Date / Time -->
+    <VRow dense class="mt-2">
+      <VCol cols="12" sm="6">
+        <div class="text-caption">Date of Transfer</div>
+        <div class="font-weight-bold">{{ fmtDate(transfer.transfer_date) }}</div>
+      </VCol>
+
+      <VCol cols="12" sm="6">
+        <div class="text-caption">Time</div>
+        <div class="font-weight-bold">{{ fmtTime(transfer.transfer_time) }}</div>
+      </VCol>
+    </VRow>
+
+    <!-- Row: Prepared By / Signature -->
+    <VRow dense class="mt-2">
+      <VCol cols="12" sm="6">
+        <div class="text-caption">Prepared and Checked by</div>
+        <div class="font-weight-bold">
+          {{ transfer.preparedByName || transfer.prepared_by || '—' }}
+        </div>
+      </VCol>
+
+      <VCol cols="12" sm="6">
+        <div class="text-caption">Signature</div>
+        <div class="font-weight-bold">&nbsp;</div>
+      </VCol>
+    </VRow>
+
+    <!-- Row: Driver Name / Signature -->
+    <VRow dense class="mt-2">
+      <VCol cols="12" sm="6">
+        <div class="text-caption">Driver Name</div>
+        <div class="font-weight-bold">{{ transfer.driverName || '—' }}</div>
+      </VCol>
+
+      <VCol cols="12" sm="6">
+        <div class="text-caption">Signature</div>
+        <div class="font-weight-bold">&nbsp;</div>
+      </VCol>
+    </VRow>
+
+    <!-- Row: Contact / Vehicle -->
+    <VRow dense class="mt-2">
+      <VCol cols="12" sm="6">
+        <div class="text-caption">Contact Details</div>
+        <div class="font-weight-bold">{{ transfer.contact_details || '—' }}</div>
+      </VCol>
+
+      <VCol cols="12" sm="6">
+        <div class="text-caption">Vehicle Plate No.</div>
+        <div class="font-weight-bold">{{ transfer.vehicle_plate_no || '—' }}</div>
+      </VCol>
+    </VRow>
+
+  </VCardText>
+</VCard>
+
 
         <!-- ===== ITEMS ===== -->
-        <table class="grid items">
-          <thead>
-            <tr>
-              <th class="w-sno">S/N</th>
-              <th class="w-brand">BRAND / MODEL</th>
-              <th>DESCRIPTION</th>
-              <th class="w-qty">QTY</th>
-              <th class="w-remarks">REMARKS</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(it, i) in filledRows" :key="i">
-              <td class="center">{{ it ? i + 1 : '' }}</td>
-              <td>{{ it?.assetName || (it?.asset_id ? `#${it.asset_id}` : '') }}</td>
-              <td>{{ it?.description || it?.remarks || '' }}</td>
-              <td class="center">{{ it?.qty ?? '' }}</td>
-              <td>{{ it?.remarks || '' }}</td>
-            </tr>
-          </tbody>
-        </table>
+         <VDataTable
+    :headers="headers"
+    :items="formattedItems"
+    class="mb-4"
+    density="compact"
+    hide-default-footer
+    fixed-header
+  >
+    <template #item.sn="{ index }">
+      {{ index + 1 }}
+    </template>
 
-        <!-- ===== PLANT & MACHINERY ===== -->
-        <div class="section-title">TO BE FILLED BY THE PLANT &amp; MACHINERY:</div>
-        <div class="approval-grid">
-          <div class="date-box">
-            <div class="row small">
-              <div class="cell mini">DD</div><div class="cell mini">MM</div><div class="cell mini">YY</div>
-              <div class="cell text"><b>Approved</b></div>
-            </div>
-            <div class="row small">
-              <div class="cell mini">DD</div><div class="cell mini">MM</div><div class="cell mini">YY</div>
-              <div class="cell text"><b>Disapproved</b></div>
-            </div>
-          </div>
-          <div class="remarks-box"><div><b>Remarks :</b> {{ transfer.plant_manager_remarks || '' }}</div></div>
-          <div class="sign-box right"><div class="undertext"><i>MANAGER</i></div></div>
-        </div>
+      <template #item.asset="{ item }">
+        {{ item.assetName }} {{ item.assetCode ? `(${item.assetCode})` : '' }}
+      </template>
 
-        <!-- ===== PROJECT INCHARGE ===== -->
-        <div class="section-title">APPROVAL FROM THE PROJECT INCHARGE/DEPARTMENT HEAD</div>
-        <div class="approval-grid">
-          <div class="date-box">
-            <div class="row small">
-              <div class="cell mini">DD</div><div class="cell mini">MM</div><div class="cell mini">YY</div>
-              <div class="cell text"><b>Approved</b></div>
-            </div>
-            <div class="row small">
-              <div class="cell mini">DD</div><div class="cell mini">MM</div><div class="cell mini">YY</div>
-              <div class="cell text"><b>Disapproved</b></div>
-            </div>
-          </div>
-          <div class="remarks-box"><div><b>Remarks :</b> {{ transfer.project_incharge_remarks || '' }}</div></div>
-          <div class="sign-box right"><div class="undertext"><i>Project Manager</i></div></div>
-        </div>
 
-        <!-- ===== RECEIVER ===== -->
-        <div class="section-title">TO BE FILLED BY THE RECEIVER</div>
-        <div class="receiver-grid">
-          <div class="row">
-            <label>Received from</label><b>{{ transfer.received_from || '—' }}</b>
-            <label>Received by</label><b>{{ transfer.received_by || '—' }}</b>
-          </div>
-          <div class="row">
-            <label>Date</label><b>{{ fmtDate(transfer.received_date) }}</b>
-            <label>Time</label><b>{{ fmtTime(transfer.received_time) }}</b>
-          </div>
-          <div class="row">
-            <label>Inspected by</label><b>{{ transfer.inspected_by || '—' }}</b>
-            <label>Signature</label><b>&nbsp;</b>
-          </div>
-          <div class="row">
-            <div class="half"><div class="accept grayless"><b>Equipment / Material Accepted</b></div></div>
-            <div class="half"><div class="accept gray"><b>Equipment / Material Not Accepted</b></div></div>
-          </div>
-        </div>
-      </div>
+    <template #item.description="{ item }">
+      {{ item.description || item.remarks || '' }}
+    </template>
+
+    <template #item.qty="{ item }">
+      {{ item.qty ?? '' }}
+    </template>
+
+    <template #item.remarks="{ item }">
+      {{ item.remarks || '' }}
+    </template>
+  </VDataTable>
+
+  </div>
       <!-- /sheet -->
     </template>
 
@@ -194,6 +227,16 @@ const loading = ref(true)
 const error = ref('')
 const transfer = ref(null)
 
+const headers = [
+  { title: 'S/N', key: 'sn', width: '70px', align: 'center' },
+  { title: 'Asset Name & Code', key: 'asset' }, // <-- changed from assetName
+  { title: 'DESCRIPTION', key: 'description' },
+  { title: 'QTY', key: 'qty', width: '80px', align: 'center' },
+  { title: 'REMARKS', key: 'remarks' },
+]
+
+
+
 const getCookie = (name) => {
   const v = `; ${document.cookie}`; const p = v.split(`; ${name}=`); if (p.length === 2) return p.pop().split(';').shift(); return null
 }
@@ -202,12 +245,10 @@ const fmtDate = (iso) => { try { if (!iso) return '—'; const d = new Date(iso)
 const fmtTime = (iso) => { try { if (!iso) return '—'; const d = new Date(iso); return isNaN(d) ? '—' : d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Karachi' }) } catch { return '—' } }
 const projectOrId = (pid) => (pid ? `#${pid}` : '—')
 
-const MAX_ROWS = 13
 const filledRows = computed(() => {
-  const rows = Array.isArray(transfer.value?.items) ? transfer.value.items : []
-  if (rows.length >= MAX_ROWS) return rows.slice(0, MAX_ROWS)
-  return [...rows, ...Array(MAX_ROWS - rows.length).fill(null)]
+  return Array.isArray(transfer.value?.items) ? transfer.value.items : []
 })
+
 
 const fetchDetail = async () => {
   loading.value = true; error.value = ''; transfer.value = null
@@ -251,7 +292,382 @@ const onReject = async () => {
     alert('Rejected.'); fetchDetail()
   } catch (e) { alert(e.response?.data?.message || 'Failed to reject.') }
 }
-const printPage = () => window.print()
+
+const formattedItems = computed(() =>
+  filledRows.value.map((it) => ({
+    sn: '', // S/N is handled in template
+    brand: it?.assetName,
+    description: it?.description,
+    qty: it?.qty,
+    remarks: it?.remarks,
+    asset_id: it?.asset_id,
+    assetName: it?.assetName,
+    assetCode: it?.assetCode,
+  }))
+)
+
+const printPage = () => {
+
+
+  const h = transfer.value;
+
+  const printWindow = window.open("", "", "width=1000,height=700");
+
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Asset Handover Form</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+
+          .header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              border: 1px solid #000;
+              padding: 10px 20px;
+              margin-bottom: 20px;
+            }
+
+          .header img {
+            height: 70px;
+          }
+
+          .title {
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 20px;
+          }
+
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 14px;
+          }
+
+          table th, table td {
+            border: 1px solid #000;
+          }
+
+          .grid-table td {
+            padding: 3px 0;
+          }
+
+          .sign-row {
+            margin-top: 50px;
+          }
+
+          .sign-col {
+            width: 25%;
+            text-align: center;
+            font-weight: bold;
+            height : 80px;
+          }
+
+          .footer {
+            margin-top: 30px;
+            font-size: 12px;
+          }
+
+        .left-text, .right-text {
+            width: 30%;
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 18px;
+            text-align: center;
+          }
+
+          .logo img {
+            height: 70px;
+          }
+
+          .grid-table {
+              width: 100%;
+              border-collapse: collapse;
+              font-size: 14px;
+              margin-bottom: 15px;
+            }
+
+            .grid-table td {
+              border: 1px solid #000 !important;
+              padding: 6px 10px;
+              width: 50%;
+              vertical-align: top;
+            }
+
+    .vh-mid-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+}
+
+.vh-mid-table td {
+  vertical-align: top;
+  border: 1px solid #000;
+  padding: 10px;
+}
+
+.vh-left {
+  width: 70%;
+  text-align: center;
+}
+
+.vh-left img {
+  width: 100%;
+}
+
+.vh-right {
+  width: 55%;
+}
+
+.checks-title {
+  font-weight: bold;
+  margin: 10px 0 5px;
+}
+
+.checks-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 15px;
+}
+
+.checks-list li {
+  margin: 4px 0;
+  font-size: 14px;
+}
+
+.box {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  border: 1px solid #000;
+  text-align: center;
+  line-height: 15px;
+  margin-right: 8px;
+}
+
+    .vh-sign-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 30px;
+}
+
+.inner-sign-table {
+  width: 100%;
+  border: 1px solid #000;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.inner-sign-table th {
+  text-align: center;
+  font-weight: bold;
+  background: #f0f0f0;
+  padding: 6px;
+  border: 1px solid #000;
+}
+
+.sig-cell {
+  height: 60px; /* space for signature */
+}
+
+    .header-table{
+      text-align:center !important;
+    }
+
+
+        </style>
+      </head>
+
+      <body>
+
+        <!-- Logo & Header -->
+         <div class="header">
+            <div class="left-text">
+              Arab Supply & Trading Co.<br>
+              Construction Branch
+            </div>
+
+            <div class="logo">
+              <img src="` + logoSrc + `" />
+            </div>
+
+            <div class="right-text">
+              الشركة العربية للتوريد والتجارة<br>
+              فرع الإنشاءات
+            </div>
+          </div>
+
+         
+         <!-- Header -->
+      <table class="header-table">
+        <tr>
+          <td>ISSUE ${h.issue_no || ''}</td>
+          <td>REV ${h.revision_no || '0'}</td>
+          <td class="center" style="text-align:center" colspan="2"><b>${h.transferredProjectName}</b></td>
+          <td>DATE ${fmtDate(h.date)}</td>
+        </tr>
+        <tr>
+          <td>${h.form_no}</td>
+          <td>${fmtDate(h.revision_date)}</td>
+          <td class="center" colspan="2"><b>ASSET TRANSFER FORM (ATF)</b></td>
+          <td>TAG NO. ${h.tag_no}</td>
+        </tr>
+      </table>
+
+      <!-- Sender -->
+      <div class="section-title">TO BE FILLED BY THE SENDER</div>
+      <table>
+        <tr>
+          <td>Transferred from<br><b>${h.transferredProjectName}</b></td>
+          <td>Transferred to<br><b>${h.transferredToProjectName}</b></td>
+        </tr>
+        <tr>
+          <td>Date of Transfer<br><b>${fmtDate(h.transfer_date)}</b></td>
+          <td>Time<br><b>${fmtTime(h.transfer_time)}</b></td>
+        </tr>
+        <tr>
+          <td>Prepared and Checked by<br><b>${h.preparedByName}</b></td>
+          <td>Signature</td>
+        </tr>
+        <tr>
+          <td>Driver Name<br><b>${h.driverName}</b></td>
+          <td>Signature</td>
+        </tr>
+        <tr>
+          <td>Contact details<br><b>${h.contact_details}</b></td>
+          <td>Vehicle Plate No.<br><b>${h.vehicle_plate_no || ''}</b></td>
+        </tr>
+      </table>
+
+      <!-- Items -->
+      <table class="grid items">
+        <thead>
+          <tr>
+            <th>S/N</th>
+            <th>BRAND / MODEL</th>
+            <th>DESCRIPTION</th>
+            <th>QTY</th>
+            <th>REMARKS</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${h.items.map((item, idx) => `
+            <tr>
+              <td class="center">${idx + 1}</td>
+              <td>${item.assetCode || ''}</td>
+              <td>${item.assetName}</td>
+              <td class="center">${item.qty}</td>
+              <td>${item.remarks || ''}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+
+      <!-- Approvals -->
+      <div class="section-title">TO BE FILLED BY THE PLANT & MACHINERY</div>
+      <table>
+        <tr>
+          <td style="width:4%">Date</td>
+          <td style="width:15%"></td>
+          <td style="width:5%">Approved</td>
+          <td style="width:5%"></td>
+          <td rowspan="2"> Remarks:</td>
+          <td rowspan="2"> Manager</td>
+        </tr>
+
+        <tr>
+          <td style="width:4%">Date</td>
+          <td style="width:15%"></td>
+          <td style="width:5%">Disapproved</td>
+          <td style="width:5%"></td>
+        </tr>
+
+      </table>
+
+      <div class="section-title">APPROVAL FROM THE PROJECT INCHARGE/DEPARTMENT HEAD</div>
+      <table>
+       <table>
+        <tr>
+          <td style="width:4%">Date</td>
+          <td style="width:15%"></td>
+          <td style="width:5%">Approved</td>
+          <td style="width:5%"></td>
+          <td rowspan="2"> Remarks:</td>
+          <td rowspan="2">Project Manager</td>
+        </tr>
+
+        <tr>
+          <td style="width:4%">Date</td>
+          <td style="width:15%"></td>
+          <td style="width:5%">Disapproved</td>
+          <td style="width:5%"></td>
+        </tr>
+
+      </table>
+      </table>
+
+      <!-- Receiver -->
+      <div class="section-title">TO BE FILLED BY THE RECEIVER</div>
+      <table>
+        <tr>
+          <td>Received from</td>
+          <td>${h.received_from}</td>
+          <td>Received by</td>
+          <td>${h.received_by}</td>
+        </tr>
+        <tr>
+          <td>Date</td>
+          <td>${fmtDate(h.received_date)}</td>
+          <td>Time</td>
+          <td>${fmtTime(h.received_time)}</td>
+        </tr>
+        <tr>
+          <td>Inspected by</td>
+          <td>${h.inspected_by}</td>
+          <td>Signature</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Equipment / Material Accepted</td>
+          <td>${h.equipment_status ? '' : ''}</td>
+          <td>Equipment / Material Not Accepted</td>
+          <td>${!h.equipment_status ? '' : ''}</td>
+        </tr>
+      </table>
+      
+
+
+        
+         <div class="header">
+            <div class="left-text">
+              Arab Supply & Trading Co.<br>
+              Construction Branch
+            </div>
+
+            <div class="logo">
+              <img src="` + logoSrc + `" />
+            </div>
+
+            <div class="right-text">
+              الشركة العربية للتوريد والتجارة<br>
+              فرع الإنشاءات
+            </div>
+          </div>             
+
+      </body>
+    </html>
+  `);
+
+  printWindow.document.close();
+  printWindow.print();
+
+
+}
+
 </script>
 
 <style scoped>

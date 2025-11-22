@@ -108,6 +108,9 @@ const headers = [
   { title: "Category", key: "category_name", sortable: true },
   { title: "Subcategory", key: "sub_category_name", sortable: true },
   { title: "Asset", key: "asset_title", sortable: true },
+  { title: "Unit Price (SAR)", key: "unit_price", sortable: true },
+  { title: "Total Price (SAR)", key: "sub_total", sortable: true },
+  { title: "Added By", key: "added_by_name", sortable: true },
   { title: "Quantity", key: "quantity", sortable: true },
   { title: "Actions", key: "actions", sortable: false },
 ];
@@ -136,6 +139,9 @@ const mappedAssets = computed(() =>
     asset_title: a.asset ? `${a.asset.title} - ${a.asset.code}` : "-",
     quantity: a.quantity ?? 0,
     created_at: a.created_at,
+    unit_price: a.unit_price,
+    sub_total: a.sub_total,
+    added_by_name: a.added_by?.name ?? "-",
     asset_description: a.asset?.description ?? null,
     raw: a, // keep full object if needed later
   }))

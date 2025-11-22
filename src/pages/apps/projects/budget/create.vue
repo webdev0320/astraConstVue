@@ -3,8 +3,26 @@
     <div class="d-flex justify-between align-center mb-4">
       <h3>Add Budget</h3>
     </div>
-
+    <!-- Project Title + Code -->
     <VCard class="pa-4">
+      <div v-if="projectDetails" class="mt-2">
+        <h4 class="mb-1">
+          Project Title : {{ projectDetails.name }} 
+        </h4>
+
+         <h5 class="mb-1">
+          Project Code : {{ projectDetails.project_code }} 
+        </h5>
+      </div>
+
+      <div class="mt-2">
+        Total Project Budget: <b>SAR {{ formatAmount(totalBudget) }}</b>
+      </div>
+      <div class="mt-2">
+        Remaining Project Budget: <b>SAR {{ formatAmount(remainingBudget) }}</b>
+      </div>
+    </VCard>
+    <VCard class="pa-4 mt-5">
       <VForm @submit.prevent="saveAllBudgets">
         <VRow dense>
           <!-- Category -->
@@ -113,6 +131,11 @@
           </template>
         </VDataTable>
 
+        <!-- Error message BELOW FORM -->
+        <div v-if="budgetError" class="text-red mt-2">
+          {{ budgetError }}
+        </div>
+
         <!-- Save -->
         <div class="d-flex gap-2 mt-4">
           <VBtn color="primary" @click="saveAllBudgets" :loading="saving" :disabled="!budgetRecords.length">
@@ -151,6 +174,10 @@ const budget = ref({
 
 const budgetRecords = ref([]);
 const saving = ref(false);
+
+const projectDetails = ref(null); // Already fetching project details
+const remainingBudget = ref(0);
+const totalBudget = ref(0);
 
 // ------------- Headers (use names, not IDs) -------------
 const headers = [
@@ -246,9 +273,14 @@ const getCookie = (name) => {
 const addBudgetRecord = () => {
   if (!selectedCategoryId.value || !selectedSubCategoryId.value || !budget.value.amount) return;
 
-  const desc = (budget.value.asset_description || "").trim();
+  const enteredAmount = Number(budget.value.amount);
+  if (enteredAmount > remainingBudget.value) {
+    alert(`Cannot add budget. Remaining project budget is SAR ${remainingBudget.value.toFixed(2)}.`);
+    return;
+  }
+  
 
-  // unique merge key so different descriptions don't merge
+  const desc = (budget.value.asset_description || "").trim();
   const recordKey = [
     selectedCategoryId.value,
     selectedSubCategoryId.value,
@@ -257,41 +289,59 @@ const addBudgetRecord = () => {
 
   const existing = budgetRecords.value.find(r => r.__key === recordKey);
   if (existing) {
-    // same item → amount & quantity dono add ho jayen
-    existing.amount   = Number(existing.amount) + Number(budget.value.amount);
-    existing.quantity = Number(existing.quantity || 0) + qty;
+    const newAmount = Number(existing.amount) + enteredAmount;
+    if (newAmount > remainingBudget.value) {
+      alert(`Cannot add budget. Remaining project budget is SAR ${remainingBudget.value.toFixed(2)}.`);
+      return;
+    }
+    existing.amount = newAmount;
+    existing.quantity = Number(existing.quantity || 0) + 1; // or your logic
   } else {
     budgetRecords.value.push({
       __key: recordKey,
-
       project_id: Number(projectId.value),
       asset_category_id: Number(selectedCategoryId.value),
       asset_subcategory_id: Number(selectedSubCategoryId.value),
-      asset_sub_category_id: Number(selectedSubCategoryId.value), // backend safety
-      amount: Number(budget.value.amount),
+      amount: enteredAmount,
       asset_description: desc || null,
-
       category_name: categoryNameById(selectedCategoryId.value),
       subcategory_name: subcategoryNameById(selectedSubCategoryId.value),
     });
   }
 
+  // subtract from remainingBudget
+  remainingBudget.value -= enteredAmount;
+
   // reset form fields
-  selectedCategoryId.value    = null;
+  selectedCategoryId.value = null;
   selectedSubCategoryId.value = null;
-  budget.value.amount         = null;
+  budget.value.amount = null;
   budget.value.asset_description = "";
 };
 
+
 const removeBudgetRecord = (item) => {
+  remainingBudget.value += Number(item.amount || 0);
   budgetRecords.value = budgetRecords.value.filter(r => r !== item);
 };
+
 const clearAll = () => { budgetRecords.value = []; };
 
 // ------------- Save: POST /api/project-budgets -------------
 const saveAllBudgets = async () => {
   if (!budgetRecords.value.length) return;
   saving.value = true;
+
+  let totalBudget = 0;
+  budgetRecords.value.forEach(r => {
+      totalBudget += Number(r.amount || 0);
+  });
+
+  if(totalBudget > projectDetails.value.budget){
+    saving.value = false;
+    alert(`Cannot add budget more than project budget. Please revise`);
+  }
+
   try {
     const pid = Number(projectId.value);
     const budgetsPayload = budgetRecords.value.map(r => ({
@@ -335,11 +385,12 @@ const isFormValid = computed(() => {
   const hasSubCategory = !!selectedSubCategoryId.value;
   const hasAmount = Number(budget.value.amount) > 0;
 
-  // ✅ At least asset OR description must be filled
-  const hasAssetOrDescription = !!budget.value.asset_description?.trim();
+  // disable if current entered amount exceeds remaining budget
+  const withinBudget = !budget.value.amount || Number(budget.value.amount) <= remainingBudget.value;
 
-  return hasCategory && hasSubCategory && hasAmount && hasAssetOrDescription;
+  return hasCategory && hasSubCategory && hasAmount && withinBudget;
 });
+
 
 const totalAmount = computed(() =>
   budgetRecords.value.reduce((sum, r) => sum + Number(r.amount || 0), 0)
@@ -352,8 +403,24 @@ function formatAmount(val) {
   return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+
+const fetchProjectDetails = async () => {
+  try {
+    const res = await axios.get(`${apiBaseUrl}/projects/${projectId.value}`, {
+      headers: getAuthHeaders()
+    });
+    projectDetails.value = res.data?.data || res.data;
+    totalBudget.value = projectDetails.value.budget;
+    remainingBudget.value = projectDetails.value.remainingBudget;    
+    console.log("Loaded Project:", projectDetails.value);
+  } catch (err) {
+    console.error("Error loading project:", err);
+  }
+};
+
 // ------------- Init -------------
 fetchAssetCategories();
+fetchProjectDetails(); 
 </script>
 
 <style scoped>

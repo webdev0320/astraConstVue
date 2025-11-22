@@ -17,7 +17,7 @@
       </VCol>
 
       <!-- Project Code -->
-      <VCol cols="12" md="4">
+      <VCol cols="12" md="3">
         <VTextField
           v-model="project.project_code"
           label="Project Code"
@@ -28,7 +28,7 @@
       </VCol>
 
       <!-- Start Date -->
-      <VCol cols="12" md="4">
+      <VCol cols="12" md="3">
         <VTextField
           v-model="project.start_date"
           label="Start Date"
@@ -38,7 +38,7 @@
       </VCol>
 
       <!-- End Date -->
-      <VCol cols="12" md="4">
+      <VCol cols="12" md="3">
         <VTextField
           v-model="project.end_date"
           label="End Date"
@@ -48,17 +48,35 @@
         />
       </VCol>
 
+       <VCol cols="12" md="3">
+        <VTextField
+          v-model="project.budget"
+          label="Initial Budget (SAR)"
+          type="number"
+          :min="0"
+          :error-messages="errorMessages.budget"
+        />
+      </VCol>
+
       <!-- Description -->
       <VCol cols="12">
-      <VTextarea
-  v-model="project.description"
-  label="Description"
-  rows="5"
-  :rules="[wordLimitRule]"
-  counter
-  :counter-value="`${wordCount.value}/1000 words`"
-/>
-  </VCol>
+        <label class="mb-1 d-block">Description</label>
+        <QuillEditor
+          v-model:content="project.description"
+          content-type="html"
+          theme="snow"
+          toolbar="full"
+        />
+         <small>
+            Max Characters Allowed : 120
+        </small>
+        <small v-if="errorMessages.description" class="text-red">
+          {{ errorMessages.description[0] }}
+        </small>
+         <small>
+            Max Characters Allowed : 120
+        </small>
+      </VCol>
 
       <VCol cols="12">
         <VBtn type="submit" color="primary" :loading="loading" :disabled="loading">
@@ -79,7 +97,7 @@ import { useRouter } from 'vue-router'
 import { VBtn, VCol, VForm, VRow, VTextField, VTextarea } from 'vuetify/components'
 import { useWordLimit } from '@/utils/descValidator'
 import { toRef } from 'vue'
-
+import { QuillEditor } from '@vueup/vue-quill'
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 const router = useRouter()
 
@@ -91,6 +109,7 @@ const project = ref({
   start_date: today,
   end_date: '',
   description: '',
+  budget: '',
 })
 
 const { wordCount, wordLimitRule } = useWordLimit(
@@ -177,6 +196,7 @@ const submitForm = async () => {
       start_date: project.value.start_date,
       end_date: project.value.end_date,
       description: project.value.description,
+      budget: project.value.budget,
     }
 
     const res = await axios.post(`${apiBaseUrl}/projects`, payload, {
@@ -201,6 +221,38 @@ const submitForm = async () => {
     loading.value = false
   }
 }
+
+const CHAR_LIMIT = 120
+
+// Helper: remove HTML, normalize text
+const plainText = html => {
+  return html
+    ?.replace(/<[^>]*>/g, '')     // remove HTML tags
+    ?.replace(/\u00A0/g, ' ')     // replace non-breaking spaces
+    ?.trim() || ''
+}
+
+watch(() => project.value.description, (newValue) => {
+  const text = plainText(newValue)
+  const chars = text.length
+
+  if (!text) {
+    errorMessages.value.description = null
+    return
+  }
+
+  if (chars > CHAR_LIMIT) {
+    errorMessages.value.description = [`Maximum ${CHAR_LIMIT} characters allowed.`]
+
+    // Auto-trim characters
+    const trimmed = text.slice(0, CHAR_LIMIT)
+    project.value.description = trimmed // set trimmed plain text
+    return
+  }
+
+  errorMessages.value.description = null
+})
+
 </script>
 
 

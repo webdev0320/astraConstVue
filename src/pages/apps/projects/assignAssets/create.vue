@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="d-flex justify-between align-center mb-4">
-      <h3>Add Budget</h3>
+      <h3>Add Assets</h3>
     </div>
 
     <VCard class="pa-4">
@@ -67,7 +67,7 @@
 
   <!-- Show selected asset price below field -->
   <small v-if="selectedAsset" class="text-muted">
-    Price: SAR {{ Number(selectedAsset.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+    Price: SAR {{ Number(selectedAsset.unit_price || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
   </small>
 </VCol>
 
@@ -88,6 +88,15 @@
             <small v-if="selectedAsset" class="text-muted">
               Remaining: {{ selectedAsset.remaining_quantity }}
             </small>
+
+             <small v-if="selectedAsset" class="text-muted totalAmountAfterCalculation">
+                Total: SAR {{
+                  selectedAssetTotal.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  })
+                }}
+              </small>
           </VCol>
 
 
@@ -129,9 +138,15 @@
           :items-per-page="5"
           class="mt-4"
         >
-          <template #item.amount="{ item }">
-            {{ formatAmount(item.amount) }}
+         
+          <template #item.unit_price="{ item }">
+            SAR {{ Number(item.unit_price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
           </template>
+
+          <template #item.subtotal="{ item }">
+            SAR {{ Number(item.subtotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+          </template>
+
           <template #item.actions="{ item }">
             <VBtn color="error" size="small" @click="removeBudgetRecord(item)">
               Delete
@@ -185,6 +200,8 @@ const headers = [
   { title: "Category", key: "category_name" },
   { title: "Subcategory", key: "subcategory_name" },
   { title: "Qty", key: "quantity" },
+  { title: "Unit Price", key: "unit_price" },
+  { title: "Subtotal", key: "subtotal" },
   { title: "Actions", key: "actions", sortable: false },
 ];
 
@@ -227,7 +244,7 @@ const fetchAssetCategories = async () => {
 
       // Save remaining budget
       const key = `${catId}|${subId}`;
-      categoryBudgets.value[key] = (categoryBudgets.value[key] || 0) + Number(item.amount || 0);
+      categoryBudgets.value[key] = (categoryBudgets.value[key] || 0) + Number(item.remainingBudget || 0);
     });
 
     allCategories.value = Object.values(grouped);
@@ -265,6 +282,16 @@ const subcategoryItemsForCategory = computed(() => {
       remainingBudget, // attach the remaining budget
     };
   });
+});
+
+
+const selectedAssetTotal = computed(() => {
+  if (!selectedAsset.value) return 0;
+
+  const price = Number(selectedAsset.value.unit_price || 0);
+  const qty = Number(budget.value.quantity || 0);
+
+  return price * qty;
 });
 
 
@@ -350,11 +377,11 @@ const addBudgetRecord = () => {
       r.asset_category_id === selectedCategoryId.value &&
       r.asset_subcategory_id === selectedSubCategoryId.value
     ) {
-      alreadyUsed += Number(r.quantity || 0) * Number(r.price || a.price || 0);
+      alreadyUsed += Number(r.quantity || 0) * Number(r.unit_price || a.unit_price || 0);
     }
   });
 
-  if ((alreadyUsed + qty * a.price) > totalBudget) {
+  if ((alreadyUsed + qty * a.unit_price) > totalBudget) {
     alert("Cannot add more than remaining budget for this category/subcategory.");
     return;
   }
@@ -369,18 +396,21 @@ const addBudgetRecord = () => {
   if (existing) {
     existing.quantity = Number(existing.quantity || 0) + qty;
   } else {
-    budgetRecords.value.push({
+      budgetRecords.value.push({
       __key: recordKey,
       project_id: Number(projectId.value),
       asset_id: a.id,
       asset_category_id: Number(selectedCategoryId.value),
       asset_subcategory_id: Number(selectedSubCategoryId.value),
       quantity: qty,
-      price: Number(a.price || 0),
-      asset_code: a?.title+'-'+a?.code ?? '—',
+      unit_price: Number(a.unit_price || 0),
+      subtotal: qty * Number(a.unit_price || 0),
+
+      asset_code: `${a.title}-${a.code}`,
       category_name: categoryNameById(selectedCategoryId.value),
       subcategory_name: subcategoryNameById(selectedSubCategoryId.value),
     });
+
   }
 
   // reset form

@@ -455,6 +455,21 @@ export const routes = [
   },
 },
 
+{
+  path: "/dashboards/projects/show/:id",
+  name: "dashboards-projects-show",
+  component: () => import("@/pages/apps/projects/show.vue"),
+  meta: {
+    layout: "default",
+    navActiveLink: "dashboards-projects",
+    breadcrumb: (route) => [
+      { title: "Dashboard", to: "/dashboards/projects" },
+      { title: "Projects", to: "/dashboards/projects" },
+      { title: `Details #${route.params.id}` },
+    ],
+  },
+},
+
 // Assign Users Routes
 {
   path: '/dashboards/projects/:id/assignusers',

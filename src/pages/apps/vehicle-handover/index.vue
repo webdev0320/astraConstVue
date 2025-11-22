@@ -174,7 +174,7 @@ const headers = [
   { title: 'DateTime', key: 'handover_dt_display' },
   { title: 'Rec DateTime', key: 'receiving_dt_display' },
   { title: "Req Status", key: "reqStatus" },
-  { title: "Status", key: "myApprovalStatus" },
+  { title: "My Status", key: "myApprovalStatus" },
   { title: 'Actions', key: 'actions', sortable: false },
 ]
 
@@ -258,38 +258,50 @@ const confirmDialog = ref({
   onConfirm: null,
 });
 
-const openApproveDialog = (vehicleHandOver, approvalId,status) => {
 
+const openApproveDialog = (assetInvestmentRequestId, approvalId, status) => {
   confirmDialog.value = {
     value: true,
-    title: "Approve Request",
-    message: "Are you sure you want to approve this request?",
-    color: "primary",
-    onConfirm: async () => {
+    title: status === "APPROVED" ? "Approve Request" : "Reject Request",
+    message: status === "APPROVED"
+      ? "Are you sure you want to approve this request? You may add remarks."
+      : "Are you sure you want to reject this request? Please add remarks.",
+    color: status === "APPROVED" ? "primary" : "error",
+    // onConfirm receives remarks (string)
+    onConfirm: async (remarks) => {
       try {
-        const accessToken = decodeURIComponent(getCookie("accessToken"));
+        actionLoading.value = true;
+        const accessToken = getCookie("accessToken");
+        if (!accessToken) throw new Error("Access token missing");
 
-        await axios.get(
-          `${apiBaseUrl}/vehicle-handover/changeStatus/${vehicleHandOver}/${approvalId}/${status}`,
+        const decodedToken = decodeURIComponent(accessToken);
+
+        // Use POST so you can include remarks in body
+        await axios.post(
+          `${apiBaseUrl}/vehicle-handover/${assetInvestmentRequestId}/changeStatus/${approvalId}/${encodeURIComponent(status)}`,
+          { remarks }, // <-- send remarks in request body
           {
-            headers: { 
-              Authorization: `Bearer ${accessToken}`,
+            headers: {
+              Authorization: `Bearer ${decodedToken}`,
               Accept: "application/json",
             },
           }
         );
 
-        console.log(`Request ${vehicleHandOver} approved by ${approvalId}`);
-        // Optionally reload your table data
-        await fetchHandovers();
-
+        // success: refresh table
+        await fetchAssetInvestmentRequests();
       } catch (error) {
-        console.error("Approve action failed:", error);
-        alert(error.response?.data?.message || "Failed to approve request.");
+        console.error("Approve/Reject failed:", error);
+        alert(error.response?.data?.message || error.message || "Action failed");
+        // rethrow if you want the dialog to keep showing loading; currently confirmWithRemarks catches errors
+        throw error;
+      } finally {
+        actionLoading.value = false;
       }
     },
   };
 };
+
 
 // --- fetch list ---
 const fetchHandovers = async () => {

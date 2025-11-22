@@ -1,106 +1,128 @@
 <template>
-  <div class="pa-6">
-    <!-- Header -->
-    <div class="d-flex justify-space-between align-center w-100 mb-4">
-      <h2 class="m-0">Asset Handover Detail</h2>
-
-      <div class="d-flex align-center gap-2" style="margin-left: auto;">
-        <VBtn color="secondary" @click="printPage">Print</VBtn>
-        <VBtn color="primary" @click="$router.push('/dashboards/assethandovers')">Back to List</VBtn>
-      </div>
+<div class="pa-6">
+  <!-- Header -->
+  <div class="d-flex justify-space-between align-center w-100 mb-4">
+    <h2 class="m-0">Asset Handover Detail</h2>
+    <div class="d-flex align-center gap-2" style="margin-left: auto;">
+      <VBtn color="secondary" @click="printPage">Print</VBtn>
+      <VBtn color="primary" @click="$router.push('/dashboards/assethandovers')">Back to List</VBtn>
     </div>
-
-    <!-- Loading / Error -->
-    <VCard v-if="isLoading" class="pa-4"><p>Loading details...</p></VCard>
-    <VAlert v-else-if="errorMessage" type="error" class="mb-4">{{ errorMessage }}</VAlert>
-
-    <!-- Detail View -->
-    <VCard v-else-if="handover" id="printArea" class="pa-6">
-      <VCardText>
-        <!-- Top Info Grid -->
-        <div class="detail-grid mb-6">
-          <div class="kv"><span class="k">Handover ID</span><span class="v">{{ show(handover.handover_id) }}</span></div>
-          <div class="kv"><span class="k">Handover Date</span><span class="v">{{ show(handover.handover_date) }}</span></div>
-          <div class="kv"><span class="k">Project Name</span><span class="v">{{ show(handover.projectName) }}</span></div>
-          <div class="kv"><span class="k">Asset Investment Request ID</span><span class="v">{{ show(handover.asset_investment_request_id) }}</span></div>
-
-          <div class="kv"><span class="k">Handover By</span><span class="v">{{ show(handover.handover_by?.name) }} ({{ show(handover.handover_by?.user_code) }})</span></div>
-          <div class="kv"><span class="k">Handover To</span><span class="v">{{ show(handover.user?.name) }} ({{ show(handover.user?.user_code) }})</span></div>
-          <div class="kv"><span class="k">Status</span><span class="v">{{ show(handover.status) }}</span></div>
-        </div>
-         <div class="detail-grid mb-6">
-          <div class="kv"><span class="k">Remarks</span><span class="v">{{ show(handover.remarks) }}</span></div>
-        </div>
-
-        <!-- Items Table -->
-        <div>
-          <h3 class="mb-2">Handover Items</h3>
-          <table class="handover-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Asset Name</th>
-                <th>Asset Type</th>
-                <th>Quantity Requested</th>
-                <th>Remarks</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(item, index) in handover.items" :key="item.id">
-                <td>{{ index + 1 }}</td>
-                <td>{{ show(item.asset_code) }} - {{ show(item.asset_name) }}</td>
-                <td>{{ show(item.asset_type) }}</td>
-                <td>{{ show(item.quantity) }}</td>
-                <td>{{ show(item.remarks) }}</td>
-              </tr>
-              <tr v-if="!handover.items?.length">
-                <td colspan="7" class="text-center">No items found</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-
-
-         <div>
-          <h3 class="mb-2">History</h3>
-          <table class="handover-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Date</th>
-                <th>Given By User Name</th>
-                <th>Given By User Code</th>
-                <th>Quantity Given</th>
-                <th>Quantity Pending</th>
-
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(item, index) in handover.history" :key="item.id">
-                <td>{{ index + 1 }}</td>
-                <td>{{ show(item.created_at) }}</td>
-                <td>{{ show(item.user.name) }}</td>
-                <td>{{ show(item.user.user_code) }}</td>
-                <td>{{ show(item.quantity_given) }}</td>
-                <td>{{ show(item.quantity_pending) }}</td>
-              </tr>
-              <tr v-if="!handover.history?.length">
-                <td colspan="7" class="text-center">No items found</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </VCardText>
-    </VCard>
   </div>
+  <!-- Loading / Error -->
+  <VCard v-if="isLoading" class="pa-4"><p>Loading details...</p></VCard>
+  <VAlert v-else-if="errorMessage" type="error" class="mb-4">{{ errorMessage }}</VAlert>
+  <!-- Detail View -->
+  <VCard v-else-if="handover" id="printArea" class="pa-6">
+  <VCardText>
+  <!-- Top Info Grid -->
+  <div class="detail-grid mb-6">
+    <div class="kv"><span class="k">Handover ID</span><span class="v">{{ show(handover.handover_id) }}</span></div>
+    <div class="kv"><span class="k">Handover Date</span><span class="v">{{ show(handover.handover_date) }}</span></div>
+    <div class="kv"><span class="k">Project Name</span><span class="v">{{ show(handover.projectName) }}</span></div>
+    <div class="kv"><span class="k">Asset Investment Request ID</span><span class="v">{{ show(handover.asset_investment_request_id) }}</span></div>
+    <div class="kv"><span class="k">Handover By</span><span class="v">{{ show(handover.handover_by?.name) }} ({{ show(handover.handover_by?.user_code) }})</span></div>
+    <div class="kv"><span class="k">Handover To</span><span class="v">{{ show(handover.user?.name) }} ({{ show(handover.user?.user_code) }})</span></div>
+    <div class="kv"><span class="k">Status</span><span class="v">{{ show(handover.status) }}</span></div>
+  </div>
+  <div class="detail-grid mb-6">
+    <div class="kv"><span class="k">Remarks</span><span class="v">{{ show(handover.remarks) }}</span></div>
+  </div>
+  <!-- Items Table -->
+  <!-- Handover Items DataTable -->
+  <div>
+    <h3 class="mb-2">Handover Items</h3>
+    <VDataTable
+    :headers="itemHeaders"
+    :items="handover.items"
+    item-value="id"
+    density="comfortable"
+    fixed-header
+    :items-per-page="5"
+    >
+    <template #item.asset="{ item }">
+    {{ show(item.asset_code) }} - {{ show(item.asset_name) }}
+    </template>
+    <template #item.quantity="{ item }">
+    {{ show(item.quantity) }}
+    </template>
+    <template #item.remarks="{ item }">
+    {{ show(item.remarks) }}
+    </template>
+    <template #no-data>
+    <div class="text-center py-4 textBlack">No items found.</div>
+    </template>
+    </VDataTable>
+  </div>
+  <!-- History DataTable -->
+  <div class="mt-4">
+    <h3 class="mb-2">History</h3>
+    <VDataTable
+    :headers="historyHeaders"
+    :items="handover.history"
+    item-value="id"
+    density="comfortable"
+    fixed-header
+    :items-per-page="5"
+    >
+    <template #item.date="{ item }">
+    {{ show(item.created_at) }}
+    </template>
+    <template #item.given_by_name="{ item }">
+    {{ show(item.user.name) }}
+    </template>
+    <template #item.given_by_code="{ item }">
+    {{ show(item.user.user_code) }}
+    </template>
+    <template #item.quantity_given="{ item }">
+    {{ show(item.quantity_given) }}
+    </template>
+    <template #item.quantity_pending="{ item }">
+    {{ show(item.quantity_pending) }}
+    </template>
+    <template #no-data>
+    <div class="text-center py-4 textBlack">No history found.</div>
+    </template>
+    </VDataTable>
+  </div>
+  
+  </VCardText>
+  </VCard>
+<VCard class="pa-3 rounded-lg no-print mt-4 no-padd" elevation="2">
+            <VCardTitle class="no-padd">Approvals</VCardTitle>
+            <VCardText class="no-padd">
+
+              <VAlert
+                v-if="approvalsError"
+                type="error"
+                class="mb-4"
+                variant="tonal"
+              >
+                {{ approvalsError }}
+              </VAlert>
+
+              <VDataTable
+                v-if="approvals.length"
+                :headers="approvalHeaders"
+                :items="approvals"
+                :items-per-page="5"
+                class="elev-1 no-padd"
+              />
+
+              <div v-else class="text-center py-4 text-medium-emphasis">
+                No approvals found.
+              </div>
+
+            </VCardText>
+          </VCard>
+
+</div>
 </template>
 
 <script setup>
 import axios from "axios";
 import { ref, onMounted } from "vue";
 import { useRoute } from "vue-router";
-import { VBtn, VCard, VCardText, VAlert } from "vuetify/components";
+import { VBtn, VCard, VCardText, VAlert, VDataTable } from "vuetify/components";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 const route = useRoute();
@@ -108,6 +130,29 @@ const route = useRoute();
 const handover = ref(null);
 const isLoading = ref(true);
 const errorMessage = ref("");
+
+const approvals = ref([])
+const approvalsError = ref("")
+
+
+// Table headers
+const itemHeaders = [
+  { title: "#", key: "index" },
+  { title: "Asset Name", key: "asset" },
+  { title: "Asset Type", key: "asset_type" },
+  { title: "Quantity Requested", key: "quantity" },
+  { title: "Remarks", key: "remarks" },
+];
+
+const historyHeaders = [
+  { title: "#", key: "index" },
+  { title: "Date", key: "date" },
+  { title: "Given By User Name", key: "given_by_name" },
+  { title: "Given By User Code", key: "given_by_code" },
+  { title: "Quantity Given", key: "quantity_given" },
+  { title: "Quantity Pending", key: "quantity_pending" },
+];
+
 
 const getCookie = (name) => {
   const value = `; ${document.cookie}`;
@@ -139,6 +184,31 @@ const fetchDetail = async () => {
     isLoading.value = false;
   }
 };
+
+const fetchApprovals = async () => {
+  approvalsError.value = ""
+  try {
+
+    const res = await axios.get(
+      `${apiBaseUrl}/getApprovals/AssetHandOver/${handover.value.id}`,
+      {
+        headers: getAuthHeaders(),
+      }
+    )
+
+    const data = res.data?.data ?? []
+    approvals.value = data.map(a => ({
+      id: a.id,
+      status: a.status,
+      name: a.user?.name ?? "—",
+      user_code: a.user?.user_code ?? "—",
+    }))
+  } catch (e) {
+    console.error("Fetch approvals failed", e)
+    approvalsError.value = e?.response?.data?.message || e?.message || "Failed to load approvals."
+  }
+}
+
 const logoPath = "/src/assets/images/logos/astra-logo.png";
 const printPage = () => {
   const h = handover.value;
@@ -329,7 +399,13 @@ const printPage = () => {
   printWindow.print();
 };
 
-onMounted(fetchDetail);
+
+
+onMounted(async () => {
+  await fetchDetail()
+  await fetchApprovals()
+})  
+
 </script>
 
 <style>
