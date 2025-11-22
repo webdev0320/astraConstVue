@@ -13,7 +13,7 @@ import svgLoader from 'vite-svg-loader'
 import VueDevTools from 'vite-plugin-vue-devtools'
 
 export default defineConfig({
-  base: './', // required if deploying in subfolder like public_html
+  base: '/',
   plugins: [
     // Vue Router
     VueRouter({
