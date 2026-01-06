@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" href="/astraConstVue/assets/favicon-Ci7aeqqh.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Astra Const Admin Dashboard Template</title>
+  <link rel="stylesheet" type="text/css" href="/astraConstVue/loader.css" />
+  <link rel="stylesheet" type="text/css" href="/astraConstVue/styles.css" />
+  <script type="module" crossorigin src="/astraConstVue/assets/index-BJgTmWrC.js"></script>
+  <link rel="stylesheet" crossorigin href="/astraConstVue/assets/index-CGd3SSG7.css">
+</head>
+
+<body>
+  <div id="app">
+    <div id="loading-bg">
+     <div class="loading-logo" style="
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100%;
+        ">
+
+        <!-- SVG Logo -->
+        <img src="/astraConstVue/assets/logo-black-Ba5Vd-ph.png" style="width: 30%;">
+      </div>
+      <div class=" loading">
+        <div class="effect-1 effects"></div>
+        <div class="effect-2 effects"></div>
+        <div class="effect-3 effects"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const loaderColor = localStorage.getItem('vuexy-initial-loader-bg') || '#FFFFFF'
+    const primaryColor = localStorage.getItem('vuexy-initial-loader-color') || '#7367F0'
+
+    if (loaderColor)
+      document.documentElement.style.setProperty('--initial-loader-bg', loaderColor)
+    if (loaderColor)
+      document.documentElement.style.setProperty('--initial-loader-bg', loaderColor)
+
+    if (primaryColor)
+      document.documentElement.style.setProperty('--initial-loader-color', primaryColor)
+    </script>
+  </body>
+</html>
