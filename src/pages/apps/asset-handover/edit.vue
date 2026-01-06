@@ -6,18 +6,34 @@
   <VForm ref="refForm" @submit.prevent="submitForm">
     <VRow>
       <!-- Name of Employee (from logged-in user) -->
-      <VCol cols="12" md="6">
-        <VTextField
-          v-model="form.employee_name"
-          label="Name of Employee"
-          readonly
-          :error-messages="errorMessages.employee_name"
-          hide-details="auto"
-        />
-      </VCol>
+        <VCol cols="12" md="4">
+              <VTextField
+                v-model="form.hor_number"
+                label="HandOver Number"
+                :error-messages="errorMessages.hor_number"
+                clearable
+              />
+            </VCol>
+
+
+   <VCol cols="12" md="4">
+          <VSelect
+            v-model="form.project_id"
+            :items="projects"
+            item-title="label"
+            item-value="id"
+            label="Project"
+            :loading="loadingProjects"
+            :disabled="loadingProjects"
+            :error-messages="errorMessages.project_id"
+            clearable
+            @update:modelValue="onProjectChange"
+          />
+        </VCol>
+
 
       <!-- Asset Investment Request -->
-      <VCol cols="12" md="6">
+      <VCol cols="12" md="4">
         <VSelect
           v-model="form.asset_investment_requests_id"
           :items="requestOptions"
@@ -31,19 +47,8 @@
         />
       </VCol>
 
-      <!-- Employee Code No (from logged-in user.user_code) -->
-      <VCol cols="12" md="6">
-        <VTextField
-          v-model="form.employee_code"
-          label="Employee Code No"
-          readonly
-          :error-messages="errorMessages.employee_code"
-          hide-details="auto"
-        />
-      </VCol>
-
       <!-- Handover Date (defaults to today) -->
-      <VCol cols="12" md="6">
+      <VCol cols="12" md="4">
         <VTextField
           v-model="form.handover_date"
           label="Handover Date"
@@ -54,7 +59,7 @@
       </VCol>
 
       <!-- Department -->
-      <VCol cols="12" md="6">
+      <VCol cols="12" md="4">
         <VSelect
           v-model="form.department_id"
           :items="departmentsOptions"
@@ -69,7 +74,7 @@
       </VCol>
 
       <!-- Handover By -->
-      <VCol cols="12" md="6">
+      <VCol cols="12" md="4">
         <VSelect
           v-model="form.user_id"
           :items="usersOptions"
@@ -178,29 +183,6 @@
         </VCard>
       </VCol>
 
-      <!-- Authorized Signatory Section -->
-      <VCol cols="12">
-        <div class="auth-signatory">
-          <span>Authorized Signatory <br /> (Person Requesting)</span>
-          <span>Authorized Signatory <br /> (Approver)</span>
-        </div>
-      </VCol>
-
-      <!-- ACKNOWLEDGEMENT AND DECLARATION BY EMPLOYEE: -->
-      <VCol cols="12">
-        <h5>ACKNOWLEDGEMENT AND DECLARATION BY EMPLOYEE:</h5>
-        <p>
-          I,
-          <strong>
-            {{
-              usersOptions.find(u => u.value === form.user_id)?.title?.split(' — ')[0]
-              || form.employee_name
-              || '________'
-            }}
-          </strong>
-          acknowledge that I have received the above mentioned assets. I understand that this asset belongs to ASTRA CONSTRUCTION and is under my possession for carrying out my work. I hereby assure that I will take care of the assets of the company to the best possible extent and will handover/transfer or return back to the company before my vacation or end of contract clearance (termination/resignation).
-        </p>
-      </VCol>
 
       <VCol cols="12">
         <VBtn type="submit" color="primary" :loading="loading" :disabled="loading">
@@ -228,7 +210,7 @@ import {
 /* ========= CONFIG ========= */
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL // should end with /api
 const apiCreateUrl = `${apiBaseUrl}/asset-handovers`
-const apiRequestsUrl = `${apiBaseUrl}/asset-investment-requests`
+const apiRequestsUrl = `${apiBaseUrl}/asset-handovers`
 const apiDepartmentsUrl = `${apiBaseUrl}/departments`
 
 const router = useRouter()
@@ -254,18 +236,23 @@ const loadingItems = ref(false)
 const requestItems = ref([])   // [{ item_id, description, request_qty, handover_qty, asset_id|null, remarks, asset_type }]
 const rowErrors = ref([])      // per-row client errors
 
+const projects = ref([])
+const loadingProjects = ref(false)
+
 /* today as default date */
 const today = new Date().toISOString().split('T')[0]
 
 /* include employee_id/employee_name/employee_code */
 const form = ref({
-  employee_id: null,           // hidden, captured from logged-in user.id
+   employee_id: null,           // hidden, captured from logged-in user.id
   employee_name: '',           // shown (readonly)
   employee_code: '',           // shown (readonly)
   asset_investment_requests_id: null,
+  project_id: null,
   user_id: null,
   department_id: null,
   handover_date: today,
+  hor_number: null,
 })
 
 watch(
@@ -305,47 +292,15 @@ const getToken = () => {
   return fromLS ? decodeURIComponent(fromLS) : null
 }
 
-/* ========= CURRENT USER (fill Name/Code) ========= */
-const currentUser = ref(null)
 
-const fetchCurrentUser = async () => {
-  const token = getToken()
-  if (!token) return
-
-  const candidates = [
-    `${apiBaseUrl}/me`,
-    `${apiBaseUrl}/auth/me`,
-    `${apiBaseUrl}/user`,
-    `${apiBaseUrl}/profile`,
-  ]
-
-  for (const url of candidates) {
-    try {
-      const res = await axios.get(url, {
-        headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
-      })
-      const u = res.data?.data ?? res.data?.user ?? res.data
-      if (u && (u.name || u.user_code || u.id)) {
-        currentUser.value = u
-        form.value.employee_id = u.id ?? null
-        form.value.employee_name = u.name ?? ''
-        form.value.employee_code = u.user_code ?? (u.id ? String(u.id) : '')
-        return
-      }
-    } catch (e) { /* try next */ }
+const onProjectChange = (projectId) => {
+  if (!projectId) {
+    asset.asset_investment_requests_id = null
+    return
   }
 
-  // Fallback: if you stored login payload in localStorage as "user"
-  try {
-    const fromLS = localStorage.getItem('user')
-    if (fromLS) {
-      const u = JSON.parse(fromLS)
-      currentUser.value = u
-      form.value.employee_id = u.id ?? null
-      form.value.employee_name = u.name ?? ''
-      form.value.employee_code = u.user_code ?? (u.id ? String(u.id) : '')
-    }
-  } catch (e) {}
+  fetchAssetRequests(projectId)
+  fetchAssets(projectId)
 }
 
 /* ========= OPTIONS ========= */
@@ -449,6 +404,8 @@ const fetchInvestmentRequestDetail = async (id) => {
       asset_id: it.asset_id != null ? String(it.asset_id) : null,
       remarks: '',
       asset_type: it.request_type || 'NEW',
+      handover_date : it.handover_date,
+      hor_number : it.handover_id
     }))
 
     rowErrors.value = requestItems.value.map(() => ({}))

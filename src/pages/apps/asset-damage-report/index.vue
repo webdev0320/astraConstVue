@@ -62,11 +62,11 @@
               <VListItemTitle>Detail</VListItemTitle>
             </VListItem>
 
-<!--             <VListItem @click="$router.push(`/dashboards/asset-damage-report/edit/${item.id}`)">
+            <VListItem @click="$router.push(`/dashboards/asset-damage-report/edit/${item.id}`)">
               <template #prepend><VIcon icon="tabler-edit" /></template>
               <VListItemTitle>Edit</VListItemTitle>
             </VListItem>
- -->
+
             <VListItem @click="deleteReport(item.id)">
               <template #prepend><VIcon icon="tabler-trash" /></template>
               <VListItemTitle>Delete</VListItemTitle>
@@ -154,21 +154,70 @@ const fetchReports = async () => {
   }
 };
 
-/* ---------- Delete ---------- */
+
+/* ---------- DELETE HANDLER ---------- */
+import Swal from "sweetalert2";
+/* ---------------- Mutations ---------------- */
 const deleteReport = async (id) => {
-  if (!confirm("Are you sure you want to delete this damage report?")) return;
+
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "This request will be permanently deleted!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "Cancel",
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    customClass: {
+      title: 'swal-title-color',      // title text
+      content: 'swal-content-color',  // message text
+      confirmButton: 'swal-confirm-btn', // confirm button text
+      cancelButton: 'swal-cancel-btn'    // cancel button text
+    }
+  });
+
+  if (!result.isConfirmed) return;
 
   try {
-    await axios.delete(`${apiBaseUrl}/asset-damage-reports/${id}`, {
-      headers: getAuthHeaders(),
+    Swal.fire({
+      title: "Deleting...",
+      text: "Please wait",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
     });
-    reports.value = reports.value.filter((r) => r.id !== id);
-    alert("Damage report deleted successfully!");
-  } catch (err) {
-    console.error("Error deleting report:", err);
-    alert(err.response?.data?.message || "Failed to delete report.");
+
+    await axios.delete(`${apiBaseUrl}/asset-damage-reports/${id}`, {
+        headers: getAuthHeaders(),
+    });
+    Swal.fire({
+      title: "Deleted!",
+      text: "Request deleted successfully.",
+      icon: "success",
+      customClass: {
+        title: 'swal-title-color',      // title text
+        content: 'swal-content-color',  // message text
+        confirmButton: 'swal-confirm-btn', // confirm button text
+        cancelButton: 'swal-cancel-btn'    // cancel button text
+      }
+    }).then(() => {
+      // ✅ Reload the page
+      window.location.reload();
+    });;
+
+  } catch (e) {
+    console.error("Error deleting request:", e);
+
+    Swal.fire({
+      title: "Error!",
+      text: e.response?.data?.message || "Failed to request.",
+      icon: "error",
+    });
   }
-};
+
+}
+
+
 
 onMounted(fetchReports);
 </script>

@@ -1,523 +1,598 @@
 <template>
-  <div class="d-flex justify-between align-center mb-4">
-    <h3>Edit Vehicle Handover</h3>
-    <VBtn variant="text" @click="$router.push('/dashboards/vehiclehandovers')">Back to list</VBtn>
-  </div>
-
-  <VForm ref="refForm" @submit.prevent="submitForm">
-    <VRow>
-      <!-- Investment Request -->
-      <VCol cols="12" md="6">
-        <VSelect
-          v-model="form.investment_req_id"
-          :items="investmentOptions"
-          item-title="label"
-          item-value="id"
-          label="Investment Request"
-          :rules="[requiredValidator]"
-          :error-messages="errorMessages.investment_req_id"
-          :loading="loadingInvestments"
-          clearable
-          @update:model-value="onInvestmentChange"
-        />
-      </VCol>
-
-      <!-- Report Date -->
-      <VCol cols="12" md="6">
-        <VTextField
-          v-model="form.report_date"
-          type="date"
-          label="Report Date"
-          :rules="[requiredValidator]"
-          :error-messages="errorMessages.report_date"
-          clearable
-        />
-      </VCol>
-
-      <!-- Plate No -->
-      <VCol cols="12" md="4">
-        <VTextField
-          v-model="form.plate_no"
-          label="Plate No"
-          :rules="[requiredValidator]"
-          :error-messages="errorMessages.plate_no"
-          clearable
-        />
-      </VCol>
-
-      <!-- Vehicle Type -->
-      <VCol cols="12" md="4">
-        <VTextField
-          v-model="form.vehicle_type"
-          label="Vehicle Type"
-          :rules="[requiredValidator]"
-          :error-messages="errorMessages.vehicle_type"
-          clearable
-        />
-      </VCol>
-
-      <!-- Model No / Year -->
-      <VCol cols="12" md="4">
-        <VTextField
-          v-model="form.model_no"
-          label="Model No / Year"
-          :rules="[requiredValidator]"
-          :error-messages="errorMessages.model_no"
-          clearable
-        />
-      </VCol>
-
-      <!-- KM Reading -->
-      <VCol cols="12" md="4">
-        <VTextField
-          v-model.number="form.km_reading"
-          type="number"
-          min="0"
-          label="KM Reading"
-          :rules="[requiredValidator]"
-          :error-messages="errorMessages.km_reading"
-          clearable
-        />
-      </VCol>
-
-      <!-- Driver -->
-      <VCol cols="12" md="8">
-        <VSelect
-          v-model="form.driver_id"
-          :items="driverOptions"
-          item-title="name"
-          item-value="id"
-          label="Driver"
-          :loading="loadingProjectUsers"
-          :error-messages="errorMessages.driver_id"
-          clearable
-        />
-      </VCol>
-
-      <!-- Releasing Employee -->
-      <VCol cols="12" md="6">
-        <VSelect
-          v-model="form.releasing_emp_id"
-          :items="projectUsers"
-          item-title="name"
-          item-value="id"
-          label="Releasing Employee"
-          :loading="loadingProjectUsers"
-          :rules="[requiredValidator]"
-          :error-messages="errorMessages.releasing_emp_id"
-          clearable
-        />
-      </VCol>
-
-      <!-- Receiving Employee -->
-      <VCol cols="12" md="6">
-        <VSelect
-          v-model="form.receiving_emp_id"
-          :items="projectUsers"
-          item-title="name"
-          item-value="id"
-          label="Receiving Employee"
-          :loading="loadingProjectUsers"
-          :rules="[requiredValidator]"
-          :error-messages="errorMessages.receiving_emp_id"
-          clearable
-        />
-      </VCol>
-
-      <!-- Handover Location -->
-      <VCol cols="12" md="6">
-        <VSelect
-          v-model="form.handover_location_id"
-          :items="locationOptions"
-          item-title="name"
-          item-value="id"
-          label="Handover Location"
-          :loading="loadingLocations"
-          :rules="[requiredValidator]"
-          :error-messages="errorMessages.handover_location_id"
-          clearable
-        />
-      </VCol>
-
-      <!-- Receiving Location -->
-      <VCol cols="12" md="6">
-        <VSelect
-          v-model="form.receiving_location_id"
-          :items="locationOptions"
-          item-title="name"
-          item-value="id"
-          label="Receiving Location"
-          :loading="loadingLocations"
-          :rules="[requiredValidator]"
-          :error-messages="errorMessages.receiving_location_id"
-          clearable
-        />
-      </VCol>
-
-      <!-- Handover Datetime -->
-      <VCol cols="12" md="6">
-        <VTextField
-          v-model="form.handover_datetime"
-          type="datetime-local"
-          label="Handover Datetime"
-          :rules="[requiredValidator]"
-          :error-messages="errorMessages.handover_datetime"
-          clearable
-        />
-      </VCol>
-
-      <!-- Receiving Datetime -->
-      <VCol cols="12" md="6">
-        <VTextField
-          v-model="form.receiving_datetime"
-          type="datetime-local"
-          label="Receiving Datetime"
-          :rules="[requiredValidator]"
-          :error-messages="errorMessages.receiving_datetime"
-          clearable
-        />
-      </VCol>
-
-      <!-- Notes -->
-      <VCol cols="12">
-        <VTextarea
-          v-model="form.notes"
-          label="Notes"
-          :rows="3"
-          :error-messages="errorMessages.notes"
-        />
-      </VCol>
-
-      <!-- Checks -->
-      <VCol cols="12">
-        <div class="mb-2 font-weight-500">Checks</div>
+  <div class="rental-form-container">
+    <VCard class="pa-4">
+      <VForm ref="refForm" @submit.prevent="saveRentalRequest">
         <VRow>
-          <VCol cols="12" sm="6" md="3" v-for="c in checkList" :key="c.key">
-            <VCheckbox
-              v-model="form.checks[c.key]"
-              :label="c.label"
-              hide-details
+          <VCol cols="12" md="4">
+            <VTextField
+              v-model="form.ren_number"
+              label="Rental Equipment Number"
+              :error-messages="errorMessages.ren_number"
+              readonly
+            />
+          </VCol>
+
+          <!-- Project -->
+          <VCol cols="12" md="4">
+            <VSelect
+              v-model="form.project_id"
+              :items="projectOptions"
+              item-title="label"
+              item-value="id"
+              label="Select Project"
+              :error-messages="errorMessages.project_id"
+              :loading="loading.projects"
+              :disabled="loading.projects"
+              hide-details="auto"
+              clearable
+              @update:modelValue="onProjectChange"
+            />
+          </VCol>
+
+          <!-- Date -->
+          <VCol cols="12" md="4">
+            <VTextField
+              v-model="form.date"
+              type="date"
+              label="Date"
+              :error-messages="errorMessages.date"
+              hide-details="auto"
+              clearable
             />
           </VCol>
         </VRow>
-        <div class="text-caption mt-1">Tip: API key <code>spare_time</code> ko as-is use kiya gaya hai.</div>
-      </VCol>
 
-      <VCol cols="12" class="mt-2">
-        <VBtn type="submit" color="primary" :loading="saving" :disabled="saving">
-          Update
-        </VBtn>
-      </VCol>
-    </VRow>
+        <!-- Asset Requests -->
+        <div class="mt-6">
+          <div class="font-weight-medium mb-2">LIST OF EQUIPMENT REQUIRED</div>
+          <VRow>
+            <VCol cols="12" md="4">
+              <VSelect
+                v-model="assetRequest.asset_category_id"
+                :items="categories"
+                item-title="name"
+                item-value="id"
+                label="Select Asset Category"
+                :loading="loading.categories"
+                :disabled="loading.categories"
+                hide-details="auto"
+                clearable
+              />
+            </VCol>
 
-    <div v-if="message" class="mt-4">{{ message }}</div>
-  </VForm>
+            <VCol cols="12" md="4">
+              <VSelect
+                v-model="assetRequest.asset_sub_category_id"
+                :items="subCategoriesForAsset"
+                item-title="name"
+                item-value="id"
+                label="Select Subcategory"
+                :disabled="!assetRequest.asset_category_id || loading.subCategories"
+                :loading="loading.subCategories"
+                hide-details="auto"
+                clearable
+              />
+            </VCol>
+
+            <VCol cols="12" md="4">
+              <VSelect
+                v-model="assetRequest.asset_id"
+                :items="assets"
+                item-title="label"
+                item-value="id"
+                label="Asset"
+                :loading="loading.assets"
+                :disabled="!assetRequest.asset_sub_category_id || loading.assets"
+                clearable
+                @update:modelValue="onAssetChange"
+              />
+            </VCol>
+
+            <VCol cols="12" md="3">
+              <VTextField
+                v-model.number="assetRequest.quantity"
+                type="number"
+                min="1"
+                :max="assetRequest.maxQty"
+                label="Quantity"
+                :rules="[v => !assetRequest.maxQty || v <= assetRequest.maxQty || `Max allowed: ${assetRequest.maxQty}`]"
+                hide-details="auto"
+              />
+            </VCol>
+
+            <VCol cols="12" md="3">
+              <VTextField
+                v-model="assetRequest.start_date"
+                type="date"
+                label="Date of Need"
+                :error-messages="errorMessages.asset_request?.start_date"
+                hide-details="auto"
+                clearable
+              />
+            </VCol>
+
+            <VCol cols="12" md="3">
+              <VTextField
+                v-model="assetRequest.end_date"
+                type="date"
+                label="End Date"
+                :error-messages="errorMessages.asset_request?.end_date"
+                hide-details="auto"
+                clearable
+              />
+            </VCol>
+
+            <VCol cols="12" md="12">
+              <VTextField
+                v-model="assetRequest.activity"
+                label="Activity"
+                :error-messages="errorMessages.asset_request?.activity"
+                hide-details="auto"
+              />
+            </VCol>
+
+            <VCol cols="12" md="3" class="d-flex align-end">
+              <VBtn color="primary" @click="addAssetRequest" :disabled="!isAssetRequestValid">
+                <VIcon start>mdi-plus</VIcon> Add
+              </VBtn>
+            </VCol>
+          </VRow>
+
+          <!-- Asset Request Chips -->
+          <div v-if="form.asset_requests.length" class="mt-4">
+            <VChip
+              v-for="(asset, idx) in form.asset_requests"
+              :key="idx"
+              class="ma-1"
+              closable
+              @click:close="removeAssetRequest(idx)"
+            >
+              {{ asset.activity }} — {{ assetNameById(asset.asset_id) }} — Qty: {{ asset.quantity }} — {{ formatDate(asset.start_date) }} to {{ formatDate(asset.end_date) }}
+            </VChip>
+          </div>
+
+          <!-- Asset Request Table -->
+          <VDataTable
+            v-if="form.asset_requests.length"
+            :headers="assetHeaders"
+            :items="form.asset_requests"
+            :items-per-page="5"
+            class="mt-4"
+          >
+            <template #item.asset_id="{ item }">
+              {{ assetNameById(item.asset_id) }}
+            </template>
+            <template #item.start_date="{ item }">
+              {{ formatDate(item.start_date) }}
+            </template>
+            <template #item.end_date="{ item }">
+              {{ formatDate(item.end_date) }}
+            </template>
+            <template #item.actions="{ item }">
+              <VBtn color="error" size="small" @click="removeAssetRequest(form.asset_requests.indexOf(item))">
+                Delete
+              </VBtn>
+            </template>
+          </VDataTable>
+        </div>
+
+        <!-- Rental Equipment -->
+        <div class="mt-6">
+          <div class="font-weight-medium mb-5">LIST OF EQUIPMENT ALREADY WORKING ON THE PROJECT</div>
+          <VDataTable :headers="assetInListHeaders" :items="assetsInProject" :items-per-page="50" />
+        </div>
+
+        <!-- Summary -->
+        <VCol cols="12" class="d-flex justify-end mt-4">
+          <div class="text-end">
+            <div class="text-medium-emphasis">Asset Requests: <b>{{ form.asset_requests.length }}</b></div>
+            <div class="text-medium-emphasis">Total Asset Quantity: <b>{{ totalAssetQuantity }}</b></div>
+            <div class="text-medium-emphasis">Rental Equipments: <b>{{ form.rental_equipments.length }}</b></div>
+            <div class="text-medium-emphasis">Total Equipment Quantity: <b>{{ totalEquipmentQuantity }}</b></div>
+          </div>
+        </VCol>
+
+        <!-- Actions -->
+        <div class="d-flex gap-2 mt-4">
+          <VBtn
+            color="primary"
+            type="submit"
+            :loading="loading.submit"
+            :disabled="loading.submit || (!form.asset_requests.length && !form.rental_equipments.length)"
+          >
+            <VIcon start>mdi-content-save</VIcon> Update
+          </VBtn>
+          <VBtn variant="text" @click="clearAll" :disabled="!form.asset_requests.length && !form.rental_equipments.length">
+            Clear
+          </VBtn>
+        </div>
+
+        <VAlert v-if="message" :type="message.includes('success') ? 'success' : 'error'" class="mt-4">
+          {{ message }}
+        </VAlert>
+      </VForm>
+    </VCard>
+  </div>
 </template>
 
 <script setup>
-import axios from 'axios'
-import { computed, onMounted, ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import {
-  VBtn, VCheckbox, VCol, VForm, VRow,
-  VSelect, VTextField, VTextarea,
-} from 'vuetify/components'
-
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL // should end with /api
-
+import axios from 'axios'
 
 const route = useRoute()
 const router = useRouter()
-const handoverId = route.params.id
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
+const rentalId = route.params.id
+const assetsInProject = ref([])
+/* ---------------- STATE ---------------- */
+const loading = ref({
+  projects: false,
+  categories: false,
+  submit: false,
+})
 
-// ---- state ----
-const refForm = ref()
-const loadingInvestments = ref(false)
-const loadingLocations = ref(false)
-const loadingProjectUsers = ref(false)
-const saving = ref(false)
 const message = ref('')
 const errorMessages = ref({})
 
-// dropdown data
-const investmentOptions = ref([])
-const projectUsers = ref([])
-const locationOptions = ref([])
+const projectOptions = ref([])
+const categories = ref([])
+const assets = ref([]) // optional future use
 
-// form model
+/* ---------------- FORM ---------------- */
 const form = ref({
-  investment_req_id: null,
-  report_date: '',
-  plate_no: '',
-  driver_id: null,
-  km_reading: null,
-  vehicle_type: '',
-  model_no: '',
-  releasing_emp_id: null,
-  handover_location_id: null,
-  handover_datetime: '',   // datetime-local format
-  receiving_emp_id: null,
-  receiving_location_id: null,
-  receiving_datetime: '',
-  notes: '',
-  checks: {
-    tires: false,
-    battery: false,
-    scratches: false,
-    mirrors: false,
-    registration_card: false,
-    insurance_card: false,
-    spare_time: false,
-    jack: false,
-    tool_kit: false,
-  },
+  project_id: null,
+  ren_number: '',
+  date: '',
+  asset_requests: [],
+  rental_equipments: [],
 })
+const today = new Date().toISOString().split('T')[0]
 
-const checkList = [
-  { key: 'tires', label: 'Tires' },
-  { key: 'battery', label: 'Battery' },
-  { key: 'scratches', label: 'Scratches' },
-  { key: 'mirrors', label: 'Mirrors' },
-  { key: 'registration_card', label: 'Registration Card' },
-  { key: 'insurance_card', label: 'Insurance Card' },
-  { key: 'spare_time', label: 'Spare Tire (spare_time)' },
-  { key: 'jack', label: 'Jack' },
-  { key: 'tool_kit', label: 'Tool Kit' },
+const subCategoriesForAsset = ref([])
+const subCategoriesForRental = ref([])
+
+/* ---------------- TABLE HEADERS ---------------- */
+const assetHeaders = [
+  { title: 'Asset', key: 'asset_id' },
+  { title: 'Activity', key: 'activity' },
+  { title: 'Quantity', key: 'quantity' },
+  { title: 'Start Date', key: 'start_date' },
+  { title: 'End Date', key: 'end_date' },
+  { title: 'Actions', key: 'actions' },
 ]
 
-// Prefer "Drivers" role for driver dropdown, else show all
-const driverOptions = computed(() => {
-  const drivers = projectUsers.value.filter(u =>
-    (u.role || '').toLowerCase().includes('driver'),
-  )
-  return drivers.length ? drivers : projectUsers.value
+const assetRequest = ref({
+  asset_category_id: null,
+  asset_sub_category_id: null,
+  asset_id: null,
+  activity: '',
+  quantity: null,
+  start_date: today,
 })
 
-// ---- utils ----
-const requiredValidator = v => (!!v || v === 0) || 'This field is required'
+const rentalEquipment = ref({
+  asset_category_id: null,
+  asset_sub_category_id: null,
+  asset_id: null,
+  activity: '',
+  quantity_at_site: null,
+  start_date: today,
+  end_date: '',
+  spo_number: '',
+})
 
-const getCookie = name => {
-  const value = `; ${document.cookie}`
-  const parts = value.split(`; ${name}=`)
-  if (parts.length === 2) return parts.pop().split(';').shift()
-  return null
-}
-const getAccessToken = () => {
-  const raw = getCookie('accessToken')
-  if (!raw) return null
-  const decoded = decodeURIComponent(raw)
-  return decoded.replace(/^"+|"+$/g, '')
-}
-const authHeaders = () => {
-  const token = getAccessToken()
-  if (!token) throw new Error('Access token is missing. Please log in.')
-  return { Authorization: `Bearer ${token}`, Accept: 'application/json' }
-}
 
-// datetime helpers
-const toSqlDatetime = (v) => {
-  if (!v) return v
-  const pad = (n) => String(n).padStart(2, '0')
-  const d = new Date(v)
-  if (isNaN(d.getTime())) {
-    return v.includes('T') ? v.replace('T', ' ') + ':00' : v
-  }
-  const yyyy = d.getFullYear()
-  const mm = pad(d.getMonth() + 1)
-  const dd = pad(d.getDate())
-  const hh = pad(d.getHours())
-  const mi = pad(d.getMinutes())
-  const ss = '00'
-  return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`
-}
-const toInputLocal = (sqlOrIso) => {
-  // convert "YYYY-MM-DD HH:mm:ss" or ISO → "YYYY-MM-DDTHH:mm"
-  if (!sqlOrIso) return ''
+
+const assetInListHeaders = [
+  { title: 'Asset', key: 'asset_name' },
+  { title: 'Activity', key: 'activity' },
+  { title: 'Quantity At Site', key: 'quantity_at_site' },
+  { title: 'Start Date', key: 'start_date' },
+  { title: 'End Date', key: 'end_date' },
+  { title: 'SPO Number', key: 'spo_number' },
+]
+
+/* ---------------- COMPUTED ---------------- */
+const totalAssetQuantity = computed(() =>
+  form.value.asset_requests.reduce((s, r) => s + Number(r.quantity || 0), 0)
+)
+
+const totalEquipmentQuantity = computed(() =>
+  form.value.rental_equipments.reduce((s, r) => s + Number(r.quantity_at_site || 0), 0)
+)
+
+const isAssetRequestValid = computed(() =>
+  assetRequest.value.asset_id &&
+  assetRequest.value.quantity &&
+  assetRequest.value.start_date &&
+  assetRequest.value.end_date
+)
+
+const onProjectChange = (val) => {
+  form.value.project_id = val;   // update reactive projectId
+  if (val) fetchProjectAssets(); // call your function
+};
+const filters = ref({
+  asset_category_id: null,
+  asset_sub_category_id: null
+});
+
+// fetch project assets
+const fetchProjectAssets = async () => {
+  if (!form.value.project_id) return;
+
   try {
-    let s = String(sqlOrIso)
-    if (!s.includes('T')) s = s.replace(' ', 'T')
-    const d = new Date(s)
-    if (isNaN(d.getTime())) return ''
-    const pad = n => String(n).padStart(2, '0')
-    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-  } catch {
-    return ''
-  }
-}
-
-// ---- data loaders ----
-const loadInvestments = async () => {
-  loadingInvestments.value = true
-  try {
-    const res = await axios.get(`${apiBaseUrl}/asset-investment-requests`, { headers: authHeaders() })
-    const list = res.data?.data ?? []
-    investmentOptions.value = list.map(r => ({
-      id: r.id,
-      label: `#${r.id} — ${r.project_name} — ${r.date} — ${r.status}`,
-      project_id: r.project_id,
-    }))
-  } catch (e) {
-    console.error('Load investments failed', e)
-    message.value = e.response?.data?.message || 'Failed to load investment requests.'
-  } finally {
-    loadingInvestments.value = false
-  }
-}
-
-const loadLocations = async () => {
-  loadingLocations.value = true
-  try {
-    const res = await axios.get(`${apiBaseUrl}/locations`, { headers: authHeaders() })
-    locationOptions.value = Array.isArray(res.data) ? res.data : []
-  } catch (e) {
-    console.error('Load locations failed', e)
-    message.value = e.response?.data?.message || 'Failed to load locations.'
-  } finally {
-    loadingLocations.value = false
-  }
-}
-
-const loadProjectUsersByProjectId = async (projectId) => {
-  if (!projectId) return
-  loadingProjectUsers.value = true
-  try {
-    const res = await axios.get(`${apiBaseUrl}/projects/${projectId}/users/sync`, { headers: authHeaders() })
-    projectUsers.value = res.data?.users ?? []
-  } catch (e) {
-    console.error('Load project users failed', e)
-    message.value = e.response?.data?.message || 'Failed to load project users.'
-  } finally {
-    loadingProjectUsers.value = false
-  }
-}
-
-// On changing investment manually from UI
-const onInvestmentChange = async (investmentId) => {
-  projectUsers.value = []
-  if (!investmentId) return
-  const inv = investmentOptions.value.find(i => i.id === investmentId)
-  if (inv?.project_id) {
-    await loadProjectUsersByProjectId(inv.project_id)
-  }
-}
-
-// Load existing handover
-const fetchHandover = async () => {
-  try {
-    const res = await axios.get(`${apiBaseUrl}/vehicle-handovers/${handoverId}`, { headers: authHeaders() })
-    // API might return {data:{...}} or {...}
-    const h = res.data?.data ?? res.data
-
-    // Pre-fill form
-    form.value.investment_req_id    = h.investment_req_id ?? null
-    form.value.report_date          = h.report_date ?? ''
-    form.value.plate_no             = h.plate_no ?? ''
-    form.value.vehicle_type         = h.vehicle_type ?? ''
-    form.value.model_no             = h.model_no ?? ''
-    form.value.km_reading           = h.km_reading ?? null
-    form.value.releasing_emp_id     = h.releasing_emp_id ?? null
-    form.value.receiving_emp_id     = h.receiving_emp_id ?? null
-    form.value.driver_id            = h.driver_id ?? null
-    form.value.handover_location_id = h.handover_location_id ?? null
-    form.value.receiving_location_id= h.receiving_location_id ?? null
-    form.value.handover_datetime    = toInputLocal(h.handover_datetime)
-    form.value.receiving_datetime   = toInputLocal(h.receiving_datetime)
-    form.value.notes                = h.notes ?? ''
-
-    // Checks object if available
-    if (h.checks && typeof h.checks === 'object') {
-      form.value.checks = {
-        tires: !!h.checks.tires,
-        battery: !!h.checks.battery,
-        scratches: !!h.checks.scratches,
-        mirrors: !!h.checks.mirrors,
-        registration_card: !!h.checks.registration_card,
-        insurance_card: !!h.checks.insurance_card,
-        spare_time: !!h.checks.spare_time,
-        jack: !!h.checks.jack,
-        tool_kit: !!h.checks.tool_kit,
+    const res = await axios.get(
+      `${import.meta.env.VITE_API_BASE_URL}/getRentalAssets/${encodeURIComponent(
+        form.value.project_id
+      )}`,
+      {
+        headers: authHeaders(),
+        params: { asset_type: "LEASED" },
       }
-    }
+    );
 
-    // Load project users for selected investment (needs investmentOptions to be ready)
-    const inv = investmentOptions.value.find(i => i.id === form.value.investment_req_id)
-    if (inv?.project_id) {
-      await loadProjectUsersByProjectId(inv.project_id)
-    }
+    assetsInProject.value = res.data.data.rental_equipments;
   } catch (e) {
-    console.error('Error fetching handover:', e)
-    message.value = e.response?.data?.message || 'Failed to load vehicle handover.'
+    console.error(e);
   }
-}
+};
 
-// Submit update
-const submitForm = async () => {
+watch(
+  () => assetRequest.value.asset_sub_category_id,
+  async newVal => {
+    assetRequest.value.asset_id = null
+    await fetchAssets(newVal)
+  }
+)
+
+watch(
+  () => rentalEquipment.value.asset_sub_category_id,
+  async newVal => {
+    rentalEquipment.value.asset_id = null
+    await fetchAssets(newVal)
+  }
+)
+
+const fetchAssets = async (subCategoryId) => {
+  if (!subCategoryId) {
+    //assets.value = []
+    return
+  }
+  loading.value.assets = true
   try {
-    saving.value = true
-    errorMessages.value = {}
-    message.value = ''
+    const res = await axios.get(`${apiBaseUrl}/assets`, {
+      params: { asset_sub_category_id: subCategoryId, project_id : form.value.project_id },
+      headers: authHeaders(),
+    })
+    const list = res.data?.data?.data ?? res.data?.data ?? res.data ?? []
 
-    const { valid } = await (refForm.value?.validate?.() ?? { valid: true })
-    if (!valid) { saving.value = false; return }
-
-    // Build payload
-    const payload = {
-      investment_req_id: form.value.investment_req_id,
-      report_date: form.value.report_date,
-      plate_no: form.value.plate_no,
-      driver_id: form.value.driver_id,
-      km_reading: form.value.km_reading,
-      vehicle_type: form.value.vehicle_type,
-      model_no: form.value.model_no,
-      releasing_emp_id: form.value.releasing_emp_id,
-      handover_location_id: form.value.handover_location_id,
-      handover_datetime: toSqlDatetime(form.value.handover_datetime),
-      receiving_emp_id: form.value.receiving_emp_id,
-      receiving_location_id: form.value.receiving_location_id,
-      receiving_datetime: toSqlDatetime(form.value.receiving_datetime),
-      notes: form.value.notes,
-      checks: form.value.checks,
-    }
-
-    await axios.put(`${apiBaseUrl}/vehicle-handovers/${handoverId}`, payload, {
-      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    assets.value = list.map(a => {
+      const code = a.code;
+      const title = a.title
+      return { id: Number(a.id), label: `${code} — ${title}`.trim(),quantity: Number(a.quantity) }
     })
 
-    message.value = 'Vehicle handover updated successfully!'
-    router.push('/dashboards/vehiclehandovers')
+
   } catch (error) {
-    console.error('Error updating vehicle handover:', error)
-    if (error.response?.status === 422 && error.response?.data?.errors) {
-      errorMessages.value = error.response.data.errors
-      message.value = 'Please fix the highlighted errors.'
-    } else if (error.response?.status === 401) {
-      message.value = 'Unauthorized. Please log in again.'
-    } else {
-      message.value = error.response?.data?.message || 'Failed to update vehicle handover.'
-    }
+    console.error('Error fetching Assets:', error)
+    message.value = 'Failed to load assets.'
   } finally {
-    saving.value = false
+    loading.value.assets = false
   }
 }
 
-onMounted(async () => {
+/* ---------------- HELPERS ---------------- */
+const normalizeDate = d => (d ? d.split('T')[0] : '')
+
+const assetNameById = id => `Asset #${id}`
+
+/* ---------------- AUTH ---------------- */
+const getCookie = name =>
+  document.cookie.split('; ').find(r => r.startsWith(name + '='))?.split('=')[1]
+
+const authHeaders = () => ({
+  Authorization: `Bearer ${decodeURIComponent(getCookie('accessToken') || '')}`,
+  Accept: 'application/json',
+})
+
+/* ---------------- API ---------------- */
+const fetchProjects = async () => {
+  loading.value.projects = true
   try {
-    if (!getAccessToken()) throw new Error('Access token is missing. Please log in.')
-    // Load static dropdowns first, then handover (so project users can load correctly)
-    await Promise.all([loadInvestments(), loadLocations()])
-    await fetchHandover()
-  } catch (e) {
-    console.error(e)
-    message.value = e.message
+    const res = await axios.get(`${apiBaseUrl}/projects`, { headers: authHeaders() })
+    projectOptions.value = res.data.data.map(p => ({
+      id: p.id,
+      label: `${p.project_code} - ${p.name}`,
+    }))
+  } finally {
+    loading.value.projects = false
   }
+}
+
+
+const fetchRentalData = async () => {
+  const res = await axios.get(`${apiBaseUrl}/rental-required/${rentalId}`, {
+    headers: authHeaders(),
+  })
+
+  const data = res.data.data
+
+  form.value.project_id = data.project_id
+  form.value.ren_number = data.rental_equipment_id
+  form.value.date = normalizeDate(data.date)
+
+  // 👇 SHOW IN "LIST OF EQUIPMENT REQUIRED"
+  form.value.asset_requests = data.rental_equipments.map(r => ({
+    asset_id: r.asset_id,
+    activity: r.activity,
+    quantity: r.quantity_at_site,
+    start_date: normalizeDate(r.start_date),
+    end_date: normalizeDate(r.end_date),
+  }))
+
+  // 👇 SHOW IN "ALREADY WORKING"
+  form.value.rental_equipments = data.rental_equipments
+}
+
+// watchers
+watch(
+  () => assetRequest.value.asset_category_id,
+  async newVal => {
+    assetRequest.value.asset_sub_category_id = null
+    assetRequest.value.asset_id = null
+/*    assets.value = []*/
+    await fetchSubCategories(newVal, 'asset')
+  }
+)
+
+watch(
+  () => rentalEquipment.value.asset_category_id,
+  async newVal => {
+    rentalEquipment.value.asset_sub_category_id = null
+    rentalEquipment.value.asset_id = null
+/*    assets.value = []*/
+    await fetchSubCategories(newVal, 'rental')
+  }
+)
+
+
+const fetchAllCategories = async () => {
+  let page = 1
+  let all = []
+  let total = Infinity
+  let perPageFromServer = 15
+
+  while ((page - 1) * perPageFromServer < total) {
+    const res = await axios.get(`${apiBaseUrl}/asset-categories`, {
+      params: { page },
+      headers: authHeaders(),
+    })
+
+    const list =
+      Array.isArray(res.data?.categories) ? res.data.categories
+      : Array.isArray(res.data?.data) ? res.data.data
+      : Array.isArray(res.data) ? res.data : []
+
+    all = all.concat(list)
+
+    total = Number(res.data?.total_records ?? total)
+    perPageFromServer = Number(res.data?.perPage ?? perPageFromServer)
+
+    if (!list.length) break
+    page += 1
+  }
+
+  return all
+}
+
+const fetchCategories = async () => {
+  try {
+    loading.value.categories = true
+    const raw = await fetchAllCategories()
+
+    const parents = raw.filter(
+      c => c && c.status === true && c.is_parent === true && (c.parent_id === null || c.parent_id === undefined)
+    )
+
+    categories.value = parents
+      .map(c => ({ id: c.id, slug: c.slug, name: c.title || slugToTitle(c.slug) }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+  } catch (e) {
+    console.error('Failed to load categories', e)
+    categories.value = []
+    message.value = 'Failed to load categories.'
+  } finally {
+    loading.value.categories = false
+  }
+}
+
+const fetchSubCategories = async (parentId, target) => {
+  if (!parentId) {
+    if (target === 'asset') subCategoriesForAsset.value = []
+    else subCategoriesForRental.value = []
+    return
+  }
+  try {
+    loading.value.subCategories = true
+    const res = await axios.get(`${apiBaseUrl}/asset-categories/${encodeURIComponent(parentId)}`, {
+      headers: authHeaders(),
+    })
+    const children = res?.data?.data?.children || res?.data?.children || []
+    const formatted = children
+      .filter(ch => ch?.status !== false)
+      .map(ch => ({ id: ch.id, slug: ch.slug, name: ch.title || slugToTitle(ch.slug) }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+    
+    if (target === 'asset') subCategoriesForAsset.value = formatted
+    else subCategoriesForRental.value = formatted
+  } catch (e) {
+    console.error('Failed to load sub categories', e)
+    if (target === 'asset') subCategoriesForAsset.value = []
+    else subCategoriesForRental.value = []
+    message.value = 'Failed to load subcategories.'
+  } finally {
+    loading.value.subCategories = false
+  }
+}
+
+
+/* ---------------- ACTIONS ---------------- */
+const addAssetRequest = () => {
+  form.value.asset_requests.push({ ...assetRequest.value })
+  assetRequest.value = {
+    asset_id: null,
+    activity: '',
+    quantity: null,
+    start_date: '',
+    end_date: '',
+  }
+}
+
+const removeAssetRequest = index => {
+  form.value.asset_requests.splice(index, 1)
+}
+
+const clearAll = () => {
+  form.value.asset_requests = []
+  form.value.rental_equipments = []
+}
+
+const saveRentalRequest = async () => {
+  loading.value.submit = true
+  try {
+    await axios.put(
+      `${apiBaseUrl}/rental-required/${rentalId}`,
+      {
+        project_id: form.value.project_id,
+        date: form.value.date,
+        asset_requests: form.value.asset_requests,
+        rental_equipments: form.value.rental_equipments,
+      },
+      { headers: authHeaders() }
+    )
+
+    message.value = 'Rental request updated successfully'
+    router.push({ name: 'dashboards-rental-required' })
+  } catch {
+    message.value = 'Failed to update rental request'
+  } finally {
+    loading.value.submit = false
+  }
+}
+
+/* ---------------- INIT ---------------- */
+onMounted(async () => {
+  await Promise.all([
+    fetchProjects(),
+    fetchCategories(),
+    fetchRentalData(),
+  ])
 })
 </script>
 
-<style>
-.mb-4 { margin-block-end: 16px; }
-.d-flex { display: flex; }
-.justify-between { justify-content: space-between; }
-.align-center { align-items: center; }
-.font-weight-500 { font-weight: 600; }
-.text-caption { font-size: 12px; opacity: 0.8; }
+
+<style scoped>
+/* keep your previous styles */
 </style>

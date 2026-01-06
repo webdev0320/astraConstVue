@@ -365,6 +365,8 @@
     "cancel": true,
     "confirm": true,
     "openConfirmDialog": true,
-    "useConfirmDialogState": true
+    "useConfirmDialogState": true,
+    "delet": true,
+    "deleteFunction": true
   }
 }

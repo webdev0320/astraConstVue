@@ -186,18 +186,6 @@
       </VCard>
     </VDialog>
 
-        <!-- DELETE CONFIRMATION DIALOG -->
-    <VDialog v-model="deleteDialog" max-width="420">
-      <VCard>
-        <VCardTitle class="text-h6">Confirm Delete</VCardTitle>
-        <VCardText>Are you sure you want to delete this request? This action cannot be undone.</VCardText>
-        <VCardActions>
-          <VSpacer />
-          <VBtn variant="text" @click="closeDeleteDialog" :disabled="actionLoading">No</VBtn>
-          <VBtn color="error" @click="confirmDelete" :loading="actionLoading">Yes, Delete</VBtn>
-        </VCardActions>
-      </VCard>
-    </VDialog>
 
   </div>
 </template>
@@ -230,6 +218,20 @@ const confirmDialog = ref({
   onConfirm: null,
 });
 
+const getCookie = (name) => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(";").shift();
+  return null;
+};
+
+const getAuthHeaders = () => {
+  const accessToken = getCookie("accessToken");
+  if (!accessToken) throw new Error("Access token is missing. Please log in.");
+  const decodedToken = decodeURIComponent(accessToken);
+  return { Authorization: `Bearer ${decodedToken}`, Accept: "application/json" };
+};
+
 const openApproveDialog = (assetInvestmentRequestId, approvalId, status) => {
   confirmDialog.value = {
     value: true,
@@ -245,17 +247,14 @@ const openApproveDialog = (assetInvestmentRequestId, approvalId, status) => {
         const accessToken = getCookie("accessToken");
         if (!accessToken) throw new Error("Access token missing");
 
-        const decodedToken = decodeURIComponent(accessToken);
+       
 
         // Use POST so you can include remarks in body
         await axios.post(
           `${apiBaseUrl}/asset-investment-requests/${assetInvestmentRequestId}/changeStatus/${approvalId}/${encodeURIComponent(status)}`,
           { remarks }, // <-- send remarks in request body
           {
-            headers: {
-              Authorization: `Bearer ${decodedToken}`,
-              Accept: "application/json",
-            },
+            headers: getAuthHeaders(),
           }
         );
 
@@ -323,12 +322,6 @@ const truncateSmart = (text, wordLimit = 20, charFallback = 160) => {
   return str.length > charFallback ? str.slice(0, charFallback) + "..." : str;
 };
 
-const getCookie = (name) => {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(";").shift();
-  return null;
-};
 
 const nn = (n) => {
   const x = Number(n);
@@ -378,12 +371,10 @@ const fetchAssetInvestmentRequests = async () => {
   isLoading.value = true;
   errorMessage.value = "";
   try {
-    const accessToken = getCookie("accessToken");
-    if (!accessToken) throw new Error("Access token is missing. Please log in.");
-    const decodedToken = decodeURIComponent(accessToken);
+   
 
     const res = await axios.get(`${apiBaseUrl}/asset-investment-requests`, {
-      headers: { Authorization: `Bearer ${decodedToken}`, Accept: "application/json" },
+          headers: getAuthHeaders(),
     });
 
     const list = Array.isArray(res.data)
@@ -447,11 +438,8 @@ const loadLinesFor = async (reqId) => {
   linesCache.value[reqId] = { loading: true, data: [] };
 
   try {
-    const accessToken = getCookie("accessToken");
-    const decodedToken = decodeURIComponent(accessToken);
-
     const res = await axios.get(`${apiBaseUrl}/asset-investment-requests/${reqId}`, {
-      headers: { Authorization: `Bearer ${decodedToken}`, Accept: "application/json" },
+        headers: getAuthHeaders(),
     });
 
     const p = res.data?.data ?? res.data ?? {};
@@ -518,35 +506,66 @@ onMounted(() => {
 })
 
 /* ---------- DELETE HANDLER ---------- */
-const openDeleteDialog = (id) => {
-  deleteId.value = id;
-  deleteDialog.value = true;
-};
-const closeDeleteDialog = () => {
-  deleteDialog.value = false;
-  deleteId.value = null;
-};
-const confirmDelete = async () => {
-  if (!deleteId.value) return;
-  try {
-    actionLoading.value = true;
-    const accessToken = getCookie("accessToken");
-    const decodedToken = decodeURIComponent(accessToken);
+import Swal from "sweetalert2";
+/* ---------------- Mutations ---------------- */
+const openDeleteDialog = async (id) => {
 
-    await axios.delete(`${apiBaseUrl}/asset-investment-requests/${deleteId.value}`, {
-      headers: { Authorization: `Bearer ${decodedToken}`, Accept: "application/json" },
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "This request will be permanently deleted!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "Cancel",
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    customClass: {
+      title: 'swal-title-color',      // title text
+      content: 'swal-content-color',  // message text
+      confirmButton: 'swal-confirm-btn', // confirm button text
+      cancelButton: 'swal-cancel-btn'    // cancel button text
+    }
+  });
+
+  if (!result.isConfirmed) return;
+
+  try {
+    Swal.fire({
+      title: "Deleting...",
+      text: "Please wait",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
     });
 
-    assetInvestmentRequests.value = assetInvestmentRequests.value.filter((r) => r.id !== deleteId.value);
-    closeDeleteDialog();
-  } catch (error) {
-    console.error("Error deleting request:", error);
-    alert(error.response?.data?.message || "Failed to delete request.");
-  } finally {
-    actionLoading.value = false;
-  }
-};
+    await axios.delete(`${apiBaseUrl}/asset-investment-requests/${id}`, {
+        headers: getAuthHeaders(),
+    });
+    Swal.fire({
+      title: "Deleted!",
+      text: "Request deleted successfully.",
+      icon: "success",
+      customClass: {
+        title: 'swal-title-color',      // title text
+        content: 'swal-content-color',  // message text
+        confirmButton: 'swal-confirm-btn', // confirm button text
+        cancelButton: 'swal-cancel-btn'    // cancel button text
+      }
+    }).then(() => {
+      // ✅ Reload the page
+      window.location.reload();
+    });;
 
+  } catch (e) {
+    console.error("Error deleting request:", e);
+
+    Swal.fire({
+      title: "Error!",
+      text: e.response?.data?.message || "Failed to request.",
+      icon: "error",
+    });
+  }
+
+}
 /* ---------- STATUS actions ---------- */
 const openStatusModal = (id) => {
   currentRequestId.value = id;
@@ -562,18 +581,11 @@ const submitStatus = async () => {
   if (!currentRequestId.value || !statusValue.value) return;
   try {
     actionLoading.value = true;
-    const accessToken = getCookie("accessToken");
-    const decodedToken = decodeURIComponent(accessToken);
 
     await axios.get(
       `${apiBaseUrl}/asset-investment-requests/${currentRequestId.value}/changeStatus/${encodeURIComponent(statusValue.value)}`,
       {
-        headers: {
-          Authorization: `Bearer ${decodedToken}`,
-          Accept: "application/json",
-          // Optional: avoid caches on some setups
-          "Cache-Control": "no-cache",
-        },
+        headers: getAuthHeaders(),
       }
     );
 
@@ -615,11 +627,7 @@ const submitAccordance = async () => {
     await axios.get(
       `${apiBaseUrl}/asset-investment-requests/${currentRequestId.value}/markAsAccordance/${encodeURIComponent(accordanceValue.value)}`,
       {
-        headers: {
-          Authorization: `Bearer ${decodedToken}`,
-          Accept: "application/json",
-          "Cache-Control": "no-cache",
-        },
+        headers: getAuthHeaders(),
       }
     );
 

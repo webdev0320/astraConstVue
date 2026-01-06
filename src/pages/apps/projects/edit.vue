@@ -17,7 +17,7 @@
       </VCol>
 
       <!-- Project Code -->
-      <VCol cols="12" md="4">
+      <VCol cols="12" md="3">
         <VTextField
           v-model="project.project_code"
           label="Project Code"
@@ -28,7 +28,7 @@
       </VCol>
 
       <!-- Start Date -->
-      <VCol cols="12" md="4">
+      <VCol cols="12" md="3">
         <VTextField
           v-model="project.start_date"
           label="Start Date"
@@ -38,13 +38,23 @@
       </VCol>
 
       <!-- End Date -->
-      <VCol cols="12" md="4">
+      <VCol cols="12" md="3">
         <VTextField
           v-model="project.end_date"
           label="End Date"
           type="date"
           :min="project.start_date || undefined"
           :error-messages="errorMessages.end_date"
+        />
+      </VCol>
+
+      <VCol cols="12" md="3">
+        <VTextField
+          v-model="project.budget"
+          label="Initial Budget (SAR)"
+          type="number"
+          :min="0"
+          :error-messages="errorMessages.budget"
         />
       </VCol>
 
@@ -97,6 +107,7 @@ const project = ref({
   start_date: today,
   end_date: '',
   description: '',
+  budget: '',  
 })
 
 const refForm = ref()
@@ -110,11 +121,11 @@ const requiredValidator = value => !!value || 'This field is required'
 watch(
   () => project.value.start_date,
   newDate => {
-    if (newDate && newDate < today) {
+   /* if (newDate && newDate < today) {
       errorMessages.value.start_date = ['Start date is older than today.']
     } else {
       errorMessages.value.start_date = []
-    }
+    }*/
 
     if (project.value.end_date && project.value.end_date < newDate) {
       errorMessages.value.end_date = ['End date cannot be before start date.']
@@ -201,6 +212,7 @@ const updateProject = async () => {
       start_date: project.value.start_date,
       end_date: project.value.end_date,
       description: project.value.description,
+      budget: project.value.budget,
     }
 
     const res = await axios.put(`${apiBaseUrl}/projects/${projectId}`, payload, {

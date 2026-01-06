@@ -342,8 +342,25 @@
       </VCol>
       
 
-    
+       <!-- ===================== -->
+      <!-- Price                 -->
+      <!-- ===================== -->
+      <VCol cols="12">
+        <h4 class="section-title">Rental Information</h4>
+        <VDivider class="my-3" />
+      </VCol>
 
+      <VCol cols="12" md="4">
+        <VTextField v-model="asset.rental_spo_number" type="text" label="SPO Number" clearable />
+      </VCol>   
+
+      <VCol cols="12" md="4">
+        <VTextField v-model="asset.rental_start_date" type="number" label="Start Date" clearable />
+      </VCol>
+
+      <VCol cols="12" md="4">
+        <VTextField v-model="asset.rental_end_date" type="number" label="End Date" clearable />
+      </VCol>
 
       <!-- ===================== -->
       <!-- images                 -->
@@ -389,7 +406,7 @@ const router = useRouter()
 
 /* ---------------- Options ---------------- */
 const TYPE_OPTIONS = ['Vehicle', 'IT Equipment', 'Machinery', 'Furniture', 'Other']
-const ASSET_TYPE_OPTIONS = ['NEW', 'USED', 'LEASED', 'RENTAL']
+const ASSET_TYPE_OPTIONS = ['NEW', 'USED', 'LEASED']
 const today = new Date().toISOString().split('T')[0]
 
 /* ---------------- State ---------------- */
@@ -432,6 +449,9 @@ const asset = ref({
   replacement_cost: '',
   purchase_cost: '',
   nbv: '',
+  rental_spo_number:'',
+  rental_start_date:'',
+  rental_end_date:'',
 
   // files
   images: [],
@@ -698,6 +718,10 @@ const submitForm = async () => {
     safeAppend('book_value', numOrEmpty(asset.value.nbv))
     safeAppend('useful_life', numOrEmpty(asset.value.useful_life))
     safeAppend('depreciation_rate', numOrEmpty(asset.value.depreciation_rate))
+    safeAppend('rental_spo_number', numOrEmpty(asset.value.rental_spo_number))
+    safeAppend('rental_start_date', numOrEmpty(asset.value.rental_start_date))
+    safeAppend('rental_end_date', numOrEmpty(asset.value.rental_end_date))
+
 
     // IMAGES
     ;(asset.value.images || []).forEach(file => {

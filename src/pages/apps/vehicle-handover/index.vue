@@ -78,8 +78,15 @@
                 <VListItemTitle>View Details</VListItemTitle>
             </VListItem>
 
+             <VListItem
+                @click="$router.push(`/dashboards/vehiclehandovers/edit/${item.raw?.id ?? item.id}`)"
+              >
+                <template #prepend><VIcon icon="tabler-edit" /></template>
+                <VListItemTitle>Edit</VListItemTitle>
+            </VListItem>
+
             <!-- Delete -->
-            <VListItem @click="deleteHandover(item.raw.id)">
+            <VListItem @click="deleteHandover(item.raw?.id ?? item.id)">
               <template #prepend><VIcon icon="tabler-trash" /></template>
               <VListItemTitle>Delete</VListItemTitle>
             </VListItem>
@@ -196,11 +203,13 @@ const getCookie = (name) => {
   return null
 }
 
-const normalizeToken = (raw) => {
-  if (!raw) return null
-  const decoded = decodeURIComponent(raw)
-  // sometimes stored with surrounding quotes
-  return decoded.replace(/^"+|"+$/g, '')
+
+const getAuthHeaders = () => {
+  const accessToken = getCookie('accessToken')
+
+  if (!accessToken) throw new Error('Access token is missing.')
+  const decodedToken = decodeURIComponent(accessToken)
+  return { Authorization: `Bearer ${decodedToken}`, Accept: 'application/json' }
 }
 
 const prettyDateTime = (val) => {
@@ -271,20 +280,13 @@ const openApproveDialog = (assetInvestmentRequestId, approvalId, status) => {
     onConfirm: async (remarks) => {
       try {
         actionLoading.value = true;
-        const accessToken = getCookie("accessToken");
-        if (!accessToken) throw new Error("Access token missing");
-
-        const decodedToken = decodeURIComponent(accessToken);
 
         // Use POST so you can include remarks in body
         await axios.post(
           `${apiBaseUrl}/vehicle-handover/${assetInvestmentRequestId}/changeStatus/${approvalId}/${encodeURIComponent(status)}`,
           { remarks }, // <-- send remarks in request body
           {
-            headers: {
-              Authorization: `Bearer ${decodedToken}`,
-              Accept: "application/json",
-            },
+            headers: getAuthHeaders(),
           }
         );
 
@@ -309,14 +311,8 @@ const fetchHandovers = async () => {
     loading.value = true
     errorMessage.value = ''
 
-    const accessToken = normalizeToken(getCookie('accessToken'))
-    if (!accessToken) throw new Error('Access token is missing. Please log in.')
-
     const res = await axios.get(`${apiBaseUrl}/vehicle-handovers`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accept: 'application/json',
-      },
+        headers: getAuthHeaders(),
     })
 
     const list = Array.isArray(res.data?.data)
@@ -353,27 +349,70 @@ const fetchHandovers = async () => {
 
 onMounted(fetchHandovers)
 
-// --- delete ---
-const deleteHandover = async (handoverId) => {
-  if (!confirm('Are you sure you want to delete this vehicle handover?')) return
+
+
+/* ---------- DELETE HANDLER ---------- */
+import Swal from "sweetalert2";
+/* ---------------- Mutations ---------------- */
+const deleteHandover = async (id) => {
+
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "This request will be permanently deleted!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "Cancel",
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    customClass: {
+      title: 'swal-title-color',      // title text
+      content: 'swal-content-color',  // message text
+      confirmButton: 'swal-confirm-btn', // confirm button text
+      cancelButton: 'swal-cancel-btn'    // cancel button text
+    }
+  });
+
+  if (!result.isConfirmed) return;
+
   try {
-    const accessToken = normalizeToken(getCookie('accessToken'))
-    if (!accessToken) throw new Error('Access token is missing. Please log in.')
+    Swal.fire({
+      title: "Deleting...",
+      text: "Please wait",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+    });
 
-    await axios.delete(`${apiBaseUrl}/vehicle-handovers/${handoverId}`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accept: 'application/json',
-      },
-    })
+    await axios.delete(`${apiBaseUrl}/vehicle-handovers/${id}`, {
+        headers: getAuthHeaders(),
+    });
+    Swal.fire({
+      title: "Deleted!",
+      text: "Request deleted successfully.",
+      icon: "success",
+      customClass: {
+        title: 'swal-title-color',      // title text
+        content: 'swal-content-color',  // message text
+        confirmButton: 'swal-confirm-btn', // confirm button text
+        cancelButton: 'swal-cancel-btn'    // cancel button text
+      }
+    }).then(() => {
+      // ✅ Reload the page
+      window.location.reload();
+    });;
 
-    handovers.value = handovers.value.filter(h => h.id !== handoverId)
-    alert('Vehicle handover deleted successfully!')
-  } catch (error) {
-    console.error('Error deleting vehicle handover:', error)
-    alert(error.response?.data?.message || 'Failed to delete vehicle handover.')
+  } catch (e) {
+    console.error("Error deleting request:", e);
+
+    Swal.fire({
+      title: "Error!",
+      text: e.response?.data?.message || "Failed to request.",
+      icon: "error",
+    });
   }
+
 }
+
 </script>
 
 <style>

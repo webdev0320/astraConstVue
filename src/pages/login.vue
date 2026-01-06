@@ -182,8 +182,8 @@ const onSubmit = () => {
 }
 
 .v-avatar {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.06);
-  background-color: rgb(var(--v-theme-primary), 0.08) !important;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 5%);
+  width: 200px !important;
+  height: 64px !important;
+  border-radius: 0px !important;   
 }
 </style>

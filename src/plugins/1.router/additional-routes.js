@@ -710,6 +710,11 @@ export const routes = [
     component: () => import('@/pages/apps/asset-damage-report/detail.vue'),
   },
   {
+    path: '/dashboards/asset-damage-report/edit/:id',
+    name: 'dashboards-asset-damage-report-edit',
+    component: () => import('@/pages/apps/asset-damage-report/edit.vue'),
+  },
+  {
     path: '/dashboards/asset-missing-report',
     name: 'dashboards-asset-missing-report',
     component: () => import('@/pages/apps/asset-missing-report/index.vue'),
@@ -718,6 +723,11 @@ export const routes = [
     path: '/dashboards/asset-missing-report/detail/:id',
     name: 'dashboards-asset-missing-report-detail',
     component: () => import('@/pages/apps/asset-missing-report/detail.vue'),
+  },
+  {
+    path: '/dashboards/asset-missing-report/edit/:id',
+    name: 'dashboards-asset-missing-report-edit',
+    component: () => import('@/pages/apps/asset-missing-report/edit.vue'),
   },  
   {
     path: '/dashboards/asset-missing-report/create',
@@ -735,11 +745,15 @@ export const routes = [
     name: 'dashboards-asset-scrap-report-create',
     component: () => import('@/pages/apps/asset-scrap-report/create.vue'),
   },  
-
-    {
+  {
     path: '/dashboards/asset-scrap-report/detail/:id',
     name: 'dashboards-asset-scrap-report-detail',
     component: () => import('@/pages/apps/asset-scrap-report/detail.vue'),
+  },
+  {
+    path: '/dashboards/asset-scrap-report/edit/:id',
+    name: 'dashboards-asset-scrap-report-edit',
+    component: () => import('@/pages/apps/asset-scrap-report/edit.vue'),
   },
   {
     path: '/dashboards/policy-waiver-form',
@@ -757,7 +771,13 @@ export const routes = [
     path: '/dashboards/policy-waiver-form/detail/:id',
     name: 'dashboards-policy-waiver-form-detail',
     component: () => import('@/pages/apps/policy-waiver-form/detail.vue'),
-  },  
+  },
+
+  {
+    path: '/dashboards/policy-waiver-form/edit/:id',
+    name: 'dashboards-policy-waiver-form-edit',
+    component: () => import('@/pages/apps/policy-waiver-form/edit.vue'),
+  },
 
   {
   path: '/dashboards/asset-demobilizations',

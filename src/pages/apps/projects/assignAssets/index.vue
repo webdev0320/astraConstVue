@@ -97,7 +97,7 @@ import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { VBtn, VCard, VCardText, VCardTitle, VDataTable } from "vuetify/components";
 import { VDialog, VCardActions } from "vuetify/components";
-
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 const route = useRoute();
 const router = useRouter();
 
@@ -160,7 +160,7 @@ const fetchAssets = async () => {
   try {
     // adapt base url if your VITE env differs
     const res = await axios.get(
-      `${import.meta.env.VITE_API_BASE_URL}/projects/${encodeURIComponent(projectId.value)}/get-assets`,
+      `${apiBaseUrl}/projects/${encodeURIComponent(projectId.value)}/get-assets`,
       { headers: getAuthHeaders() }
     );
 
@@ -179,7 +179,7 @@ const fetchAssets = async () => {
 const fetchProjectDetails = async () => {
   try {
     const res = await axios.get(
-      `${import.meta.env.VITE_API_BASE_URL}/projects/${encodeURIComponent(projectId.value)}`,
+      `${apiBaseUrl}/projects/${encodeURIComponent(projectId.value)}`,
       { headers: getAuthHeaders() }
     );
     project.value = res.data.data || res.data;
@@ -219,17 +219,63 @@ function formatDateTime(iso) {
   }
 }
 
+import Swal from "sweetalert2";
+
 const deleteAsset = async (id) => {
-  if (!confirm("Are you sure you want to delete this asset?")) return;
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "This asset will be permanently deleted!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "Cancel",
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    customClass: {
+      title: 'swal-title-color',      // title text
+      content: 'swal-content-color',  // message text
+      confirmButton: 'swal-confirm-btn', // confirm button text
+      cancelButton: 'swal-cancel-btn'    // cancel button text
+    }
+  });
+
+  if (!result.isConfirmed) return;
+
   try {
-    await axios.delete(
-      `${import.meta.env.VITE_API_BASE_URL}/project-assets/${id}`,
-      { headers: getAuthHeaders() }
-    );
-    await fetchAssets();
-    alert("Asset deleted successfully!");
+    Swal.fire({
+      title: "Deleting...",
+      text: "Please wait",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+    });
+
+    await axios.delete(`${apiBaseUrl}/project-assets/${id}`, {
+      headers: getAuthHeaders(),
+    });
+
+    Swal.fire({
+      title: "Deleted!",
+      text: "Asset deleted successfully.",
+      icon: "success",
+      customClass: {
+        title: 'swal-title-color',      // title text
+        content: 'swal-content-color',  // message text
+        confirmButton: 'swal-confirm-btn', // confirm button text
+        cancelButton: 'swal-cancel-btn'    // cancel button text
+      }
+    }).then(() => {
+      // ✅ Reload the page
+      window.location.reload();
+    });;
+
   } catch (e) {
-    alert(e.response?.data?.message || "Failed to delete asset.");
+    console.error("Error deleting project:", e);
+
+    Swal.fire({
+      title: "Error!",
+      text: e.response?.data?.message || "Failed to delete asset.",
+      icon: "error",
+    });
   }
 };
 </script>

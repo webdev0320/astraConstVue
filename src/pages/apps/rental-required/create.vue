@@ -15,21 +15,21 @@
 
           <!-- Project -->
           <VCol cols="12" md="4">
-            <VSelect
-              v-model="form.project_id"
-              :items="projectOptions"
-              item-title="label"
-              item-value="id"
-              label="Select Project"
-             
-              :error-messages="errorMessages.project_id"
-              :loading="loading.projects"
-              :disabled="loading.projects"
-              hide-details="auto"
-              clearable
-            />
+              <VSelect
+                v-model="form.project_id"
+                :items="projectOptions"
+                item-title="label"
+                item-value="id"
+                label="Select Project"
+                :error-messages="errorMessages.project_id"
+                :loading="loading.projects"
+                :disabled="loading.projects"
+                hide-details="auto"
+                clearable
+                @update:modelValue="onProjectChange"
+              />
+            </VCol>
 
-          </VCol>
 
           <!-- Date -->
           <VCol cols="12" md="4">
@@ -195,176 +195,15 @@
 
         <!-- Rental Equipment -->
         <div class="mt-6">
-          <div class="font-weight-medium mb-2">LIST OF EQUIPMENT ALREADY WORKING ON THE PROJECT</div>
-          <VRow>
-            
-            <VCol cols="12" md="3">
-              <VSelect
-                v-model="rentalEquipment.asset_category_id"
-                :items="categories"
-                item-title="name"
-                item-value="id"
-                label="Select Asset Category"
-               
-                :loading="loading.categories"
-                :disabled="loading.categories"
-                hide-details="auto"
-                clearable
-
-              />
-
-            </VCol>
-            <VCol cols="12" md="3">
-              <VSelect
-                v-model="rentalEquipment.asset_sub_category_id"
-                :items="subCategoriesForRental"
-                item-title="name"
-                item-value="id"
-                label="Select Subcategory"
-               
-                :disabled="!rentalEquipment.asset_category_id || loading.subCategories"
-                :loading="loading.subCategories"
-                hide-details="auto"
-                clearable
-
-              />
-
-            </VCol>
-            
-              
-
-            <VCol cols="12" md="3">
-              <VSelect
-                v-model="rentalEquipment.asset_id"
-                :items="assets"
-                item-title="label"
-                item-value="id"
-                label="Asset"
-               
-                :loading="loading.assets"
-                :disabled="!rentalEquipment.asset_sub_category_id || loading.assets"
-                hide-details="auto"
-                clearable
-                @update:modelValue="onAssetChangeRental"
-
-              />
-
-            </VCol>
-
-              <VCol cols="12" md="3">
-                  <VTextField
-                    v-model.number="rentalEquipment.quantity_at_site"
-                    type="number"
-                    min="1"
-                    :max="assetRequest.maxQty"
-                    label="Quantity at Site"
-                    :rules="[
-                      v => !assetRequest.maxQty || v <= assetRequest.maxQty || `Max allowed: ${assetRequest.maxQty}`
-                    ]"
-                    hide-details="auto"
-                    readonly
-                    variant="outlined"
-                  />
-                </VCol>
-
-           
-          
-            <VCol cols="12" md="3">
-              <VTextField
-                v-model="rentalEquipment.start_date"
-                type="date"
-                label="Start Date"
-               
-                :error-messages="errorMessages.rental_equipment?.start_date"
-                hide-details="auto"
-                clearable
-
-              />
-
-            </VCol>
-            <VCol cols="12" md="3">
-              <VTextField
-                v-model="rentalEquipment.end_date"
-                type="date"
-                label="End Date"
-               
-                :error-messages="errorMessages.rental_equipment?.end_date"
-                hide-details="auto"
-                clearable
-
-              />
-
-            </VCol>
-            <VCol cols="12" md="3">
-              <VTextField
-                v-model="rentalEquipment.spo_number"
-                label="SPO Number"
-               
-                :error-messages="errorMessages.rental_equipment?.spo_number"
-                hide-details="auto"
-
-              />
-              <small class="text-medium-emphasis">Unique SPO number</small>
-            </VCol>
-             <VCol cols="12" md="12">
-              <VTextField
-                v-model="rentalEquipment.activity"
-                label="Activity"
-               
-                :error-messages="errorMessages.rental_equipment?.activity"
-                hide-details="auto"
-
-              />
-
-            </VCol>
-            <VCol cols="12" md="4" class="d-flex align-end">
-              <VBtn
-                color="primary"
-                @click="addRentalEquipment"
-                :disabled="!isRentalEquipmentValid"
-              >
-                <VIcon start>mdi-plus</VIcon> Add
-              </VBtn>
-            </VCol>
-          </VRow>
-
-          <!-- Rental Equipment Chips -->
-          <div v-if="form.rental_equipments.length" class="mt-4">
-            <VChip
-              v-for="(rental, idx) in form.rental_equipments"
-              :key="idx"
-              class="ma-1"
-              closable
-              @click:close="removeRentalEquipment(idx)"
-            >
-              {{ rental.activity }} — {{ assetNameById(rental.asset_id) }} — Qty: {{ rental.quantity_at_site }} — {{ rental.spo_number }}
-            </VChip>
-          </div>
-
-          <!-- Rental Equipment Table -->
+          <div class="font-weight-medium mb-5">LIST OF EQUIPMENT ALREADY WORKING ON THE PROJECT</div>
+          <!-- Assets Table -->
           <VDataTable
-            v-if="form.rental_equipments.length"
-            :headers="rentalHeaders"
-            :items="form.rental_equipments"
-            :items-per-page="5"
-            class="mt-4"
-          >
-            <template #item.asset_id="{ item }">
-              {{ assetNameById(item.asset_id) }}
-            </template>
-            <template #item.start_date="{ item }">
-              {{ formatDate(item.start_date) }}
-            </template>
-            <template #item.end_date="{ item }">
-              {{ formatDate(item.end_date) }}
-            </template>
+              :headers="assetInListHeaders"
+              :items="assetsInProject"
+              :items-per-page="50"
+            >
+            </VDataTable>
 
-            <template #item.actions="{ item }">
-              <VBtn color="error" size="small" @click="removeRentalEquipment(form.rental_equipments.indexOf(item))">
-                Delete
-              </VBtn>
-            </template>
-          </VDataTable>
         </div>
 
         <!-- Summary -->
@@ -430,7 +269,7 @@ const categories = ref([])
 const subCategoriesForAsset = ref([])
 const subCategoriesForRental = ref([])
 const assets = ref([])
-
+const assetsInProject = ref([])
 // form models
 const form = ref({
   project_id: null,
@@ -461,13 +300,13 @@ const rentalEquipment = ref({
 })
 
 // table headers
-const assetHeaders = [
+const assetInListHeaders = [
+  { title: 'Asset', key: 'asset_name' },
   { title: 'Activity', key: 'activity' },
-  { title: 'Asset', key: 'asset_id' },
-  { title: 'Quantity', key: 'quantity' },
-  { title: 'Date of Need', key: 'start_date' },
-  { title: 'Request End Date', key: 'end_date' },
-  { title: 'Actions', key: 'actions', sortable: false },
+  { title: 'Quantity At Site', key: 'quantity_at_site' },
+  { title: 'Start Date as per SPO', key: 'start_date' },
+  { title: 'End Date as per SPO', key: 'end_date' },
+  { title: 'SPO Number', key: 'spo_number'},
 ]
 
 const rentalHeaders = [
@@ -622,8 +461,41 @@ const onAssetChangeRental = async (val) => {
   }
 }
 
+const onProjectChange = (val) => {
+  form.value.project_id = val;   // update reactive projectId
+  if (val) fetchProjectAssets(); // call your function
+};
+const filters = ref({
+  asset_category_id: null,
+  asset_sub_category_id: null
+});
+
+// fetch project assets
+const fetchProjectAssets = async () => {
+  if (!form.value.project_id) return;
+
+  try {
+    const res = await axios.get(
+      `${import.meta.env.VITE_API_BASE_URL}/getRentalAssets/${encodeURIComponent(
+        form.value.project_id
+      )}`,
+      {
+        headers: authHeaders(),
+        params: { asset_type: "LEASED" },
+      }
+    );
+
+    assetsInProject.value = res.data.data.rental_equipments;
+  } catch (e) {
+    console.error(e);
+  }
+};
 
 
+// helper to safely get nested values
+const getNestedValue = (obj, path) => {
+  return path.split(".").reduce((o, i) => (o ? o[i] : ""), obj);
+};
 
 const isEndBeforeStart = (start, end) => {
   if (!start || !end) return false;
@@ -739,7 +611,7 @@ const fetchProjects = async () => {
     const res = await axios.get(`${apiBaseUrl}/projects`, { headers: authHeaders() })
     projectOptions.value = res.data.data.map(project => ({
       id: project.id,
-      label: project.name,
+      label: project.project_code + ' - ' + project.name,
     }))
   } catch (error) {
     console.error('Error fetching Projects:', error)
@@ -1099,12 +971,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.rental-form-container {
-  padding: 16px;
-  margin-block: 0;
-  margin-inline: auto;
-  max-inline-size: 1200px;
-}
 
 h3 {
   color: #1a1a1a;
@@ -1160,9 +1026,4 @@ h3 {
   border-radius: 4px;
 }
 
-@media (min-width: 960px) {
-  .rental-form-container {
-    padding: 24px;
-  }
-}
 </style>

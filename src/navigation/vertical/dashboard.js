@@ -97,19 +97,9 @@ export default [
          icon: 'tabler-versions', 
       },
       {
-        title: 'Faqs',
-        to: 'dashboards-faqs',
-         icon: 'tabler-bubble-text', 
-      },
-      {
         title: 'Settings',
         to: 'dashboards-settings',
          icon: 'tabler-settings', 
-      },
-      {
-        title: 'Supports',
-        to: 'dashboards-supports',
-        icon: 'tabler-bubble',         
-      },
+      }
 
 ]

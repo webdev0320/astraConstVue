@@ -242,18 +242,68 @@ const fetchProjects = async () => {
 };
 onMounted(fetchProjects);
 
-// delete
+import Swal from "sweetalert2";
+
 const deleteProject = async (projectId) => {
-  if (!confirm("Are you sure you want to delete this project?")) return;
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "This project will be permanently deleted!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "Cancel",
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    customClass: {
+      title: 'swal-title-color',      // title text
+      content: 'swal-content-color',  // message text
+      confirmButton: 'swal-confirm-btn', // confirm button text
+      cancelButton: 'swal-cancel-btn'    // cancel button text
+    }
+  });
+
+  if (!result.isConfirmed) return;
+
   try {
-    await axios.delete(`${apiBaseUrl}/projects/${projectId}`, { headers: getAuthHeaders() });
-    projects.value = projects.value.filter(p => p.id !== projectId);
-    alert("Project deleted successfully!");
+    Swal.fire({
+      title: "Deleting...",
+      text: "Please wait",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+    });
+
+    await axios.delete(`${apiBaseUrl}/projects/${projectId}`, {
+      headers: getAuthHeaders(),
+    });
+
+    projects.value = projects.value.filter((p) => p.id !== projectId);
+
+    Swal.fire({
+      title: "Deleted!",
+      text: "Project deleted successfully.",
+      icon: "success",
+      customClass: {
+        title: 'swal-title-color',      // title text
+        content: 'swal-content-color',  // message text
+        confirmButton: 'swal-confirm-btn', // confirm button text
+        cancelButton: 'swal-cancel-btn'    // cancel button text
+      }
+    }).then(() => {
+      // ✅ Reload the page
+      window.location.reload();
+    });;
+
   } catch (e) {
     console.error("Error deleting project:", e);
-    alert(e.response?.data?.message || "Failed to delete project.");
+
+    Swal.fire({
+      title: "Error!",
+      text: e.response?.data?.message || "Failed to delete project.",
+      icon: "error",
+    });
   }
 };
+
 </script>
 
 <style>
@@ -266,4 +316,5 @@ const deleteProject = async (projectId) => {
 .mb-4 { margin-block-end: 16px; }
 .desc-cell { overflow: hidden; max-inline-size: 480px; overflow-wrap: anywhere; text-overflow: ellipsis; word-break: break-word; }
 .clamp-2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+
 </style>

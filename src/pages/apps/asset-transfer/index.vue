@@ -231,20 +231,13 @@ const openApproveDialog = (assetInvestmentRequestId, approvalId, status) => {
     onConfirm: async (remarks) => {
       try {
         actionLoading.value = true;
-        const accessToken = getCookie("accessToken");
-        if (!accessToken) throw new Error("Access token missing");
-
-        const decodedToken = decodeURIComponent(accessToken);
 
         // Use POST so you can include remarks in body
         await axios.post(
           `${apiBaseUrl}/asset-transfers/${assetInvestmentRequestId}/changeStatus/${approvalId}/${encodeURIComponent(status)}`,
           { remarks }, // <-- send remarks in request body
           {
-            headers: {
-              Authorization: `Bearer ${decodedToken}`,
-              Accept: "application/json",
-            },
+            headers: getAuthHeaders()
           }
         );
 
@@ -315,25 +308,69 @@ const fetchAssetTransfers = async () => {
 
 onMounted(fetchAssetTransfers);
 
-// Delete Asset Transfer (matches /api/asset-transfers/{id})
-const deleteAssetTransfer = async (id) => {
-  if (!confirm("Are you sure you want to delete this asset transfer?")) return;
-  try {
-    const accessToken = getCookie("accessToken");
-    if (!accessToken) throw new Error("Access token is missing. Please log in.");
-    const decodedToken = decodeURIComponent(accessToken);
 
-    await axios.delete(`${apiBaseUrl}/asset-transfers/${id}`, {
-      headers: { Authorization: `Bearer ${decodedToken}`, Accept: "application/json" },
+/* ---------- DELETE HANDLER ---------- */
+import Swal from "sweetalert2";
+/* ---------------- Mutations ---------------- */
+const deleteAssetTransfer = async (id) => {
+
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "This request will be permanently deleted!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "Cancel",
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    customClass: {
+      title: 'swal-title-color',      // title text
+      content: 'swal-content-color',  // message text
+      confirmButton: 'swal-confirm-btn', // confirm button text
+      cancelButton: 'swal-cancel-btn'    // cancel button text
+    }
+  });
+
+  if (!result.isConfirmed) return;
+
+  try {
+    Swal.fire({
+      title: "Deleting...",
+      text: "Please wait",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
     });
 
-    assettransfers.value = assettransfers.value.filter((t) => t.id !== id);
-    alert("Asset transfer deleted successfully!");
-  } catch (error) {
-    console.error("Error deleting asset transfer:", error);
-    alert(error.response?.data?.message || "Failed to delete asset transfer.");
+    await axios.delete(`${apiBaseUrl}/asset-transfers/${id}`, {
+        headers: getAuthHeaders(),
+    });
+    Swal.fire({
+      title: "Deleted!",
+      text: "Request deleted successfully.",
+      icon: "success",
+      customClass: {
+        title: 'swal-title-color',      // title text
+        content: 'swal-content-color',  // message text
+        confirmButton: 'swal-confirm-btn', // confirm button text
+        cancelButton: 'swal-cancel-btn'    // cancel button text
+      }
+    }).then(() => {
+      // ✅ Reload the page
+      window.location.reload();
+    });;
+
+  } catch (e) {
+    console.error("Error deleting request:", e);
+
+    Swal.fire({
+      title: "Error!",
+      text: e.response?.data?.message || "Failed to request.",
+      icon: "error",
+    });
   }
-};
+
+}
+
 
 // Optional: stub for modal action
 const assignUser = () => {

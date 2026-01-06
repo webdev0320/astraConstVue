@@ -24,7 +24,7 @@
 
     <VDataTable
       :headers="headers"
-      :items="rentals"
+      :items="filteredRentals"
       :items-per-page="10"
       class="mt-3"
     >
@@ -56,7 +56,6 @@
       <!-- Actions -->
       <template #item.actions="{ item }">
         <VMenu :close-on-content-click="true">
-          <!-- Activator with arrow toggle -->
           <template #activator="{ props, isActive }">
             <VBtn
               v-bind="props"
@@ -71,10 +70,14 @@
           </template>
 
           <VList density="compact">
-            <!-- Delete -->
             <VListItem @click="$router.push(`/dashboards/rental-required/details/${item.id}`)">
               <template #prepend><VIcon icon="tabler-eye" /></template>
               <VListItemTitle>Details</VListItemTitle>
+            </VListItem>
+
+            <VListItem @click="$router.push(`/dashboards/rental-required/edit/${item.id}`)">
+              <template #prepend><VIcon icon="tabler-edit" /></template>
+              <VListItemTitle>Edit</VListItemTitle>
             </VListItem>
 
             <VListItem @click="deleteRentalRequest(item.id)">
@@ -82,12 +85,18 @@
               <VListItemTitle>Delete</VListItemTitle>
             </VListItem>
 
-            <VListItem  v-if="item.myApproval !== null && (item.myApprovalStatus=='Rejected' || item.myApprovalStatus=='Pending')" @click="openApproveDialog(item.id,item.myApproval,'APPROVED')">
+            <VListItem
+              v-if="item.myApproval !== null && (item.myApprovalStatus=='Rejected' || item.myApprovalStatus=='Pending')"
+              @click="openApproveDialog(item.id,item.myApproval,'APPROVED')"
+            >
               <template #prepend><VIcon icon="tabler-check" /></template>
               <VListItemTitle>Approve</VListItemTitle>
             </VListItem>
 
-            <VListItem v-if="item.myApproval !== null && (item.myApprovalStatus=='Approved' || item.myApprovalStatus=='Pending')" @click="openApproveDialog(item.id,item.myApproval,'REJECTED')">
+            <VListItem
+              v-if="item.myApproval !== null && (item.myApprovalStatus=='Approved' || item.myApprovalStatus=='Pending')"
+              @click="openApproveDialog(item.id,item.myApproval,'REJECTED')"
+            >
               <template #prepend><VIcon icon="tabler-player-stop" /></template>
               <VListItemTitle>Reject</VListItemTitle>
             </VListItem>
@@ -100,24 +109,22 @@
       </template>
     </VDataTable>
 
-    <!-- Error / Loading (outside table for clarity) -->
     <p v-if="errorMessage" class="mt-3">{{ errorMessage }}</p>
     <p v-else-if="loading" class="mt-3">Loading...</p>
-  </div>
 
- <ConfirmDialog
+    <ConfirmDialog
       v-model="confirmDialog.value"
       :title="confirmDialog.title"
       :message="confirmDialog.message"
       :color="confirmDialog.color"
       :onConfirm="confirmDialog.onConfirm"
     />
-
+  </div>
 </template>
 
 <script setup>
 import axios from 'axios'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import {
   VBtn,
   VDataTable,
@@ -132,9 +139,9 @@ import ConfirmDialog from "@core/components/GlobalConfirmDialog.vue";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL // should end with /api
 
-const API_ORIGIN = new URL(apiBaseUrl).origin
-
-// Table headers mapped to your API fields
+// --------------------
+// Table headers
+// --------------------
 const headers = [
   { title: 'Request ID', key: 'rental_equipment_id' },
   { title: 'Project Name', key: 'project_name' },
@@ -144,11 +151,14 @@ const headers = [
   { title: 'Actions', key: 'actions', sortable: false },
 ]
 
+// --------------------
+// Refs
+// --------------------
 const rentals = ref([])
+const filteredRentals = ref([])
 const errorMessage = ref('')
 const loading = ref(false)
 const searchQuery = ref('')
-
 
 const confirmDialog = ref({
   value: false,
@@ -158,130 +168,9 @@ const confirmDialog = ref({
   onConfirm: null,
 });
 
-
-const openApproveDialog = (assetInvestmentRequestId, approvalId, status) => {
-  confirmDialog.value = {
-    value: true,
-    title: status === "APPROVED" ? "Approve Request" : "Reject Request",
-    message: status === "APPROVED"
-      ? "Are you sure you want to approve this request? You may add remarks."
-      : "Are you sure you want to reject this request? Please add remarks.",
-    color: status === "APPROVED" ? "primary" : "error",
-    // onConfirm receives remarks (string)
-    onConfirm: async (remarks) => {
-      try {
-        actionLoading.value = true;
-        const accessToken = getCookie("accessToken");
-        if (!accessToken) throw new Error("Access token missing");
-
-        const decodedToken = decodeURIComponent(accessToken);
-
-        // Use POST so you can include remarks in body
-        await axios.post(
-          `${apiBaseUrl}/rental-required/${assetInvestmentRequestId}/changeStatus/${approvalId}/${encodeURIComponent(status)}`,
-          { remarks }, // <-- send remarks in request body
-          {
-            headers: {
-              Authorization: `Bearer ${decodedToken}`,
-              Accept: "application/json",
-            },
-          }
-        );
-
-        // success: refresh table
-        await fetchAssetInvestmentRequests();
-      } catch (error) {
-        console.error("Approve/Reject failed:", error);
-        alert(error.response?.data?.message || error.message || "Action failed");
-        // rethrow if you want the dialog to keep showing loading; currently confirmWithRemarks catches errors
-        throw error;
-      } finally {
-        actionLoading.value = false;
-      }
-    },
-  };
-};
-
-
-
-// --- fetch rental required list ---
-const fetchRentalRequired = async () => {
-  try {
-    loading.value = true
-    errorMessage.value = ''
-
-    const accessToken = normalizeToken(getCookie('accessToken'))
-    if (!accessToken) throw new Error('Access token is missing. Please log in.')
-
-    const res = await axios.get(`${apiBaseUrl}/rental-required`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accept: 'application/json',
-      },
-    })
-
-    const list = Array.isArray(res.data?.data)
-      ? res.data.data
-      : []
-
-    rentals.value = list.map(r => ({
-      id: r.id,
-      rental_equipment_id : r.rental_equipment_id,
-      project_name: r.project_name ?? '—',
-      date: r.date ?? '—',
-      lastApprovedByUser: r.lastApprovedBy?r.lastApprovedBy.user_name:null,
-      myApprovalStatus: r.myApproval?r.myApproval.status:'Pending',
-      myApproval: r.myApproval?r.myApproval.id:null,
-      reqStatus: r.status,
-      asset_requests: r.asset_requests.map(req => ({
-        activity: req.activity ?? '—',
-        requested_no_days: req.requested_no_days ?? '—',
-      })),
-      rental_equipments: r.rental_equipments.map(eq => ({
-        rental_activity: eq.activity ?? '—',
-        rental_requested_no_days: eq.requested_no_days ?? '—',
-      })),
-    }))
-  } catch (error) {
-    console.error('Error fetching rental required:', error)
-    errorMessage.value = error.response?.data?.message || 'Failed to fetch rental required data.'
-  } finally {
-    loading.value = false
-  }
-}
-
-// --- delete ---
-const deleteRentalRequest = async (rentalId) => {
-  if (!confirm('Are you sure you want to delete this rental request?')) return
-  try {
-    const accessToken = normalizeToken(getCookie('accessToken'))
-    if (!accessToken) throw new Error('Access token is missing. Please log in.')
-
-    await axios.delete(`${apiBaseUrl}/rental-required/${rentalId}`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accept: 'application/json',
-      },
-    })
-
-    rentals.value = rentals.value.filter(r => r.id !== rentalId)
-    alert('Rental request deleted successfully!')
-  } catch (error) {
-    console.error('Error deleting rental request:', error)
-    alert(error.response?.data?.message || 'Failed to delete rental request.')
-  }
-}
-
-// --- approve ---
-const approveRentalRequest = async (rentalId) => {
-  alert(`Approved rental request with ID: ${rentalId}`)
-}
-
-// --- reject ---
-const rejectRentalRequest = async (rentalId) => {
-  alert(`Rejected rental request with ID: ${rentalId}`)
-}
-
+// --------------------
+// Helpers
+// --------------------
 const getCookie = (name) => {
   const value = `; ${document.cookie}`
   const parts = value.split(`; ${name}=`)
@@ -295,12 +184,163 @@ const normalizeToken = (raw) => {
   return decoded.replace(/^"+|"+$/g, '')
 }
 
-// --- search filter ---
+const getAuthHeaders = () => {
+  const token = normalizeToken(getCookie('accessToken'))
+  if (!token) throw new Error('Access token is missing')
+  return { Authorization: `Bearer ${token}`, Accept: 'application/json' }
+}
+
+// --------------------
+// Fetch rental list
+// --------------------
+const fetchRentalRequired = async () => {
+  try {
+    loading.value = true
+    errorMessage.value = ''
+
+    const res = await axios.get(`${apiBaseUrl}/rental-required`, {
+      headers: getAuthHeaders(),
+    })
+
+    const list = Array.isArray(res.data?.data) ? res.data.data : []
+
+    rentals.value = list.map(r => ({
+      id: r.id,
+      rental_equipment_id : r.rental_equipment_id,
+      project_name: r.project_name ?? '—',
+      date: r.date ?? '—',
+      lastApprovedByUser: r.lastApprovedBy ? r.lastApprovedBy.user_name : null,
+      myApprovalStatus: r.myApproval ? r.myApproval.status : 'Pending',
+      myApproval: r.myApproval ? r.myApproval.id : null,
+      reqStatus: r.status,
+      asset_requests: Array.isArray(r.asset_requests)
+        ? r.asset_requests.map(req => ({
+            activity: req.activity ?? '—',
+            requested_no_days: req.requested_no_days ?? '—',
+          }))
+        : [],
+      rental_equipments: Array.isArray(r.rental_equipments)
+        ? r.rental_equipments.map(eq => ({
+            rental_activity: eq.activity ?? '—',
+            rental_requested_no_days: eq.requested_no_days ?? '—',
+          }))
+        : [],
+    }))
+
+    filteredRentals.value = [...rentals.value]
+
+  } catch (error) {
+    console.error('Error fetching rental required:', error)
+    errorMessage.value = error.response?.data?.message || 'Failed to fetch rental required data.'
+  } finally {
+    loading.value = false
+  }
+}
+
+
+/* ---------- DELETE HANDLER ---------- */
+import Swal from "sweetalert2";
+/* ---------------- Mutations ---------------- */
+const deleteRentalRequest = async (id) => {
+
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "This request will be permanently deleted!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "Cancel",
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    customClass: {
+      title: 'swal-title-color',      // title text
+      content: 'swal-content-color',  // message text
+      confirmButton: 'swal-confirm-btn', // confirm button text
+      cancelButton: 'swal-cancel-btn'    // cancel button text
+    }
+  });
+
+  if (!result.isConfirmed) return;
+
+  try {
+    Swal.fire({
+      title: "Deleting...",
+      text: "Please wait",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+    });
+
+    await axios.delete(`${apiBaseUrl}/rental-required/${id}`, {
+        headers: getAuthHeaders(),
+    });
+    Swal.fire({
+      title: "Deleted!",
+      text: "Request deleted successfully.",
+      icon: "success",
+      customClass: {
+        title: 'swal-title-color',      // title text
+        content: 'swal-content-color',  // message text
+        confirmButton: 'swal-confirm-btn', // confirm button text
+        cancelButton: 'swal-cancel-btn'    // cancel button text
+      }
+    }).then(() => {
+      // ✅ Reload the page
+      window.location.reload();
+    });;
+
+  } catch (e) {
+    console.error("Error deleting request:", e);
+
+    Swal.fire({
+      title: "Error!",
+      text: e.response?.data?.message || "Failed to request.",
+      icon: "error",
+    });
+  }
+
+}
+
+// --------------------
+// Approve/Reject dialog
+// --------------------
+const openApproveDialog = (assetInvestmentRequestId, approvalId, status) => {
+  confirmDialog.value = {
+    value: true,
+    title: status === "APPROVED" ? "Approve Request" : "Reject Request",
+    message: status === "APPROVED"
+      ? "Are you sure you want to approve this request? You may add remarks."
+      : "Are you sure you want to reject this request? Please add remarks.",
+    color: status === "APPROVED" ? "primary" : "error",
+    onConfirm: async (remarks) => {
+      try {
+        const accessToken = normalizeToken(getCookie("accessToken"))
+        if (!accessToken) throw new Error("Access token missing");
+
+        await axios.post(
+          `${apiBaseUrl}/rental-required/${assetInvestmentRequestId}/changeStatus/${approvalId}/${encodeURIComponent(status)}`,
+          { remarks },
+          { headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" } }
+        )
+
+        await fetchRentalRequired()
+      } catch (error) {
+        console.error("Approve/Reject failed:", error)
+        alert(error.response?.data?.message || error.message || "Action failed")
+        throw error
+      }
+    },
+  }
+}
+
+// --------------------
+// Search filter
+// --------------------
 const filterRentalRequired = () => {
-  rentals.value = rentals.value.filter(item => 
-    item.project_name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    item.asset_requests.some(req => req.activity.toLowerCase().includes(searchQuery.value.toLowerCase())) ||
-    item.rental_equipments.some(eq => eq.rental_activity.toLowerCase().includes(searchQuery.value.toLowerCase()))
+  const q = searchQuery.value.toLowerCase().trim()
+  filteredRentals.value = rentals.value.filter(item => 
+    item.project_name.toLowerCase().includes(q) ||
+    item.asset_requests.some(req => req.activity.toLowerCase().includes(q)) ||
+    item.rental_equipments.some(eq => eq.rental_activity.toLowerCase().includes(q))
   )
 }
 
@@ -316,5 +356,4 @@ onMounted(fetchRentalRequired)
 .gap-2 { gap: 8px; }
 .mb-4 { margin-block-end: 16px; }
 .mt-3 { margin-block-start: 12px; }
-
 </style>

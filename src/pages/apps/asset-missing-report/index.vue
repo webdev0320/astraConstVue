@@ -1,6 +1,5 @@
 <template>
-  <div class="container mt-4">
-  
+  <div>
     <div class="d-flex justify-between align-center mb-4">
       <!-- Heading -->
       <h3 class="shrink-0">Asset Missing Reports</h3>
@@ -26,16 +25,22 @@
       </VBtn>
     </div>
 
+    <!-- Loading -->
+    <p v-if="isLoading">Loading...</p>
 
-    <!-- Data Table -->
+    <!-- Error -->
+    <p v-else-if="errorMessage" class="text-error">{{ errorMessage }}</p>
+
+    <!-- Table -->
     <VDataTable
+      v-else-if="reports.length > 0"
       :headers="headers"
-      :items="filteredReports"
-      :loading="loading"
-      class="elevation-1"
-      hover
+      :items="reports"
+      :items-per-page="10"
+      :search="search"
     >
-      
+
+      <!-- Actions -->
       <template #item.actions="{ item }">
         <VMenu :close-on-content-click="true">
           <template #activator="{ props, isActive }">
@@ -57,11 +62,11 @@
               <VListItemTitle>Detail</VListItemTitle>
             </VListItem>
 
-<!--             <VListItem @click="$router.push(`/dashboards/asset-damage-reports/edit/${item.id}`)">
+            <VListItem @click="$router.push(`/dashboards/asset-missing-report/edit/${item.id}`)">
               <template #prepend><VIcon icon="tabler-edit" /></template>
               <VListItemTitle>Edit</VListItemTitle>
             </VListItem>
- -->
+
             <VListItem @click="deleteReport(item.id)">
               <template #prepend><VIcon icon="tabler-trash" /></template>
               <VListItemTitle>Delete</VListItemTitle>
@@ -69,11 +74,18 @@
           </VList>
         </VMenu>
       </template>
-
-      <template #no-data>
-        <div class="text-center text-muted py-4">No asset missing reports found.</div>
-      </template>
     </VDataTable>
+
+    <!-- Empty State -->
+    <VCard v-else class="mt-6 pa-6 text-center" variant="tonal">
+      <VCardTitle>No missing reports found</VCardTitle>
+      <VCardText>
+        You don’t have any missing reports yet. Create your first one to get started.
+      </VCardText>
+      <VBtn color="primary" @click="$router.push('/dashboards/asset-missing-report/create')">
+        Create Report
+      </VBtn>
+    </VCard>
   </div>
 </template>
 
@@ -156,6 +168,69 @@ const filteredReports = computed(() => {
 const viewDetail = (id) => {
   router.push({ name: "asset-missing-report-detail", params: { id } });
 };
+
+
+/* ---------- DELETE HANDLER ---------- */
+import Swal from "sweetalert2";
+/* ---------------- Mutations ---------------- */
+const deleteReport = async (id) => {
+
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "This request will be permanently deleted!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "Cancel",
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    customClass: {
+      title: 'swal-title-color',      // title text
+      content: 'swal-content-color',  // message text
+      confirmButton: 'swal-confirm-btn', // confirm button text
+      cancelButton: 'swal-cancel-btn'    // cancel button text
+    }
+  });
+
+  if (!result.isConfirmed) return;
+
+  try {
+    Swal.fire({
+      title: "Deleting...",
+      text: "Please wait",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+    });
+
+    await axios.delete(`${apiBaseUrl}/asset-missing-reports/${id}`, {
+        headers: getAuthHeaders(),
+    });
+    Swal.fire({
+      title: "Deleted!",
+      text: "Request deleted successfully.",
+      icon: "success",
+      customClass: {
+        title: 'swal-title-color',      // title text
+        content: 'swal-content-color',  // message text
+        confirmButton: 'swal-confirm-btn', // confirm button text
+        cancelButton: 'swal-cancel-btn'    // cancel button text
+      }
+    }).then(() => {
+      // ✅ Reload the page
+      window.location.reload();
+    });;
+
+  } catch (e) {
+    console.error("Error deleting request:", e);
+
+    Swal.fire({
+      title: "Error!",
+      text: e.response?.data?.message || "Failed to request.",
+      icon: "error",
+    });
+  }
+
+}
 
 // ✅ Lifecycle
 onMounted(fetchReports);

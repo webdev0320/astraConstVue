@@ -1,5 +1,5 @@
 <script setup>
-import logo from '@images/logos/astra-logo.png'
+import logo from '@images/logos/logo-black.png'
 import { layoutConfig } from '@layouts'
 import {
   VerticalNavGroup,
@@ -153,7 +153,7 @@ const hideTitleAndIcon = configStore.isVerticalNavMini(isHovered)
     </slot>
     <slot
       name="nav-items"
-      :update-is-vertical-nav-scrolled="updateIsVerticalNavScrolled"
+
     >
       <PerfectScrollbar
         :key="configStore.isAppRTL"

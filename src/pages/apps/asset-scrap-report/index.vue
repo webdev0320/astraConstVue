@@ -1,50 +1,47 @@
 <template>
-  <div class="container mt-4">
-    <!-- Header -->
-    <div class="d-flex align-center justify-space-between mb-4 flex-wrap gap-3">
-      <h3 class="text-h5 font-weight-bold mb-0">Asset Scrap Reports</h3>
+  <div>
+    <div class="d-flex justify-between align-center mb-4">
+      <!-- Heading -->
+      <h3 class="shrink-0">Asset Scrap Reports</h3>
 
-      <div class="d-flex flex-grow-1 gap-3 align-center">
-        <VTextField
-          v-model="search"
-          placeholder="Search by Tag No or Project..."
-          density="comfortable"
-          variant="outlined"
-          hide-details
-          class="flex-grow-1"
-          @keyup.enter="fetchReports"
-        />
+      <!-- Search -->
+      <VTextField
+        v-model="search"
+        placeholder="Search by Tag No or Project..."
+        density="comfortable"
+        variant="outlined"
+        hide-details
+        class="mx-4 flex-grow-1"
+        @keyup.enter="fetchReports"
+      />
 
-        <VBtn
-          color="primary"
-          class="shrink-0"
-          @click="$router.push('/dashboards/asset-scrap-report/create')"
-        >
-          <VIcon icon="mdi-plus" class="me-2" /> Create Report
-        </VBtn>
-      </div>
+      <!-- Create Button -->
+      <VBtn
+        color="primary"
+        class="shrink-0"
+        @click="$router.push('/dashboards/asset-scrap-report/create')"
+      >
+        Create Report
+      </VBtn>
     </div>
 
-    <!-- Data Table -->
-    <VCard>
-      <VDataTable
-        :headers="headers"
-        :items="filteredReports"
-        class="elevation-1"
-        :items-per-page="10"
-        density="comfortable"
-      >
-        <!-- Date Columns -->
-        <template #item.report_date="{ item }">
-          {{ formatDate(item.report_date) }}
-        </template>
+    <!-- Loading -->
+    <p v-if="isLoading">Loading...</p>
 
-        <template #item.approval_date="{ item }">
-          {{ formatDate(item.approval_date) }}
-        </template>
+    <!-- Error -->
+    <p v-else-if="errorMessage" class="text-error">{{ errorMessage }}</p>
 
-        <!-- Action Menu -->
-        <template #item.actions="{ item }">
+    <!-- Table -->
+    <VDataTable
+      v-else-if="reports.length > 0"
+      :headers="headers"
+      :items="reports"
+      :items-per-page="10"
+      :search="search"
+    >
+
+      <!-- Actions -->
+      <template #item.actions="{ item }">
         <VMenu :close-on-content-click="true">
           <template #activator="{ props, isActive }">
             <VBtn
@@ -65,11 +62,11 @@
               <VListItemTitle>Detail</VListItemTitle>
             </VListItem>
 
-<!--             <VListItem @click="$router.push(`/dashboards/asset-scrap-report/edit/${item.id}`)">
+            <VListItem @click="$router.push(`/dashboards/asset-scrap-report/edit/${item.id}`)">
               <template #prepend><VIcon icon="tabler-edit" /></template>
               <VListItemTitle>Edit</VListItemTitle>
             </VListItem>
- -->
+
             <VListItem @click="deleteReport(item.id)">
               <template #prepend><VIcon icon="tabler-trash" /></template>
               <VListItemTitle>Delete</VListItemTitle>
@@ -77,14 +74,17 @@
           </VList>
         </VMenu>
       </template>
+    </VDataTable>
 
-        <!-- No data -->
-        <template #no-data>
-          <div class="text-center py-5 text-medium-emphasis">
-            No scrap reports found.
-          </div>
-        </template>
-      </VDataTable>
+    <!-- Empty State -->
+    <VCard v-else class="mt-6 pa-6 text-center" variant="tonal">
+      <VCardTitle>No missing reports found</VCardTitle>
+      <VCardText>
+        You don’t have any missing reports yet. Create your first one to get started.
+      </VCardText>
+      <VBtn color="primary" @click="$router.push('/dashboards/asset-scrap-report/create')">
+        Create Report
+      </VBtn>
     </VCard>
   </div>
 </template>
@@ -141,18 +141,6 @@ const fetchReports = async () => {
   }
 }
 
-// ✅ Delete report
-const deleteReport = async id => {
-  if (!confirm('Are you sure you want to delete this report?')) return
-  try {
-    await axios.delete(`${apiBaseUrl}/asset-scrap-reports/${id}`, {
-      headers: getAuthHeaders(),
-    })
-    fetchReports()
-  } catch (error) {
-    console.error('Error deleting report:', error)
-  }
-}
 
 // ✅ Search filter
 const filteredReports = computed(() => {
@@ -169,6 +157,68 @@ const filteredReports = computed(() => {
 const formatDate = date => {
   if (!date) return '-'
   return new Date(date).toLocaleDateString()
+}
+
+/* ---------- DELETE HANDLER ---------- */
+import Swal from "sweetalert2";
+/* ---------------- Mutations ---------------- */
+const deleteReport = async (id) => {
+
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "This request will be permanently deleted!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "Cancel",
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    customClass: {
+      title: 'swal-title-color',      // title text
+      content: 'swal-content-color',  // message text
+      confirmButton: 'swal-confirm-btn', // confirm button text
+      cancelButton: 'swal-cancel-btn'    // cancel button text
+    }
+  });
+
+  if (!result.isConfirmed) return;
+
+  try {
+    Swal.fire({
+      title: "Deleting...",
+      text: "Please wait",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+    });
+
+    await axios.delete(`${apiBaseUrl}/asset-scrap-reports/${id}`, {
+        headers: getAuthHeaders(),
+    });
+    Swal.fire({
+      title: "Deleted!",
+      text: "Request deleted successfully.",
+      icon: "success",
+      customClass: {
+        title: 'swal-title-color',      // title text
+        content: 'swal-content-color',  // message text
+        confirmButton: 'swal-confirm-btn', // confirm button text
+        cancelButton: 'swal-cancel-btn'    // cancel button text
+      }
+    }).then(() => {
+      // ✅ Reload the page
+      window.location.reload();
+    });;
+
+  } catch (e) {
+    console.error("Error deleting request:", e);
+
+    Swal.fire({
+      title: "Error!",
+      text: e.response?.data?.message || "Failed to request.",
+      icon: "error",
+    });
+  }
+
 }
 
 onMounted(fetchReports)

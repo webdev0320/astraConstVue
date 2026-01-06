@@ -1,10 +1,11 @@
 <template>
   <div class="container mt-4">
-    <h3 class="text-h5 font-weight-bold mb-4">Create Policy Waiver Form</h3>
+    <h3 class="text-h5 font-weight-bold mb-4">Edit Policy Waiver Form</h3>
 
     <VCard class="pa-4">
-      <VForm @submit.prevent="submitForm">
+      <VForm @submit.prevent="updateForm">
         <div class="row">
+
           <!-- FORM NO -->
           <div class="col-md-4 mb-3">
             <VTextField v-model="form.form_no" label="Form No" variant="outlined" />
@@ -51,17 +52,14 @@
             />
           </div>
 
-          <!-- ITEM DESCRIPTION -->
           <div class="col-md-12 mb-3">
             <VTextarea v-model="form.item_description" label="Item Description" variant="outlined" />
           </div>
 
-          <!-- ORIGINAL POLICY -->
           <div class="col-md-12 mb-3">
             <VTextarea v-model="form.original_policy" label="Original Policy" variant="outlined" />
           </div>
 
-          <!-- POLICY WAIVED & REASON -->
           <div class="col-md-12 mb-3">
             <VTextarea
               v-model="form.policy_waived_and_reason"
@@ -70,7 +68,6 @@
             />
           </div>
 
-          <!-- REMARKS -->
           <div class="col-md-12 mb-3">
             <VTextarea
               v-model="form.concerned_department_remarks"
@@ -97,7 +94,7 @@
             Cancel
           </VBtn>
           <VBtn color="primary" type="submit">
-            Submit
+            Update
           </VBtn>
         </div>
       </VForm>
@@ -108,11 +105,15 @@
 <script setup>
 import { reactive, ref, onMounted } from 'vue'
 import axios from 'axios'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
+const route = useRoute()
+const id = route.params.id
+
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 
+// AUTH TOKEN
 const getCookie = name => {
   const value = `; ${document.cookie}`
   const parts = value.split(`; ${name}=`)
@@ -124,6 +125,7 @@ const getAuthHeaders = () => {
   return { Authorization: `Bearer ${decodeURIComponent(token)}`, Accept: 'application/json' }
 }
 
+// FORM MODEL
 const form = reactive({
   form_no: '',
   waiver_type: '',
@@ -142,6 +144,7 @@ const form = reactive({
 const departments = ref([])
 const projects = ref([])
 
+// FETCH DROPDOWNS
 const fetchDropdowns = async () => {
   try {
     const [deptRes, projRes] = await Promise.all([
@@ -155,40 +158,54 @@ const fetchDropdowns = async () => {
   }
 }
 
-const fetchLatestId = async () => {
+// LOAD EXISTING DATA
+const fetchFormData = async () => {
   try {
-    const res = await axios.get(`${apiBaseUrl}/getLatestNumber`, {
-      params: { type: 'PolicyWaiverForm'},
-      headers: getAuthHeaders(),
-    });
-
-
-    const numberId = res.data.value;
-    form.form_no = numberId;
-  } catch (e) {
-    console.error(e);
-    form_no.value = '';
-  } finally {
-
-  }
-};
-
-const submitForm = async () => {
-  try {
-    await axios.post(`${apiBaseUrl}/policy-waiver-forms`, form, {
+    const res = await axios.get(`${apiBaseUrl}/policy-waiver-forms/${id}`, {
       headers: getAuthHeaders(),
     })
-    alert('Form created successfully!')
-    router.push('/dashboards/policy-waiver-form')
+
+    const data = res.data.data
+
+    // Populate form with API data
+    Object.assign(form, {
+      form_no: data.form_no,
+      waiver_type: data.waiver_type,
+      po_no: data.po_no,
+      date: data.date,
+      department_id: data.department_id,
+      project_id: data.project_id,
+      item_description: data.item_description,
+      original_policy: data.original_policy,
+      policy_waived_and_reason: data.policy_waived_and_reason,
+      concerned_department_remarks: data.concerned_department_remarks,
+      cost_controls_and_finance_department_remarks: data.cost_controls_and_finance_department_remarks,
+      gm_remarks: data.gm_remarks,
+    })
+
   } catch (error) {
     console.error(error)
-    alert('Error creating form')
+    alert('Failed to load form details')
+  }
+}
+
+// UPDATE FORM (PUT)
+const updateForm = async () => {
+  try {
+    await axios.put(`${apiBaseUrl}/policy-waiver-forms/${id}`, form, {
+      headers: getAuthHeaders(),
+    })
+
+    alert('Form updated successfully!')
+    router.push('/dashboards/policy-waiver-form')
+  } catch (err) {
+    console.error(err)
+    alert('Error updating form')
   }
 }
 
 onMounted(() => {
-  fetchDropdowns();
-  fetchLatestId();
-});
-
+  fetchDropdowns()
+  fetchFormData()
+})
 </script>

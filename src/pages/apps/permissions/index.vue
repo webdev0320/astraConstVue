@@ -1,113 +1,188 @@
+<template>
+  <div class="pa-6">
+    <!-- 🔹 Header -->
+    <div class="d-flex justify-space-between align-center mb-4">
+      <h3>Permissions List</h3>
+      <VBtn color="primary" @click="openCreateDialog">
+        Create Permission
+      </VBtn>
+    </div>
+
+    <!-- 🔹 Error -->
+    <VAlert v-if="errorMessage" type="error" class="mb-4">
+      {{ errorMessage }}
+    </VAlert>
+
+    <!-- 🔹 Loader -->
+    <div v-if="isLoading" class="d-flex justify-center my-8">
+      <VProgressCircular indeterminate size="48" />
+    </div>
+
+    <!-- 🔹 Table -->
+    <VDataTable
+      v-else
+      :headers="headers"
+      :items="permissions"
+      :items-per-page="50"
+      class="mt-4"
+    >
+      <!-- NAME -->
+      <template #item.name="{ item }">
+        <strong>{{ item.raw?.name ?? item.name }}</strong>
+      </template>
+
+      <!-- ACTIONS -->
+      <template #item.actions="{ item }">
+        <div class="d-flex gap-2">
+          <VBtn
+            size="small"
+            color="warning"
+            @click="editPermission(item.raw?.name ?? item.name)"
+          >
+            Edit
+          </VBtn>
+
+          <VBtn
+            size="small"
+            color="error"
+            @click="deletePermission(item.raw?.id ?? item.id)"
+          >
+            Delete
+          </VBtn>
+        </div>
+      </template>
+
+      <!-- NO DATA -->
+      <template #no-data>
+        <div class="py-8 text-center">
+          No permissions found.
+        </div>
+      </template>
+    </VDataTable>
+
+    <!-- 🔹 Dialog -->
+    <AddEditPermissionDialog
+      v-model:isDialogVisible="isDialogVisible"
+      v-model:permission-name="permissionName"
+    />
+  </div>
+</template>
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import axios from "axios"
+import { ref, onMounted } from "vue"
 
-// ... your headers/colors omitted for brevity
+import {
+  VBtn,
+  VDataTable,
+  VAlert,
+  VProgressCircular,
+} from "vuetify/components"
 
-const search = ref('')
-const itemsPerPage = ref(10)
-const page = ref(1)
-const sortBy = ref<string | undefined>()
-const orderBy = ref<'asc' | 'desc' | undefined>()
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 
-const updateOptions = (options: any) => {
-  sortBy.value  = options.sortBy[0]?.key
-  orderBy.value = options.sortBy[0]?.order
+/* ---------------------------------
+   TABLE HEADERS
+---------------------------------- */
+const headers = [
+  { title: "NAME", key: "name" },
+  { title: "ACTIONS", key: "actions", sortable: false },
+]
+
+/* ---------------------------------
+   STATE
+---------------------------------- */
+const permissions = ref<any[]>([])
+const isLoading = ref(false)
+const errorMessage = ref("")
+
+/* ---------------------------------
+   DIALOG
+---------------------------------- */
+const isDialogVisible = ref(false)
+const permissionName = ref("")
+
+const openCreateDialog = () => {
+  permissionName.value = ""
+  isDialogVisible.value = true
 }
-
-// A tiny helper to normalize different API shapes
-function normalizePermissions(payload: any) {
-  if (!payload) return { items: [], total: 0 }
-
-  // Option A: { permissions: [], totalPermissions: n }
-  if (Array.isArray(payload.permissions)) {
-    return {
-      items: payload.permissions,
-      total: Number(payload.totalPermissions ?? payload.permissions.length),
-    }
-  }
-
-  // Option B (Laravel paginator): { data: [], total: n } or { data: [], meta:{ total:n } }
-  if (Array.isArray(payload.data)) {
-    return {
-      items: payload.data,
-      total: Number(payload.total ?? payload.meta?.total ?? payload.data.length),
-    }
-  }
-
-  return { items: [], total: 0 }
-}
-
-// Build URL with current filters
-const buildUrl = () =>
-  createUrl('/permissions', {
-    query: {
-      q: search.value || undefined,
-      itemsPerPage: itemsPerPage.value,
-      page: page.value,
-      sortBy: sortBy.value || undefined,
-      orderBy: orderBy.value || undefined,
-    },
-  })
-
-// Fetch
-const { data: permissionsData, error, refresh, pending } = await useApi(buildUrl, {
-  immediate: true,
-})
-
-// Re-fetch when filters change
-watch([search, itemsPerPage, page, sortBy, orderBy], () => {
-  refresh()
-})
-
-// Safe computed (no null reads)
-const table = computed(() => normalizePermissions(permissionsData.value))
-const permissions = computed(() => table.value.items)
-const totalPermissions = computed(() => table.value.total)
-
-// Dialogs
-const isPermissionDialogVisible = ref(false)
-const isAddPermissionDialogVisible = ref(false)
-const permissionName = ref('')
 
 const editPermission = (name: string) => {
-  isPermissionDialogVisible.value = true
   permissionName.value = name
+  isDialogVisible.value = true
 }
+
+/* ---------------------------------
+   HELPERS
+---------------------------------- */
+const getCookie = (name: string) => {
+  const value = `; ${document.cookie}`
+  const parts = value.split(`; ${name}=`)
+  return parts.length === 2 ? parts.pop()?.split(";").shift() : null
+}
+
+/* ---------------------------------
+   NORMALIZE API RESPONSE
+---------------------------------- */
+const normalizePermissions = (payload: any) => {
+  if (Array.isArray(payload)) return payload
+  if (Array.isArray(payload?.permissions)) return payload.permissions
+  if (Array.isArray(payload?.data)) return payload.data
+  return []
+}
+
+/* ---------------------------------
+   FETCH PERMISSIONS
+---------------------------------- */
+const fetchPermissions = async () => {
+  isLoading.value = true
+  errorMessage.value = ""
+
+  try {
+    const token = getCookie("accessToken")
+    if (!token) throw new Error("Authentication required")
+
+    const res = await axios.get(
+      `${apiBaseUrl}/getAllPermissions`,
+      {
+        headers: {
+          Authorization: `Bearer ${decodeURIComponent(token)}`,
+          Accept: "application/json",
+        },
+      }
+    )
+
+    permissions.value = normalizePermissions(res.data)
+  } catch (error: any) {
+    console.error(error)
+    errorMessage.value =
+      error.response?.data?.message || "Failed to load permissions."
+  } finally {
+    isLoading.value = false
+  }
+}
+
+/* ---------------------------------
+   DELETE
+---------------------------------- */
+const deletePermission = async (id: number) => {
+  if (!confirm("Delete this permission?")) return
+
+  try {
+    const token = getCookie("accessToken")
+    await axios.delete(`${apiBaseUrl}/permissions/${id}`, {
+      headers: {
+        Authorization: `Bearer ${decodeURIComponent(token!)}`,
+      },
+    })
+
+    permissions.value = permissions.value.filter(p => p.id !== id)
+  } catch (error: any) {
+    alert(error.response?.data?.message || "Delete failed.")
+  }
+}
+
+/* ---------------------------------
+   INIT
+---------------------------------- */
+onMounted(fetchPermissions)
 </script>
-
-<template>
-  <VRow>
-    <VCol cols="12">
-      <VCard>
-        <!-- top bar omitted -->
-
-        <VDataTableServer
-          v-model:items-per-page="itemsPerPage"
-          v-model:page="page"
-          :items-length="totalPermissions"
-          :headers="headers"
-          :items="permissions"
-          item-value="name"
-          class="text-no-wrap"
-          @update:options="updateOptions"
-        >
-          <template #no-data>
-            <div class="text-center pa-6">
-              <div v-if="error">Failed to load permissions ({{ error?.statusCode || '' }}). Please try again.</div>
-              <div v-else-if="pending">Loading…</div>
-              <div v-else>No permissions found.</div>
-            </div>
-          </template>
-
-          <!-- your slots (name, assignedTo, actions, bottom) stay the same -->
-        </VDataTableServer>
-      </VCard>
-
-      <AddEditPermissionDialog
-        v-model:isDialogVisible="isPermissionDialogVisible"
-        v-model:permission-name="permissionName"
-      />
-      <AddEditPermissionDialog v-model:isDialogVisible="isAddPermissionDialogVisible" />
-    </VCol>
-  </VRow>
-</template>

@@ -273,6 +273,13 @@ const loadingItems = ref(false)
 const requestItems = ref([])   // [{ item_id, description, request_qty, handover_qty, asset_code|null, remarks, asset_type }]
 const rowErrors = ref([])      // per-row client errors
 
+
+const loadingAssets = ref(false)
+const assets = ref([])
+
+const projects = ref([])
+const loadingProjects = ref(false)
+
 // Watcher for handover date
 
 
@@ -364,50 +371,6 @@ const getAuthHeaders = () => {
   return { Accept: 'application/json', Authorization: `Bearer ${token}` }
 }
 
-/* ========= CURRENT USER (fill Name/Code) ========= */
-const currentUser = ref(null)
-
-
-/**
- * Tries common "who am I" endpoints. If you already have a dedicated endpoint,
- * replace the candidates array with that single URL.
- */
-const fetchCurrentUser = async () => {
-  const token = getToken()
-  if (!token) return
-
-  const candidates = [
-    `${apiBaseUrl}/me`,
-    `${apiBaseUrl}/user`,
-    `${apiBaseUrl}/profile`,
-  ]
-
-  for (const url of candidates) {
-    try {
-      const res = await axios.get(url, { headers: getAuthHeaders() })
-      const u = res.data?.data ?? res.data?.user ?? res.data
-      if (u && (u.name || u.user_code || u.id)) {
-        currentUser.value = u
-        form.value.employee_id = u.id ?? null
-        form.value.employee_name = u.name ?? ''
-        form.value.employee_code = u.user_code ?? (u.id ? String(u.id) : '')
-        return
-      }
-    } catch (e) { /* try next */ }
-  }
-
-  // Fallback: if you stored login payload in localStorage as "user"
-  try {
-    const fromLS = localStorage.getItem('user')
-    if (fromLS) {
-      const u = JSON.parse(fromLS)
-      currentUser.value = u
-      form.value.employee_id = u.id ?? null
-      form.value.employee_name = u.name ?? ''
-      form.value.employee_code = u.user_code ?? (u.id ? String(u.id) : '')
-    }
-  } catch (e) {}
-}
 
 /* ========= OPTIONS ========= */
 const requestOptions = computed(() =>
@@ -548,11 +511,6 @@ const validateRows = () => {
 
 
 /* ========= ASSETS DROPDOWN ========= */
-const loadingAssets = ref(false)
-const assets = ref([])
-
-const projects = ref([])
-const loadingProjects = ref(false)
 
 
 const assetOptions = computed(() =>
@@ -698,7 +656,6 @@ const fetchLatestId = async () => {
 /* ========= LIFECYCLE ========= */
 onMounted(async () => {
   await Promise.all([
-    fetchCurrentUser(),
     fetchProjects(),
     fetchDepartments(),
     fetchUsers(),

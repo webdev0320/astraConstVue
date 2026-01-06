@@ -33,24 +33,46 @@
       <template #item.amount="{ item }">
         {{ formatAmount(item.amount) }}
       </template>
+    <template #item.actions="{ item }">
+      <VMenu>
+                    <template #activator="{ props }">
+                       <VBtn
+                            v-bind="props"
+                            size="small"
+                            color="primary"
+                            variant="elevated"
+                            class="d-flex align-center gap-1"
+                          >
+                            Actions
+                            <VIcon :icon="isActive ? 'tabler-caret-up' : 'tabler-caret-down'" />
+                          </VBtn>
+                    </template>
 
-      <template v-slot:item.actions="{ item }">
-            <div class="d-flex gap-2">
-              <VBtn color="primary" size="small" @click="viewDetails(item)">
-                Details
-              </VBtn>
+                    <VList class="py-0">
+                      
+                      <VListItem @click="viewDetails(item.id)">
+                        <VIcon start>tabler-eye</VIcon>
+                        Details
+                      </VListItem>
 
-              <!-- <VBtn color="primary" size="small" @click="editBudget(item.id)">
-                Edit
-              </VBtn> -->
 
-              <VBtn color="error" size="small" @click="deleteBudget(item.id)">
-                Delete
-              </VBtn>
-            </div>
-          </template>
+                      <VListItem
+                        @click="editBudget(item.id)"
+                      >
+                        <VIcon start>tabler-edit</VIcon>
+                        Edit
+                      </VListItem>
 
-    </VDataTable>
+                      <VListItem
+                        @click="deleteBudget(item.id)"
+                      >
+                        <VIcon start>tabler-trash</VIcon>
+                        Delete
+                      </VListItem>
+                    </VList>
+                  </VMenu>
+                </template>
+        </VDataTable>
 
 
       <!-- Budget Details Dialog -->
@@ -114,7 +136,7 @@ const route = useRoute();
 const router = useRouter();
 
 const projectId = computed(() => route.params.id);
-
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 const headers = [
   { title: "BUDGET ID", key: "id", sortable: true },
   { title: "CATEGORY", key: "category", sortable: true },
@@ -159,7 +181,7 @@ const fetchBudgets = async () => {
   errorMessage.value = "";
   try {
     const res = await axios.get(
-      `${import.meta.env.VITE_API_BASE_URL}/project-budgets`,
+      `${apiBaseUrl}/project-budgets`,
       {
         params: { project_id: projectId.value },
         headers: getAuthHeaders(),
@@ -180,7 +202,7 @@ const fetchBudgets = async () => {
 const fetchProjectDetails = async () => {
   try {
     const res = await axios.get(
-      `${import.meta.env.VITE_API_BASE_URL}/projects/${encodeURIComponent(projectId.value)}`,
+      `${apiBaseUrl}/projects/${encodeURIComponent(projectId.value)}`,
       { headers: getAuthHeaders() }
     );
     project.value = res.data.data || res.data;
@@ -237,17 +259,63 @@ const editBudget = (id) => {
   });
 };
 
+import Swal from "sweetalert2";
+
 const deleteBudget = async (id) => {
-  if (!confirm("Are you sure you want to delete this budget?")) return;
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "This budget will be permanently deleted!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "Cancel",
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    customClass: {
+      title: 'swal-title-color',      // title text
+      content: 'swal-content-color',  // message text
+      confirmButton: 'swal-confirm-btn', // confirm button text
+      cancelButton: 'swal-cancel-btn'    // cancel button text
+    }
+  });
+
+  if (!result.isConfirmed) return;
+
   try {
-    await axios.delete(
-      `${import.meta.env.VITE_API_BASE_URL}/project-budgets/${id}`,
-      { headers: getAuthHeaders() }
-    );
-    await fetchBudgets();
-    alert("Budget deleted successfully!");
+    Swal.fire({
+      title: "Deleting...",
+      text: "Please wait",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+    });
+
+    await axios.delete(`${apiBaseUrl}/project-budgets/${id}`, {
+      headers: getAuthHeaders(),
+    });
+
+    Swal.fire({
+      title: "Deleted!",
+      text: "Budget deleted successfully.",
+      icon: "success",
+      customClass: {
+        title: 'swal-title-color',      // title text
+        content: 'swal-content-color',  // message text
+        confirmButton: 'swal-confirm-btn', // confirm button text
+        cancelButton: 'swal-cancel-btn'    // cancel button text
+      }
+    }).then(() => {
+      // ✅ Reload the page
+      window.location.reload();
+    });;
+
   } catch (e) {
-    alert(e.response?.data?.message || "Failed to delete budget.");
+    console.error("Error deleting project:", e);
+
+    Swal.fire({
+      title: "Error!",
+      text: e.response?.data?.message || "Failed to delete budget.",
+      icon: "error",
+    });
   }
 };
 </script>

@@ -1,15 +1,15 @@
 <template>
   <div>
     <div class="d-flex justify-between align-center mb-4">
-      <VBtn variant="text" @click="$router.back()">← Back</VBtn>
       <h3>Edit Budget</h3>
     </div>
 
-    <VCard class="pa-4">
+    <VCard class="pa-4 mt-5">
       <VForm @submit.prevent="saveBudget">
         <VRow dense>
+
           <!-- Category -->
-          <VCol cols="12" md="4">
+          <VCol cols="12" md="3">
             <VSelect
               v-model="selectedCategoryId"
               :items="parentCategoryItems"
@@ -19,16 +19,14 @@
               :loading="loading.categories || loading.form"
               :disabled="loading.categories || loading.form"
               @update:modelValue="onCategoryChange"
-              hide-details="auto"
               variant="outlined"
-              density="compact"
               clearable
+              hide-details="auto"
             />
-            <small class="text-medium-emphasis">Category select karen → subcategories filter hongi</small>
           </VCol>
 
           <!-- Subcategory -->
-          <VCol cols="12" md="4">
+          <VCol cols="12" md="3">
             <VSelect
               v-model="selectedSubCategoryId"
               :items="subcategoryItemsForCategory"
@@ -37,45 +35,9 @@
               label="Select Sub Asset Category"
               :disabled="!selectedCategoryId || loading.form"
               @update:modelValue="onSubCategoryChange"
-              hide-details="auto"
               variant="outlined"
-              density="compact"
               clearable
-            />
-            <small class="text-medium-emphasis">Selected category ki subcategories (names)</small>
-          </VCol>
-
-          <!-- Asset (Optional) -->
-          <VCol cols="12" md="4">
-            <VSelect
-              v-model="selectedAsset"
-              :items="assets"
-              :item-title="asset => `${asset.code} - ${asset.title}`"
-              item-value="id"
-              label="Select Asset (Optional)"
-              :loading="loading.assets || loading.form"
-              :disabled="!selectedSubCategoryId || loading.assets || loading.form"
-              return-object
               hide-details="auto"
-              variant="outlined"
-              density="compact"
-              clearable
-            />
-            <small class="text-medium-emphasis">Agar asset na select karein tab bhi save ho jayega.</small>
-          </VCol>
-
-          <!-- Quantity -->
-          <VCol cols="12" md="2">
-            <VTextField
-              v-model.number="quantity"
-              label="Qty"
-              type="number"
-              min="1"
-              step="1"
-              variant="outlined"
-              density="compact"
-              hide-details="auto"
-              :disabled="loading.form"
             />
           </VCol>
 
@@ -85,38 +47,42 @@
               v-model.number="amount"
               label="Budget Amount"
               type="number"
+              prefix="SAR"
               min="0"
               step="0.01"
-              prefix="Rs"
               variant="outlined"
-              density="compact"
               hide-details="auto"
               :disabled="loading.form"
             />
           </VCol>
 
-          <!-- Asset Description (Optional) -->
-          <VCol cols="12" md="8">
+          <!-- Asset Description -->
+          <VCol cols="12" md="12">
             <VTextField
               v-model="assetDescription"
-              label="Asset Description (Optional)"
+              label="Other Asset Request"
               variant="outlined"
-              density="compact"
+              clearable
               hide-details="auto"
               :disabled="loading.form"
-              clearable
             />
           </VCol>
 
-          <!-- Actions -->
-          <VCol cols="12" class="d-flex align-end justify-end">
-            <div class="d-flex gap-2">
-              <VBtn variant="text" @click="$router.back()" :disabled="saving || loading.form">Cancel</VBtn>
-              <VBtn color="primary" @click="saveBudget" :loading="saving" :disabled="!isFormValid || loading.form">
-                Save Changes
-              </VBtn>
-            </div>
+          <!-- Save Button -->
+          <VCol cols="12" class="d-flex justify-end mt-4">
+            <VBtn variant="text" @click="$router.back()" :disabled="saving || loading.form">Cancel</VBtn>
+
+            <VBtn
+              color="primary"
+              class="ml-2"
+              @click="saveBudget"
+              :loading="saving"
+              :disabled="!isFormValid || loading.form"
+            >
+              Save Changes
+            </VBtn>
           </VCol>
+
         </VRow>
 
         <VAlert
@@ -124,11 +90,15 @@
           type="error"
           variant="tonal"
           class="mt-4"
-        >{{ formError }}</VAlert>
+        >
+          {{ formError }}
+        </VAlert>
+
       </VForm>
     </VCard>
   </div>
 </template>
+
 
 <script setup>
 import axios from "axios";
@@ -164,6 +134,13 @@ const nameById = (id) => {
   const c = allCategories.value.find(x => Number(x.id) === Number(id));
   return c?.title ?? c?.slug ?? `#${id}`;
 };
+
+function formatAmount(val) {
+  if (val === null || val === undefined || val === "") return "-";
+  const num = Number(val);
+  if (Number.isNaN(num)) return String(val);
+  return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
 // form fields
 const selectedCategoryId    = ref(null);
@@ -283,12 +260,9 @@ const saveBudget = async () => {
   try {
     const payload = {
       project_id: Number(projectId.value),
-      asset_id: selectedAsset.value?.id ?? null,                // optional
       asset_category_id: Number(selectedCategoryId.value),
       asset_subcategory_id: Number(selectedSubCategoryId.value),
-      asset_sub_category_id: Number(selectedSubCategoryId.value), // tolerate backend spelling
       amount: Number(amount.value),
-      quantity: Number(quantity.value || 1),                    // NEW
       asset_description: assetDescription.value?.trim() || null // NEW
     };
 

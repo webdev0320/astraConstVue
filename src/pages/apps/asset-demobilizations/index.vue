@@ -60,7 +60,17 @@
               <template #prepend><VIcon icon="tabler-eye" /></template>
               <VListItemTitle>Detail</VListItemTitle>
             </VListItem>
+            <!--  <VListItem @click="$router.push(`/dashboards/asset-demobilizations/edit/${item.id}`)">
+              <template #prepend><VIcon icon="tabler-edit" /></template>
+              <VListItemTitle>Edit</VListItemTitle>
+            </VListItem>
 
+           -->
+             <VListItem @click="openDeleteDialog(item.id)">
+              <template #prepend><VIcon icon="tabler-trash" /></template>
+              <VListItemTitle>Delete</VListItemTitle>
+            </VListItem> 
+            
           </VList>
         </VMenu>
       </template>
@@ -149,21 +159,68 @@ const fetchDemobilizations = async () => {
   }
 };
 
-/* ---------- Delete ---------- */
-const deleteDemobilization = async (id) => {
-  if (!confirm("Are you sure you want to delete this demobilization?")) return;
+/* ---------- DELETE HANDLER ---------- */
+import Swal from "sweetalert2";
+/* ---------------- Mutations ---------------- */
+const openDeleteDialog = async (id) => {
+
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "This request will be permanently deleted!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "Cancel",
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    customClass: {
+      title: 'swal-title-color',      // title text
+      content: 'swal-content-color',  // message text
+      confirmButton: 'swal-confirm-btn', // confirm button text
+      cancelButton: 'swal-cancel-btn'    // cancel button text
+    }
+  });
+
+  if (!result.isConfirmed) return;
 
   try {
-    await axios.delete(`${apiBaseUrl}/asset-demobilizations/${id}`, {
-      headers: getAuthHeaders(),
+    Swal.fire({
+      title: "Deleting...",
+      text: "Please wait",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
     });
-    demobilizations.value = demobilizations.value.filter(d => d.id !== id);
-    alert("Demobilization deleted successfully!");
-  } catch (err) {
-    console.error("Error deleting demobilization:", err);
-    alert(err.response?.data?.message || "Failed to delete demobilization.");
+
+    await axios.delete(`${apiBaseUrl}/asset-demobilizations/${id}`, {
+        headers: getAuthHeaders(),
+    });
+    Swal.fire({
+      title: "Deleted!",
+      text: "Request deleted successfully.",
+      icon: "success",
+      customClass: {
+        title: 'swal-title-color',      // title text
+        content: 'swal-content-color',  // message text
+        confirmButton: 'swal-confirm-btn', // confirm button text
+        cancelButton: 'swal-cancel-btn'    // cancel button text
+      }
+    }).then(() => {
+      // ✅ Reload the page
+      window.location.reload();
+    });;
+
+  } catch (e) {
+    console.error("Error deleting request:", e);
+
+    Swal.fire({
+      title: "Error!",
+      text: e.response?.data?.message || "Failed to request.",
+      icon: "error",
+    });
   }
-};
+
+}
+
 
 onMounted(fetchDemobilizations);
 </script>

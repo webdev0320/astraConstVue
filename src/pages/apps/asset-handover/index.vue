@@ -112,10 +112,19 @@
       </template>
     </VDataTable>
 
-    <!-- Empty / Loading / Error states -->
-    <p v-else-if="!isLoading && !handovers.length">No handovers found.</p>
-    <p v-else-if="errorMessage" class="text-danger">{{ errorMessage }}</p>
-    <p v-else>Loading...</p>
+    <VCard v-else-if="!isLoading && !handovers.length" class="mt-6 pa-6 text-center" variant="tonal">
+      <VCardTitle>No handover requests found</VCardTitle>
+      <VCardText>
+        You do not have any requests yet. Start by creating your first request.
+      </VCardText>
+      <VBtn
+        color="primary"
+        @click="$router.push('/dashboards/assethandovers/create')"
+      >
+        Create HandOver Request
+      </VBtn>
+    </VCard>
+
   </div>
 
   <ConfirmDialog
@@ -144,6 +153,8 @@ const isLoading    = ref(false);
 const handovers    = ref([]);
 const errorMessage = ref("");
 
+const searchQuery = ref('')
+
 /* ====== Table headers ====== */
 const headers = [
   { title: "ID", key: "handover_id" },
@@ -166,13 +177,15 @@ const getCookie = (name) => {
   return null;
 };
 
-const getToken = () => {
-  // Cookie first, then localStorage as fallback
-  const fromCookie = getCookie("accessToken");
-  if (fromCookie) return decodeURIComponent(fromCookie);
-  const fromLS = localStorage.getItem("accessToken");
-  return fromLS ? decodeURIComponent(fromLS) : null;
-};
+
+
+const getAuthHeaders = () => {
+  const accessToken = getCookie('accessToken')
+
+  if (!accessToken) throw new Error('Access token is missing.')
+  const decodedToken = decodeURIComponent(accessToken)
+  return { Authorization: `Bearer ${decodedToken}`, Accept: 'application/json' }
+}
 
 const truncateSmart = (text, wordLimit = 20, charFallback = 120) => {
   if (!text) return "—";
@@ -197,6 +210,10 @@ const confirmDialog = ref({
 });
 
 
+function filterAssethadnover() {
+  // logic
+}
+
 const openApproveDialog = (assetInvestmentRequestId, approvalId, status) => {
   confirmDialog.value = {
     value: true,
@@ -209,20 +226,13 @@ const openApproveDialog = (assetInvestmentRequestId, approvalId, status) => {
     onConfirm: async (remarks) => {
       try {
         actionLoading.value = true;
-        const accessToken = getCookie("accessToken");
-        if (!accessToken) throw new Error("Access token missing");
-
-        const decodedToken = decodeURIComponent(accessToken);
 
         // Use POST so you can include remarks in body
         await axios.post(
           `${apiBaseUrl}/asset-handovers/${assetInvestmentRequestId}/changeStatus/${approvalId}/${encodeURIComponent(status)}`,
           { remarks }, // <-- send remarks in request body
           {
-            headers: {
-              Authorization: `Bearer ${decodedToken}`,
-              Accept: "application/json",
-            },
+            headers: getAuthHeaders(),
           }
         );
 
@@ -263,14 +273,10 @@ const fetchHandovers = async () => {
   isLoading.value = true;
   errorMessage.value = "";
   try {
-    const token = getToken();
-    if (!token) throw new Error("Access token is missing. Please log in.");
+
 
     const res = await axios.get(apiListUrl, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
+            headers: getAuthHeaders(),
     });
 
     const list = Array.isArray(res.data)
@@ -305,29 +311,71 @@ const fetchHandovers = async () => {
   }
 };
 
-/* ====== Delete ====== */
+
+
+
+/* ---------- DELETE HANDLER ---------- */
+import Swal from "sweetalert2";
+/* ---------------- Mutations ---------------- */
 const deleteHandover = async (id) => {
-  if (!id) return;
-  if (!confirm("Are you sure you want to delete this handover?")) return;
+
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "This request will be permanently deleted!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "Cancel",
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    customClass: {
+      title: 'swal-title-color',      // title text
+      content: 'swal-content-color',  // message text
+      confirmButton: 'swal-confirm-btn', // confirm button text
+      cancelButton: 'swal-cancel-btn'    // cancel button text
+    }
+  });
+
+  if (!result.isConfirmed) return;
 
   try {
-    const token = getToken();
-    if (!token) throw new Error("Access token is missing. Please log in.");
-
-    await axios.delete(apiDeleteUrl(id), {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
+    Swal.fire({
+      title: "Deleting...",
+      text: "Please wait",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
     });
 
-    handovers.value = handovers.value.filter((h) => h.id !== id);
-    alert("Handover deleted successfully!");
-  } catch (err) {
-    console.error("Error deleting handover:", err);
-    alert(err.response?.data?.message || err.message || "Failed to delete handover.");
+    await axios.delete(apiDeleteUrl(id), {
+        headers: getAuthHeaders(),
+    });
+    Swal.fire({
+      title: "Deleted!",
+      text: "Request deleted successfully.",
+      icon: "success",
+      customClass: {
+        title: 'swal-title-color',      // title text
+        content: 'swal-content-color',  // message text
+        confirmButton: 'swal-confirm-btn', // confirm button text
+        cancelButton: 'swal-cancel-btn'    // cancel button text
+      }
+    }).then(() => {
+      // ✅ Reload the page
+      window.location.reload();
+    });;
+
+  } catch (e) {
+    console.error("Error deleting request:", e);
+
+    Swal.fire({
+      title: "Error!",
+      text: e.response?.data?.message || "Failed to request.",
+      icon: "error",
+    });
   }
-};
+
+}
+
 
 /* ====== Lifecycle ====== */
 onMounted(fetchHandovers);

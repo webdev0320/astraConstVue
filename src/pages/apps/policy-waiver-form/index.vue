@@ -26,7 +26,7 @@
     </div>
 
     <!-- Data Table -->
-    <VCard>
+    <VCard v-if="filteredForms.length > 0">
       <VDataTable
         :headers="headers"
         :items="filteredForms"
@@ -72,21 +72,32 @@
                 <VListItemTitle>Detail</VListItemTitle>
               </VListItem>
 
-              <VListItem @click="deleteForm(item.id)">
-                <template #prepend><VIcon icon="tabler-trash" /></template>
-                <VListItemTitle>Delete</VListItemTitle>
+               <VListItem @click="$router.push(`/dashboards/policy-waiver-form/edit/${item.id}`)">
+                <template #prepend><VIcon icon="tabler-edit" /></template>
+                <VListItemTitle>Edit</VListItemTitle>
               </VListItem>
+
+              <VListItem @click="openDeleteDialog(item.id)">
+              <template #prepend><VIcon icon="tabler-trash" /></template>
+              <VListItemTitle>Delete</VListItemTitle>
+            </VListItem> 
+
             </VList>
           </VMenu>
         </template>
-
-        <template #no-data>
-          <div class="text-center py-5 text-medium-emphasis">
-            No policy waiver forms found.
-          </div>
-        </template>
       </VDataTable>
     </VCard>
+
+    <VCard v-else class="mt-6 pa-6 text-center" variant="tonal">
+      <VCardTitle>No Policy Waiver Forms found</VCardTitle>
+      <VCardText>
+        You don’t have any policy waiver forms yet. Create your first one to get started.
+      </VCardText>
+      <VBtn color="primary" @click="$router.push('/dashboards/policy-waiver-form/create')">
+        Create Policy Waiver Form
+      </VBtn>
+    </VCard>
+
   </div>
 </template>
 
@@ -167,6 +178,69 @@ const filteredForms = computed(() => {
 
 // Date formatter
 const formatDate = date => (date ? new Date(date).toLocaleDateString() : '-')
+
+/* ---------- DELETE HANDLER ---------- */
+import Swal from "sweetalert2";
+/* ---------------- Mutations ---------------- */
+const openDeleteDialog = async (id) => {
+
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "This request will be permanently deleted!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "Cancel",
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    customClass: {
+      title: 'swal-title-color',      // title text
+      content: 'swal-content-color',  // message text
+      confirmButton: 'swal-confirm-btn', // confirm button text
+      cancelButton: 'swal-cancel-btn'    // cancel button text
+    }
+  });
+
+  if (!result.isConfirmed) return;
+
+  try {
+    Swal.fire({
+      title: "Deleting...",
+      text: "Please wait",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+    });
+
+    await axios.delete(`${apiBaseUrl}/policy-waiver-forms/${id}`, {
+        headers: getAuthHeaders(),
+    });
+    Swal.fire({
+      title: "Deleted!",
+      text: "Request deleted successfully.",
+      icon: "success",
+      customClass: {
+        title: 'swal-title-color',      // title text
+        content: 'swal-content-color',  // message text
+        confirmButton: 'swal-confirm-btn', // confirm button text
+        cancelButton: 'swal-cancel-btn'    // cancel button text
+      }
+    }).then(() => {
+      // ✅ Reload the page
+      window.location.reload();
+    });;
+
+  } catch (e) {
+    console.error("Error deleting request:", e);
+
+    Swal.fire({
+      title: "Error!",
+      text: e.response?.data?.message || "Failed to request.",
+      icon: "error",
+    });
+  }
+
+}
+
 
 onMounted(fetchForms)
 </script>

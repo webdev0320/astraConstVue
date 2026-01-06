@@ -371,22 +371,68 @@ const assignDepartments = async () => {
 
 onMounted(fetchAssets);
 
+
+import Swal from "sweetalert2";
 /* ---------------- Mutations ---------------- */
 const deleteAsset = async (id) => {
-  if (!confirm("Are you sure you want to delete this asset?")) return;
+
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "This asset will be permanently deleted!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "Cancel",
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    customClass: {
+      title: 'swal-title-color',      // title text
+      content: 'swal-content-color',  // message text
+      confirmButton: 'swal-confirm-btn', // confirm button text
+      cancelButton: 'swal-cancel-btn'    // cancel button text
+    }
+  });
+
+  if (!result.isConfirmed) return;
 
   try {
+    Swal.fire({
+      title: "Deleting...",
+      text: "Please wait",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+    });
+
     await axios.delete(`${apiBaseUrl}/assets/${id}`, {
       headers: getAuthHeaders(),
     });
+    Swal.fire({
+      title: "Deleted!",
+      text: "Asset deleted successfully.",
+      icon: "success",
+      customClass: {
+        title: 'swal-title-color',      // title text
+        content: 'swal-content-color',  // message text
+        confirmButton: 'swal-confirm-btn', // confirm button text
+        cancelButton: 'swal-cancel-btn'    // cancel button text
+      }
+    }).then(() => {
+      // ✅ Reload the page
+      window.location.reload();
+    });;
 
-    assets.value = assets.value.filter((row) => row.id !== id);
-    alert("Asset deleted successfully!");
-  } catch (err) {
-    console.error("Error deleting asset:", err);
-    alert(err.response?.data?.message || "Failed to delete asset.");
+  } catch (e) {
+    console.error("Error deleting asset:", e);
+
+    Swal.fire({
+      title: "Error!",
+      text: e.response?.data?.message || "Failed to delete asset.",
+      icon: "error",
+    });
   }
-};
+
+}
+
 </script>
 
 <style>
