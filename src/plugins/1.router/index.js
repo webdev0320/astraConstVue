@@ -1,5 +1,5 @@
 import { setupLayouts } from 'virtual:generated-layouts'
-import { createRouter, createWebHashHistory } from 'vue-router/auto' // <-- changed here
+import { createRouter, createWebHistory } from 'vue-router/auto'
 import { redirects, routes } from './additional-routes'
 import { setupGuards } from './guards'
 
@@ -15,7 +15,7 @@ function recursiveLayouts(route) {
 }
 
 const router = createRouter({
-  history: createWebHashHistory(import.meta.env.BASE_URL), // <-- changed here
+  history: createWebHistory(import.meta.env.BASE_URL),
   scrollBehavior(to) {
     if (to.hash)
       return { el: to.hash, behavior: 'smooth', top: 60 }
@@ -32,9 +32,7 @@ const router = createRouter({
 })
 
 setupGuards(router)
-
 export { router }
-
 export default function (app) {
   app.use(router)
 }
