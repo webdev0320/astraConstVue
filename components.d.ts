@@ -46,6 +46,5 @@ declare module 'vue' {
     TheCustomizer: typeof import('./src/@core/components/TheCustomizer.vue')['default']
     ThemeSwitcher: typeof import('./src/@core/components/ThemeSwitcher.vue')['default']
     TiptapEditor: typeof import('./src/@core/components/TiptapEditor.vue')['default']
-    VueApexCharts: typeof import('vue3-apexcharts')['default']
   }
 }
